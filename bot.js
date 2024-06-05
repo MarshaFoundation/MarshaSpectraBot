@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-const token = 'YOUR_TELEGRAM_BOT_TOKEN';
+const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
 const bot = new TelegramBot(token, { polling: true });
 
 const userCodes = {}; // Almacenar los códigos temporales
