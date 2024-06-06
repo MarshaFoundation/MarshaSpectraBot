@@ -99,12 +99,10 @@ bot.on('message', async (msg) => {
             console.error('Error al buscar en Wikipedia:', err);
             bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
         });
-    } else {
         // Responder según la intención detectada por node-nlp
         bot.sendMessage(chatId, response.answer);
     }
 });
-
 
 // Función para manejar errores de polling
 bot.on('polling_error', (error) => {
