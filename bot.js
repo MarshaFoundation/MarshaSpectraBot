@@ -85,7 +85,9 @@ manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas ap
 
 // Función para manejar mensajes de texto
 bot.on('message', async (msg) => {
+    // Aquí agregamos la línea para obtener el chatId
     const chatId = msg.chat.id;
+
     const response = await manager.process(msg.from.language_code, msg.text);
 
     // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
