@@ -10,49 +10,41 @@ i18n.configure({
     cookie: 'locale',
 });
 
-const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0'; // Reemplaza 'YOUR_TELEGRAM_BOT_TOKEN' con el token real de tu bot
+// Token del bot (¡reemplaza esto con tu propio token!)
+const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
 const bot = new TelegramBot(token, { polling: true });
 
-const userCodes = {}; // Almacenar los códigos temporales
-const userLanguages = {}; // Almacenar las preferencias de idioma temporales
-
-// Comando para iniciar
+// Función para manejar el comando /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, '¡Hola! Soy un bot sobre la comunidad LGTBI+ y Marsha+. Pregunta lo que quieras y estaré encantado de ayudarte.');
+    bot.sendMessage(chatId, '¡Hola! Soy Spectra, un Bot de Marsha+, ¿estás list@ para aprender sobre la comunidad LGTBI+? ¿En qué puedo ayudarte hoy?');
 });
 
-// Comando para solicitar autenticación
+// Función para manejar los saludos
+bot.onText(/hola|hi|hello|saludos/i, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, '¡Hola! Soy Spectra, un Bot de Marsha+, ¿estás list@ para aprender sobre la comunidad LGTBI+? ¿En qué puedo ayudarte hoy?');
+});
+
+// Función para manejar el comando /auth
 bot.onText(/\/auth/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const code = Math.floor(100000 + Math.random() * 900000); // Generar un código de 6 dígitos
-    userCodes[userId] = code;
+    const code = Math.floor(100000 + Math.random() * 900000);
     bot.sendMessage(chatId, `Tu código de autenticación es: ${code}. Envíalo usando el comando /verify <código>`);
 });
 
-// Comando para verificar el código
+// Función para manejar el comando /verify
 bot.onText(/\/verify (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
     const code = parseInt(match[1]);
-
-    if (userCodes[userId] && userCodes[userId] === code) {
-        delete userCodes[userId];
-        bot.sendMessage(chatId, 'Autenticación exitosa.');
-    } else {
-        bot.sendMessage(chatId, 'Código incorrecto. Inténtalo de nuevo.');
-    }
+    // Lógica para verificar el código y autenticar al usuario
 });
 
-// Comando para cambiar el idioma
+// Función para manejar el comando /language
 bot.onText(/\/language (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
     const locale = match[1];
-
     if (['en', 'es'].includes(locale)) {
-        userLanguages[userId] = locale;
         i18n.setLocale(locale);
         bot.sendMessage(chatId, i18n.__('Idioma cambiado a ') + locale);
     } else {
@@ -60,58 +52,59 @@ bot.onText(/\/language (.+)/, (msg, match) => {
     }
 });
 
-// Comando para mostrar el menú
+// Función para manejar el comando /menu
 bot.onText(/\/menu/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const locale = userLanguages[userId] || 'es';
-    i18n.setLocale(locale);
-
     const options = {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: i18n.__('Info'), callback_data: 'info' }],
-                [{ text: i18n.__('Recursos'), callback_data: 'resources' }],
-                [{ text: i18n.__('Eventos'), callback_data: 'events' }],
-                [{ text: i18n.__('Soporte'), callback_data: 'support' }],
-                [{ text: i18n.__('Comentarios'), callback_data: 'feedback' }],
+                [{ text: 'Info', callback_data: 'info' }],
+                [{ text: 'Recursos', callback_data: 'resources' }],
+                [{ text: 'Eventos', callback_data: 'events' }],
+                [{ text: 'Soporte', callback_data: 'support' }],
+                [{ text: 'Comentarios', callback_data: 'feedback' }],
             ]
         })
     };
-    bot.sendMessage(chatId, i18n.__('Elige una opción:'), options);
+    bot.sendMessage(chatId, 'Elige una opción:', options);
 });
 
-// Manejo de las opciones del menú
+// Función para manejar las opciones del menú
 bot.on('callback_query', (callbackQuery) => {
     const msg = callbackQuery.message;
     const data = callbackQuery.data;
-    const userId = msg.from.id;
-    const locale = userLanguages[userId] || 'es';
-    i18n.setLocale(locale);
 
     if (data === 'info') {
-        bot.sendMessage(msg.chat.id, i18n.__('Marsha+ es una comunidad inclusiva...'));
+        bot.sendMessage(msg.chat.id, 'Marsha+ es una comunidad inclusiva...');
     } else if (data === 'resources') {
-        bot.sendMessage(msg.chat.id, i18n.__('Aquí tienes algunos recursos útiles...'));
+        bot.sendMessage(msg.chat.id, 'Aquí tienes algunos recursos útiles...');
     } else if (data === 'events') {
-        bot.sendMessage(msg.chat.id, i18n.__('Aquí tienes algunos próximos eventos...'));
+        bot.sendMessage(msg.chat.id, 'Aquí tienes algunos próximos eventos...');
     } else if (data === 'support') {
-        bot.sendMessage(msg.chat.id, i18n.__('Si necesitas apoyo, aquí tienes algunas opciones...'));
+        bot.sendMessage(msg.chat.id, 'Si necesitas apoyo, aquí tienes algunas opciones...');
     } else if (data === 'feedback') {
-        bot.sendMessage(msg.chat.id, i18n.__('Por favor, envía tus comentarios usando /feedback <tu feedback>'));
+        bot.sendMessage(msg.chat.id, 'Por favor, envía tus comentarios usando /feedback <tu feedback>');
     }
 });
 
-// Comando para recibir feedback
+// Función para manejar el comando /feedback
 bot.onText(/\/feedback (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     const feedback = match[1];
-
-    // Aquí podríamos guardar el feedback en la base de datos o enviarlo a un administrador
-    bot.sendMessage(chatId, i18n.__('Gracias por tu feedback. Lo apreciamos mucho.'));
+    // Lógica para manejar el feedback del usuario
 });
 
-// Iniciar la aplicación
+// Función para manejar errores de polling
 bot.on('polling_error', (error) => {
-    console.log(error.code);  // => 'EFATAL'
+    console.error('Error de polling:', error);
+});
+
+// Función para manejar errores no capturados
+process.on('uncaughtException', (err) => {
+    console.error('Error no capturado:', err);
+});
+
+// Función para manejar errores no manejados
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Error no manejado:', reason, 'promise:', promise);
 });
