@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const { NlpManager } = require('node-nlp');
 const i18n = require('i18n');
 
 // Token del bot (¡reemplaza esto con tu propio token!)
@@ -15,94 +16,98 @@ i18n.configure({
 
 // Crear instancia del bot
 const bot = new TelegramBot(token, { polling: true });
-
 console.log('Bot iniciado correctamente');
 
-// Función para manejar el comando /start
-bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, '¡Hola! Soy Spectra, un Bot de Marsha+, ¿estás list@ para aprender sobre la comunidad LGTBI+? ¿En qué puedo ayudarte hoy?');
-});
+// Configuración de node-nlp
+const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 
-// Función para manejar el comando /auth
-bot.onText(/\/auth/, (msg) => {
-    const chatId = msg.chat.id;
-    const code = Math.floor(100000 + Math.random() * 900000);
-    bot.sendMessage(chatId, `Tu código de autenticación es: ${code}. Envíalo usando el comando /verify <código>`);
-});
+// Entrenar el modelo
+// Saludos
+manager.addDocument('en', 'hello', 'greetings.hello');
+manager.addDocument('es', 'hola', 'greetings.hello');
+manager.addDocument('en', 'hi', 'greetings.hello');
+manager.addDocument('es', 'buenos días', 'greetings.goodmorning');
+manager.addDocument('en', 'good morning', 'greetings.goodmorning');
+manager.addDocument('es', 'buenas tardes', 'greetings.goodafternoon');
+manager.addDocument('en', 'good afternoon', 'greetings.goodafternoon');
+manager.addDocument('es', 'buenas noches', 'greetings.goodevening');
+manager.addDocument('en', 'good evening', 'greetings.goodevening');
+manager.addDocument('en', 'how are you', 'greetings.howareyou');
+manager.addDocument('es', 'como estas', 'greetings.howareyou');
 
-// Función para manejar el comando /verify
-bot.onText(/\/verify (.+)/, (msg, match) => {
-    const chatId = msg.chat.id;
-    const code = parseInt(match[1]);
-    // Lógica para verificar el código y autenticar al usuario
-});
+manager.addAnswer('en', 'greetings.hello', 'Hello! How can I help you today?');
+manager.addAnswer('es', 'greetings.hello', '¡Hola! ¿Cómo puedo ayudarte hoy?');
+manager.addAnswer('en', 'greetings.goodmorning', 'Good morning! How can I help you today?');
+manager.addAnswer('es', 'greetings.goodmorning', '¡Buenos días! ¿Cómo puedo ayudarte hoy?');
+manager.addAnswer('en', 'greetings.goodafternoon', 'Good afternoon! How can I help you today?');
+manager.addAnswer('es', 'greetings.goodafternoon', '¡Buenas tardes! ¿Cómo puedo ayudarte hoy?');
+manager.addAnswer('en', 'greetings.goodevening', 'Good evening! How can I help you today?');
+manager.addAnswer('es', 'greetings.goodevening', '¡Buenas noches! ¿Cómo puedo ayudarte hoy?');
+manager.addAnswer('en', 'greetings.howareyou', 'I am an AI bot, I am always fine! How about you?');
+manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
 
-// Función para manejar el comando /language
-bot.onText(/\/language (.+)/, (msg, match) => {
+// Consultas sobre la comunidad LGTBI+
+manager.addDocument('en', 'tell me about LGBT', 'lgbt.info');
+manager.addDocument('es', 'cuéntame sobre LGBT', 'lgbt.info');
+manager.addDocument('en', 'what does LGBT mean', 'lgbt.meaning');
+manager.addDocument('es', 'qué significa LGBT', 'lgbt.meaning');
+manager.addDocument('en', 'what is LGBTQ+', 'lgbtq.info');
+manager.addDocument('es', 'qué es LGBTQ+', 'lgbtq.info');
+
+manager.addAnswer('en', 'lgbt.info', 'The LGBT community is diverse and inclusive, encompassing a wide range of identities including lesbian, gay, bisexual, and transgender individuals.');
+manager.addAnswer('es', 'lgbt.info', 'La comunidad LGBT es diversa e inclusiva, abarcando una amplia gama de identidades que incluyen a lesbianas, gays, bisexuales y personas transgénero.');
+manager.addAnswer('en', 'lgbt.meaning', 'LGBT stands for Lesbian, Gay, Bisexual, and Transgender.');
+manager.addAnswer('es', 'lgbt.meaning', 'LGBT significa Lesbianas, Gays, Bisexuales y Transgénero.');
+manager.addAnswer('en', 'lgbtq.info', 'LGBTQ+ includes all of the identities in the LGBT acronym plus Queer and other identities.');
+manager.addAnswer('es', 'lgbtq.info', 'LGBTQ+ incluye todas las identidades del acrónimo LGBT más Queer y otras identidades.');
+
+// Responder a situaciones personales
+manager.addDocument('en', 'I am feeling sad', 'emotion.sad');
+manager.addDocument('es', 'me siento triste', 'emotion.sad');
+manager.addDocument('en', 'I am feeling happy', 'emotion.happy');
+manager.addDocument('es', 'me siento feliz', 'emotion.happy');
+manager.addDocument('en', 'I need help', 'emotion.help');
+manager.addDocument('es', 'necesito ayuda', 'emotion.help');
+
+manager.addAnswer('en', 'emotion.sad', 'I am sorry to hear that you are feeling sad. If you need someone to talk to, there are many resources available to help you.');
+manager.addAnswer('es', 'emotion.sad', 'Lamento escuchar que te sientes triste. Si necesitas hablar con alguien, hay muchos recursos disponibles para ayudarte.');
+manager.addAnswer('en', 'emotion.happy', 'I am glad to hear that you are feeling happy! Remember, your happiness is important.');
+manager.addAnswer('es', 'emotion.happy', '¡Me alegra saber que te sientes feliz! Recuerda, tu felicidad es importante.');
+manager.addAnswer('en', 'emotion.help', 'It is okay to ask for help. If you need support, here are some resources that might be helpful for you.');
+manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas apoyo, aquí tienes algunos recursos que pueden ser útiles para ti.');
+
+// Entrenar y guardar el modelo
+(async () => {
+    await manager.train();
+    manager.save();
+})();
+
+// Función para manejar mensajes de texto
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const locale = match[1];
-    if (['en', 'es'].includes(locale)) {
-        i18n.setLocale(locale);
-        bot.sendMessage(chatId, i18n.__('Idioma cambiado a ') + locale);
+    const response = await manager.process(msg.from.language_code, msg.text);
+    
+    if (response.intent === 'None') {
+        bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
     } else {
-        bot.sendMessage(chatId, i18n.__('Idioma no soportado.'));
+        bot.sendMessage(chatId, response.answer);
     }
-});
-
-// Función para manejar el comando /menu
-bot.onText(/\/menu/, (msg) => {
-    const chatId = msg.chat.id;
-    const options = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: 'Info', callback_data: 'info' }],
-                [{ text: 'Recursos', callback_data: 'resources' }],
-                [{ text: 'Eventos', callback_data: 'events' }],
-                [{ text: 'Soporte', callback_data: 'support' }],
-                [{ text: 'Comentarios', callback_data: 'feedback' }],
-            ]
-        })
-    };
-    bot.sendMessage(chatId, 'Elige una opción:', options);
-});
-
-// Función para manejar las opciones del menú
-bot.on('callback_query', (callbackQuery) => {
-    const msg = callbackQuery.message;
-    const data = callbackQuery.data;
-
-    if (data === 'info') {
-        bot.sendMessage(msg.chat.id, 'Marsha+ es una comunidad inclusiva...');
-    } else if (data === 'resources') {
-        bot.sendMessage(msg.chat.id, 'Aquí tienes algunos recursos útiles...');
-    } else if (data === 'events') {
-        bot.sendMessage(msg.chat.id, 'Aquí tienes algunos próximos eventos...');
-    } else if (data === 'support') {
-        bot.sendMessage(msg.chat.id, 'Si necesitas apoyo, aquí tienes algunas opciones...');
-    } else if (data === 'feedback') {
-        bot.sendMessage(msg.chat.id, 'Por favor, envía tus comentarios usando /feedback <tu feedback>');
-    }
-});
-
-// Función para manejar el comando /feedback
-bot.onText(/\/feedback (.+)/, (msg, match) => {
-    const chatId = msg.chat.id;
-    const feedback = match[1];
-    // Lógica para manejar el feedback del usuario
 });
 
 // Función para manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
+    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
 
 // Función para manejar errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
+    bot.sendMessage(chatId, 'Ha ocurrido un error crítico. Por favor, intenta nuevamente más tarde.');
 });
 
 // Función para manejar errores no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
+    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
