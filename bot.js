@@ -1,5 +1,4 @@
 const TelegramBot = require('node-telegram-bot-api');
-const mongoose = require('mongoose');
 const i18n = require('i18n');
 
 // Configuración de i18n
@@ -11,35 +10,15 @@ i18n.configure({
     cookie: 'locale',
 });
 
-// Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/telegramBot', { useNewUrlParser: true, useUnifiedTopology: true });
-
-const userSchema = new mongoose.Schema({
-    id: Number,
-    username: String,
-    subscribed: Boolean,
-    authenticated: Boolean,
-    language: { type: String, default: 'es' }
-});
-
-const User = mongoose.model('User', userSchema);
-
-const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
+const token = 'YOUR_TELEGRAM_BOT_TOKEN'; // Reemplaza 'YOUR_TELEGRAM_BOT_TOKEN' con el token real de tu bot
 const bot = new TelegramBot(token, { polling: true });
 
 const userCodes = {}; // Almacenar los códigos temporales
+const userLanguages = {}; // Almacenar las preferencias de idioma temporales
 
 // Comando para iniciar
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    let user = await User.findOne({ id: userId });
-
-    if (!user) {
-        user = new User({ id: userId, username: msg.from.username || 'Unknown', subscribed: false, authenticated: false });
-        await user.save();
-    }
-
     bot.sendMessage(chatId, '¡Hola! Soy un bot sobre la comunidad LGTBI+ y Marsha+. Pregunta lo que quieras y estaré encantado de ayudarte.');
 });
 
@@ -53,16 +32,13 @@ bot.onText(/\/auth/, (msg) => {
 });
 
 // Comando para verificar el código
-bot.onText(/\/verify (.+)/, async (msg, match) => {
+bot.onText(/\/verify (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const code = parseInt(match[1]);
 
     if (userCodes[userId] && userCodes[userId] === code) {
         delete userCodes[userId];
-        let user = await User.findOne({ id: userId });
-        user.authenticated = true;
-        await user.save();
         bot.sendMessage(chatId, 'Autenticación exitosa.');
     } else {
         bot.sendMessage(chatId, 'Código incorrecto. Inténtalo de nuevo.');
@@ -70,46 +46,48 @@ bot.onText(/\/verify (.+)/, async (msg, match) => {
 });
 
 // Comando para cambiar el idioma
-bot.onText(/\/language (.+)/, async (msg, match) => {
+bot.onText(/\/language (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const locale = match[1];
 
     if (['en', 'es'].includes(locale)) {
+        userLanguages[userId] = locale;
         i18n.setLocale(locale);
-        let user = await User.findOne({ id: userId });
-        user.language = locale;
-        await user.save();
-        bot.sendMessage(chatId, i18n.__('Language set to ') + locale);
+        bot.sendMessage(chatId, i18n.__('Idioma cambiado a ') + locale);
     } else {
-        bot.sendMessage(chatId, i18n.__('Unsupported language.'));
+        bot.sendMessage(chatId, i18n.__('Idioma no soportado.'));
     }
 });
 
 // Comando para mostrar el menú
 bot.onText(/\/menu/, (msg) => {
     const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const locale = userLanguages[userId] || 'es';
+    i18n.setLocale(locale);
+
     const options = {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: 'Info', callback_data: 'info' }],
-                [{ text: 'Resources', callback_data: 'resources' }],
-                [{ text: 'Events', callback_data: 'events' }],
-                [{ text: 'Support', callback_data: 'support' }],
-                [{ text: 'Feedback', callback_data: 'feedback' }],
+                [{ text: i18n.__('Info'), callback_data: 'info' }],
+                [{ text: i18n.__('Recursos'), callback_data: 'resources' }],
+                [{ text: i18n.__('Eventos'), callback_data: 'events' }],
+                [{ text: i18n.__('Soporte'), callback_data: 'support' }],
+                [{ text: i18n.__('Comentarios'), callback_data: 'feedback' }],
             ]
         })
     };
-    bot.sendMessage(chatId, 'Elige una opción:', options);
+    bot.sendMessage(chatId, i18n.__('Elige una opción:'), options);
 });
 
 // Manejo de las opciones del menú
-bot.on('callback_query', async (callbackQuery) => {
+bot.on('callback_query', (callbackQuery) => {
     const msg = callbackQuery.message;
     const data = callbackQuery.data;
     const userId = msg.from.id;
-    let user = await User.findOne({ id: userId });
-    i18n.setLocale(user.language);
+    const locale = userLanguages[userId] || 'es';
+    i18n.setLocale(locale);
 
     if (data === 'info') {
         bot.sendMessage(msg.chat.id, i18n.__('Marsha+ es una comunidad inclusiva...'));
@@ -125,11 +103,9 @@ bot.on('callback_query', async (callbackQuery) => {
 });
 
 // Comando para recibir feedback
-bot.onText(/\/feedback (.+)/, async (msg, match) => {
+bot.onText(/\/feedback (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
     const feedback = match[1];
-    const userId = msg.from.id;
-    let user = await User.findOne({ id: userId });
 
     // Aquí podríamos guardar el feedback en la base de datos o enviarlo a un administrador
     bot.sendMessage(chatId, i18n.__('Gracias por tu feedback. Lo apreciamos mucho.'));
