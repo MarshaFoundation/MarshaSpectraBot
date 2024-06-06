@@ -10,7 +10,7 @@ i18n.configure({
     cookie: 'locale',
 });
 
-const token = 'YOUR_TELEGRAM_BOT_TOKEN'; // Reemplaza 'YOUR_TELEGRAM_BOT_TOKEN' con el token real de tu bot
+const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0'; // Reemplaza 'YOUR_TELEGRAM_BOT_TOKEN' con el token real de tu bot
 const bot = new TelegramBot(token, { polling: true });
 
 const userCodes = {}; // Almacenar los códigos temporales
