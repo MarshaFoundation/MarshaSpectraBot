@@ -1,4 +1,5 @@
-const TelegramBot = require('node-telegram-bot-api');
+const bot = new TelegramBot(token, { polling: true });
+console.log('Bot iniciado correctamente');
 const i18n = require('i18n');
 
 // Configuración de i18n
