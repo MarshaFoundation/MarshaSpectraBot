@@ -88,10 +88,11 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const response = await manager.process(msg.from.language_code, msg.text);
 
-        // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
-  if (!response.intent || response.intent === 'None') {
+    // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
+    if (!response.intent || response.intent === 'None') {
         // Buscar en Wikipedia si no se detecta ninguna intención
         wtf.fetch(msg.text, 'es').then(doc => {
+            console.log(doc); // Agregar este console.log para imprimir doc
             const summary = doc.summary();
             bot.sendMessage(chatId, summary);
         }).catch(err => {
