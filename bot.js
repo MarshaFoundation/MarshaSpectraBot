@@ -87,9 +87,10 @@ manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas ap
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const response = await manager.process(msg.from.language_code, msg.text);
-    
-    if (response.intent === 'None') {
-        // Si no se detecta ninguna intención, buscar en Wikipedia
+
+        // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
+  if (!response.intent || response.intent === 'None') {
+        // Buscar en Wikipedia si no se detecta ninguna intención
         wtf.fetch(msg.text, 'es').then(doc => {
             const summary = doc.summary();
             bot.sendMessage(chatId, summary);
@@ -98,6 +99,7 @@ bot.on('message', async (msg) => {
             bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
         });
     } else {
+        // Responder según la intención detectada por node-nlp
         bot.sendMessage(chatId, response.answer);
     }
 });
@@ -119,4 +121,3 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
     bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
-
