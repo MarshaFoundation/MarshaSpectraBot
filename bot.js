@@ -1,6 +1,8 @@
-const bot = new TelegramBot(token, { polling: true });
-console.log('Bot iniciado correctamente');
+const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
+
+// Token del bot (¡reemplaza esto con tu propio token!)
+const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
 
 // Configuración de i18n
 i18n.configure({
@@ -11,18 +13,13 @@ i18n.configure({
     cookie: 'locale',
 });
 
-// Token del bot (¡reemplaza esto con tu propio token!)
-const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
+// Crear instancia del bot
 const bot = new TelegramBot(token, { polling: true });
+
+console.log('Bot iniciado correctamente');
 
 // Función para manejar el comando /start
 bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, '¡Hola! Soy Spectra, un Bot de Marsha+, ¿estás list@ para aprender sobre la comunidad LGTBI+? ¿En qué puedo ayudarte hoy?');
-});
-
-// Función para manejar los saludos
-bot.onText(/hola|hi|hello|saludos/i, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, '¡Hola! Soy Spectra, un Bot de Marsha+, ¿estás list@ para aprender sobre la comunidad LGTBI+? ¿En qué puedo ayudarte hoy?');
 });
