@@ -91,18 +91,20 @@ bot.on('message', async (msg) => {
     // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
     if (!response.intent || response.intent === 'None') {
         // Buscar en Wikipedia si no se detecta ninguna intención
-wtf.parse(msg.text, 'es').then(doc => {
-    console.log(doc); // Agregar este console.log para imprimir doc
-    const summary = doc.sections[0].sentences[0].text;
-    bot.sendMessage(chatId, summary);
-}).catch(err => {
-    console.error('Error al buscar en Wikipedia:', err);
-    bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-});
+        wtf.parse(msg.text, 'es').then(doc => {
+            console.log(doc); // Agregar este console.log para imprimir doc
+            const summary = doc.sections[0].sentences[0].text;
+            bot.sendMessage(chatId, summary);
+        }).catch(err => {
+            console.error('Error al buscar en Wikipedia:', err);
+            bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        });
+    } else {
         // Responder según la intención detectada por node-nlp
         bot.sendMessage(chatId, response.answer);
     }
 });
+
 
 // Función para manejar errores de polling
 bot.on('polling_error', (error) => {
