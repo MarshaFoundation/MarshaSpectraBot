@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { NlpManager } = require('node-nlp');
 const i18n = require('i18n');
+const wtf = require('wtf_wikipedia');
 
 // Token del bot (¡reemplaza esto con tu propio token!)
 const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
@@ -22,69 +23,7 @@ console.log('Bot iniciado correctamente');
 const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 
 // Entrenar el modelo
-// (Código de entrenamiento omitido por brevedad)
-
-// Función para buscar en Wikipedia
-async function searchWikipedia(query) {
-    try {
-        const response = await axios.get('https://en.wikipedia.org/w/api.php', {
-            params: {
-                action: 'query',
-                format: 'json',
-                prop: 'extracts',
-                titles: query,
-                explaintext: 1,
-                redirects: 1,
-                formatversion: 2
-            }
-        });
-
-        const page = response.data.query.pages[0];
-        if (page.missing) {
-            return "Lo siento, no se encontró información sobre ese tema en Wikipedia.";
-        } else {
-            return page.extract;
-        }
-    } catch (error) {
-        console.error('Error al buscar en Wikipedia:', error);
-        return "Se produjo un error al buscar en Wikipedia. Por favor, inténtalo de nuevo más tarde.";
-    }
-}
-
-// Manejo de mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const response = await manager.process(msg.from.language_code, msg.text);
-    
-    if (response.intent === 'None') {
-        const wikipediaResult = await searchWikipedia(msg.text);
-        bot.sendMessage(chatId, wikipediaResult);
-    } else {
-        bot.sendMessage(chatId, response.answer);
-    }
-});
-
-// Función para manejar errores de polling
-bot.on('polling_error', (error) => {
-    console.error('Error de polling:', error);
-    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
-});
-
-// Función para manejar errores no capturados
-process.on('uncaughtException', (err) => {
-    console.error('Error no capturado:', err);
-    bot.sendMessage(chatId, 'Ha ocurrido un error crítico. Por favor, intenta nuevamente más tarde.');
-});
-
-// Función para manejar errores no manejados
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Error no manejado:', reason, 'promise:', promise);
-    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
-});
-
-// Entrenar el modelo
 // Saludos
-
 manager.addDocument('en', 'hello', 'greetings.hello');
 manager.addDocument('es', 'hola', 'greetings.hello');
 manager.addDocument('en', 'hi', 'greetings.hello');
@@ -150,7 +89,14 @@ bot.on('message', async (msg) => {
     const response = await manager.process(msg.from.language_code, msg.text);
     
     if (response.intent === 'None') {
-        bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        // Si no se detecta ninguna intención, buscar en Wikipedia
+        wtf.fetch(msg.text, 'es').then(doc => {
+            const summary = doc.summary();
+            bot.sendMessage(chatId, summary);
+        }).catch(err => {
+            console.error('Error al buscar en Wikipedia:', err);
+            bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        });
     } else {
         bot.sendMessage(chatId, response.answer);
     }
@@ -173,3 +119,4 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
     bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
+
