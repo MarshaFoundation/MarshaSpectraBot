@@ -23,7 +23,7 @@ console.log('Bot iniciado correctamente');
 const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 
 // Función para entrenar el modelo NLP
-const trainNlp = async () => {
+async function trainNlp() {
     // Saludos
     manager.addDocument('en', 'hello', 'greetings.hello');
     manager.addDocument('es', 'hola', 'greetings.hello');
@@ -81,51 +81,55 @@ const trainNlp = async () => {
     // Entrenar y guardar el modelo
     await manager.train();
     manager.save();
-};
+}
 
-trainNlp();
+// Entrenar el modelo NLP
+trainNlp().then(() => {
+    console.log('Modelo entrenado y listo para recibir mensajes.');
 
-// Función para manejar mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
+    // Función para manejar mensajes de texto
+    bot.on('message', async (msg) => {
+        const chatId = msg.chat.id;
 
-    try {
-        const response = await manager.process(msg.from.language_code, msg.text);
+        try {
+            const language = ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es';
+            const response = await manager.process(language, msg.text);
 
-        if (!response.intent || response.intent === 'None') {
-            // Buscar en Wikipedia si no se detecta ninguna intención
-            wtf.fetch(msg.text, 'es').then((doc) => {
-                if (doc) {
+            if (!response.intent || response.intent === 'None') {
+                // Buscar en Wikipedia si no se detecta ninguna intención
+                const doc = await wtf.fetch(msg.text, 'es');
+                if (doc && doc.sections(0).paragraphs(0).sentences(0)) {
                     const summary = doc.sections(0).paragraphs(0).sentences(0).text();
                     bot.sendMessage(chatId, summary);
                 } else {
-                    bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+                    bot.sendMessage(chatId, i18n.__({ phrase: 'Lo siento, no entiendo eso. ¿Podrías reformularlo?', locale: language }));
                 }
-            }).catch((err) => {
-                console.error('Error al buscar en Wikipedia:', err);
-                bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-            });
-        } else {
-            // Responder según la intención detectada por node-nlp
-            bot.sendMessage(chatId, response.answer);
+            } else {
+                // Responder según la intención detectada por node-nlp
+                bot.sendMessage(chatId, response.answer);
+            }
+        } catch (error) {
+            console.error('Error al procesar el mensaje:', error);
+            bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: language }));
         }
-    } catch (error) {
-        console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
-    }
+    });
+
+    // Función para manejar errores de polling
+    bot.on('polling_error', (error) => {
+        console.error('Error de polling:', error);
+    });
+
+    // Función para manejar errores no capturados
+    process.on('uncaughtException', (err) => {
+        console.error('Error no capturado:', err);
+    });
+
+    // Función para manejar errores no manejados
+    process.on('unhandledRejection', (reason, promise) => {
+        console.error('Error no manejado:', reason, 'promise:', promise);
+    });
+}).catch((err) => {
+    console.error('Error entrenando el modelo:', err);
 });
 
-// Función para manejar errores de polling
-bot.on('polling_error', (error) => {
-    console.error('Error de polling:', error);
-});
-
-// Función para manejar errores no capturados
-process.on('uncaughtException', (err) => {
-    console.error('Error no capturado:', err);
-});
-
-// Función para manejar errores no manejados
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Error no manejado:', reason, 'promise:', promise);
-});
+console.log('Bot entrenado y listo para recibir mensajes.');
