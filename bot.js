@@ -188,19 +188,19 @@ bot.on('message', async (msg) => {
         console.error('Error al procesar el mensaje:', error);
         bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: 'es' })); // Corrección: Usar 'es' como idioma predeterminado
     }
-});
+})
 
 // Función para manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
-});
+})
 
 // Función para manejar errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
-});
+})
 
 // Función para manejar errores no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
-});
+})
