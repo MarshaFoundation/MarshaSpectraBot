@@ -87,33 +87,32 @@ async function trainNlp() {
 trainNlp().then(() => {
     console.log('Modelo entrenado y listo para recibir mensajes.');
 
-    // Función para manejar mensajes de texto
-    bot.on('message', async (msg) => {
-        const chatId = msg.chat.id;
+   // Función para manejar mensajes de texto
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
 
-        try {
-            const language = ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es';
-            const response = await manager.process(language, msg.text);
+    try {
+        const language = msg.from.language_code && ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es'; // Corrección: Asegurarse de que el idioma esté definido
+        const response = await manager.process(language, msg.text);
 
-            if (!response.intent || response.intent === 'None') {
-                // Buscar en Wikipedia si no se detecta ninguna intención
-                const doc = await wtf.fetch(msg.text, 'es');
-                if (doc && doc.sections(0).paragraphs(0).sentences(0)) {
-                    const summary = doc.sections(0).paragraphs(0).sentences(0).text();
-                    bot.sendMessage(chatId, summary);
-                } else {
-                    bot.sendMessage(chatId, i18n.__({ phrase: 'Lo siento, no entiendo eso. ¿Podrías reformularlo?', locale: language }));
-                }
+        if (!response.intent || response.intent === 'None') {
+            // Buscar en Wikipedia si no se detecta ninguna intención
+            const doc = await wtf.fetch(msg.text, language); // Corrección: Pasar el idioma al método fetch
+            if (doc && doc.sections(0) && doc.sections(0).paragraphs(0) && doc.sections(0).paragraphs(0).sentences(0)) { // Verificar si se recibió una respuesta válida
+                const summary = doc.sections(0).paragraphs(0).sentences(0).text();
+                bot.sendMessage(chatId, summary);
             } else {
-                // Responder según la intención detectada por node-nlp
-                bot.sendMessage(chatId, response.answer);
+                bot.sendMessage(chatId, i18n.__({ phrase: 'Lo siento, no entiendo eso. ¿Podrías reformularlo?', locale: language }));
             }
-        } catch (error) {
-            console.error('Error al procesar el mensaje:', error);
-            bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: language }));
+        } else {
+            // Responder según la intención detectada por node-nlp
+            bot.sendMessage(chatId, response.answer);
         }
-    });
-
+    } catch (error) {
+        console.error('Error al procesar el mensaje:', error);
+        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: language }));
+    }
+});
     // Función para manejar errores de polling
     bot.on('polling_error', (error) => {
         console.error('Error de polling:', error);
