@@ -48,7 +48,7 @@ manager.addAnswer('en', 'greetings.goodafternoon', 'Good afternoon! How can I he
 manager.addAnswer('es', 'greetings.goodafternoon', '¡Buenas tardes! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.goodevening', 'Good evening! How can I help you today?');
 manager.addAnswer('es', 'greetings.goodevening', '¡Buenas noches! ¿Cómo puedo ayudarte hoy?');
-manager.addAnswer('en', 'greetings.howareyou', 'I am an AI bot, I am always fine! How about you?');
+manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
 manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');owareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
     
  // Consultas sobre la comunidad LGTBI+
