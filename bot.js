@@ -92,7 +92,6 @@ const lgbtQuestionsEn = [
     manager.addAnswer('es', 'lgbtq.nonbinary', 'Ser no binario significa no identificarse exclusivamente como hombre o mujer. Es una identidad de género válida y respetada.');
     manager.addAnswer('en', 'lgbtq.talk.kids', 'When talking to kids about LGBTQ+ topics, use age-appropriate language, be honest, and emphasize the importance of acceptance and diversity.');
   
-];
 
     manager.addAnswer('es', 'lgbtq.talk.kids', 'Cuando hables con niños sobre temas LGBTQ+, utiliza un lenguaje apropiado para su edad, sé honesto y enfatiza la importancia de la aceptación y la diversidad.');
     manager.addAnswer('en', 'lgbtq.safe.space', 'Creating a safe space for LGBTQ+ youth involves fostering an environment of acceptance, respect, and support where they can freely express themselves without fear of judgment or discrimination.');
