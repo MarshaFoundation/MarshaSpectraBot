@@ -24,7 +24,7 @@ const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 
 // Función para entrenar el modelo NLP
 async function trainNlp() {
-    // Saludos
+    
 // Saludos
 manager.addDocument('en', 'hello', 'greetings.hello');
 manager.addDocument('es', 'hola', 'greetings.hello');
@@ -188,7 +188,7 @@ lgbtQuestionsEs.forEach((question, index) => {
     manager.addAnswer('es', `lgbt.topic${index}`, `Aquí tienes información sobre "${question}".`);
 });
 
-    // Entrenar y guardar el modelo
+      // Entrenar y guardar el modelo
     await manager.train();
     manager.save();
 }
@@ -196,8 +196,11 @@ lgbtQuestionsEs.forEach((question, index) => {
 // Entrenar el modelo NLP
 trainNlp().then(() => {
     console.log('Modelo entrenado y listo para recibir mensajes.');
+}).catch((err) => {
+    console.error('Error entrenando el modelo:', err);
+});
 
-   // Función para manejar mensajes de texto
+// Función para manejar mensajes de texto
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
 
@@ -223,22 +226,40 @@ bot.on('message', async (msg) => {
         bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: language }));
     }
 });
-    // Función para manejar errores de polling
-    bot.on('polling_error', (error) => {
-        console.error('Error de polling:', error);
-    });
 
-    // Función para manejar errores no capturados
-    process.on('uncaughtException', (err) => {
-        console.error('Error no capturado:', err);
-    });
-
-    // Función para manejar errores no manejados
-    process.on('unhandledRejection', (reason, promise) => {
-        console.error('Error no manejado:', reason, 'promise:', promise);
-    });
-}).catch((err) => {
-    console.error('Error entrenando el modelo:', err);
+// Función para manejar el evento de cambio de idioma
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    const opts = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: '🇬🇧 English', callback_data: 'en' }],
+                [{ text: '🇪🇸 Español', callback_data: 'es' }],
+            ],
+        }),
+    };
+    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
 
-console.log('Bot entrenado y listo para recibir mensajes.');
+// Manejar el cambio de idioma
+bot.on('callback_query', (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const locale = callbackQuery.data;
+    i18n.setLocale(locale);
+    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
+});
+
+// Función para manejar errores de polling
+bot.on('polling_error', (error) => {
+    console.error('Error de polling:', error);
+});
+
+// Función para manejar errores no capturados
+process.on('uncaughtException', (err) => {
+    console.error('Error no capturado:', err);
+});
+
+// Función para manejar errores no manejados
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Error no manejado:', reason, 'promise:', promise);
+});
