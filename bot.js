@@ -26,6 +26,7 @@ const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 async function trainNlp() {
     
 // Saludos
+     const greetings = [
 manager.addDocument('en', 'hello', 'greetings.hello');
 manager.addDocument('es', 'hola', 'greetings.hello');
 manager.addDocument('en', 'hi', 'greetings.hello');
@@ -48,9 +49,10 @@ manager.addAnswer('en', 'greetings.goodevening', 'Good evening! How can I help y
 manager.addAnswer('es', 'greetings.goodevening', '¡Buenas noches! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.howareyou', 'I am an AI bot, I am always fine! How about you?');
 manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
-
+];
+    
 // Consultas sobre la comunidad LGTBI+
-const lgbtQuestionsEn = [
+for (const greeting of greetings) { 
         { en: 'tell me about LGBT', es: 'cuéntame sobre LGBT', key: 'lgbt.info' },
         { en: 'what does LGBT mean', es: 'qué significa LGBT', key: 'lgbt.meaning' },
         { en: 'what is LGBTQ+', es: 'qué es LGBTQ+', key: 'lgbtq.info' },
@@ -71,11 +73,11 @@ const lgbtQuestionsEn = [
         { en: 'what is the history of the LGBTQ+ movement', es: 'cuál es la historia del movimiento LGBTQ+', key: 'lgbtq.history' },
         { en: 'how to deal with internalized homophobia', es: 'cómo lidiar con la homofobia internalizada', key: 'lgbtq.internalized.homophobia' },
         { en: 'how to support a transgender friend', es: 'cómo apoyar a un amigo transgénero', key: 'lgbtq.support.transgender' },
-    ];
+}
 
-    for (const intent of lgbtIntents) {
-        manager.addDocument('en', intent.en, intent.key);
-        manager.addDocument('es', intent.es, intent.key);
+    for (const greeting of greetings) {
+        manager.addDocument('en', greeting.en, greeting.key);
+        manager.addDocument('es', greeting.es, greeting.key);
     }
 
     manager.addAnswer('en', 'lgbt.info', 'The LGBT community is diverse and inclusive, encompassing a wide range of identities including lesbian, gay, bisexual, and transgender individuals.');
@@ -160,47 +162,62 @@ bot.on('callback_query', (callbackQuery) => {
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
-// Entrenar el modelo NLP
 trainNlp();
 
-// Función para manejar mensajes de texto
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    const opts = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: '🇬🇧 English', callback_data: 'en' }],
+                [{ text: '🇪🇸 Español', callback_data: 'es' }],
+            ],
+        }),
+    };
+    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+});
+
+bot.on('callback_query', (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const locale = callbackQuery.data;
+    i18n.setLocale(locale);
+    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
+});
+
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
 
     try {
-        const language = msg.from.language_code && ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es'; // Corrección: Asegurarse de que el idioma esté definido
+        const language = msg.from.language_code && ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es';
         const response = await manager.process(language, msg.text);
 
         if (!response.intent || response.intent === 'None') {
-            // Buscar en Wikipedia si no se detecta ninguna intención
-            const doc = await wtf.fetch(msg.text, language); // Corrección: Pasar el idioma al método fetch
-            if (doc && doc.sections(0) && doc.sections(0).paragraphs(0) && doc.sections(0).paragraphs(0).sentences(0)) { // Verificar si se recibió una respuesta válida
+            const doc = await wtf.fetch(msg.text, language);
+            if (doc && doc.sections(0) && doc.sections(0).paragraphs(0) && doc.sections(0).paragraphs(0).sentences(0)) {
                 const summary = doc.sections(0).paragraphs(0).sentences(0).text();
                 bot.sendMessage(chatId, summary);
             } else {
                 bot.sendMessage(chatId, i18n.__({ phrase: 'Lo siento, no entiendo eso. ¿Podrías reformularlo?', locale: language }));
             }
         } else {
-            // Responder según la intención detectada por node-nlp
             bot.sendMessage(chatId, response.answer);
         }
     } catch (error) {
         console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: 'es' })); // Corrección: Usar 'es' como idioma predeterminado
+        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: 'es' }));
     }
 });
 
-// Función para manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
-// Función para manejar errores no capturados
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException',
+
+           (err) => {
     console.error('Error no capturado:', err);
 });
 
-// Función para manejar errores no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
