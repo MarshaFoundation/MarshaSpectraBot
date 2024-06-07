@@ -26,25 +26,20 @@ const manager = new NlpManager({ languages: ['en', 'es'], forceNER: true });
 async function trainNlp() {
     
 // Saludos
-     const greetings = [
-manager.addDocument('en', 'hello', 'greetings.hello');
-manager.addDocument('es', 'hola', 'greetings.hello');
-manager.addDocument('en', 'hi', 'greetings.hello');
-manager.addDocument('es', 'buenos días', 'greetings.goodmorning');
-manager.addDocument('en', 'good morning', 'greetings.goodmorning');
-manager.addDocument('es', 'buenas tardes', 'greetings.goodafternoon');
-manager.addDocument('en', 'good afternoon', 'greetings.goodafternoon');
-manager.addDocument('es', 'buenas noches', 'greetings.goodevening');
-manager.addDocument('en', 'good evening', 'greetings.goodevening');
-manager.addDocument('en', 'how are you', 'greetings.howareyou');
-manager.addDocument('es', 'como estas', 'greetings.howareyou');
+const greetings = [
+    { en: 'hello', es: 'hola', key: 'greetings.hello' },
+    { en: 'hi', es: 'hola', key: 'greetings.hello' },
+    { en: 'good morning', es: 'buenos días', key: 'greetings.goodmorning' },
+    { en: 'good afternoon', es: 'buenas tardes', key: 'greetings.goodafternoon' },
+    { en: 'good evening', es: 'buenas noches', key: 'greetings.goodevening' },
+    { en: 'how are you', es: 'cómo estás', key: 'greetings.howareyou' }
 ];
 
-    for (const greeting of greetings) {
-        manager.addDocument('en', greeting.en, greeting.key);
-        manager.addDocument('es', greeting.es, greeting.key);
-    }
-    
+for (const greeting of greetings) {
+    manager.addDocument('en', greeting.en, greeting.key);
+    manager.addDocument('es', greeting.es, greeting.key);
+}
+
 manager.addAnswer('en', 'greetings.hello', 'Hello! How can I help you today?');
 manager.addAnswer('es', 'greetings.hello', '¡Hola! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.goodmorning', 'Good morning! How can I help you today?');
@@ -54,7 +49,7 @@ manager.addAnswer('es', 'greetings.goodafternoon', '¡Buenas tardes! ¿Cómo pue
 manager.addAnswer('en', 'greetings.goodevening', 'Good evening! How can I help you today?');
 manager.addAnswer('es', 'greetings.goodevening', '¡Buenas noches! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.howareyou', 'I am an AI bot, I am always fine! How about you?');
-manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
+manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');owareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
     
  // Consultas sobre la comunidad LGTBI+
     const lgbtQueries = [
@@ -80,39 +75,50 @@ manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre esto
         { en: 'how to support a transgender friend', es: 'cómo apoyar a un amigo transgénero', key: 'lgbtq.support.transgender' },
 ];
 
-    for (const query of lgbtQueries) {
-        manager.addDocument('en', query.en, query.key);
-        manager.addDocument('es', query.es, query.key);
-    }
+    // Consultas sobre la comunidad LGTBI+
+const lgbtQueries = [
+    { en: 'tell me about LGBT', es: 'cuéntame sobre LGBT', key: 'lgbt.info' },
+    { en: 'what does LGBT mean', es: 'qué significa LGBT', key: 'lgbt.meaning' },
+    { en: 'what is LGBTQ+', es: 'qué es LGBTQ+', key: 'lgbtq.info' },
+    { en: 'what are the rights of LGBTQ+ individuals', es: 'cuáles son los derechos de las personas LGBTQ+', key: 'lgbtq.rights' },
+    { en: 'how can I support a friend who is coming out', es: 'cómo puedo apoyar a un amigo que está saliendo del clóset', key: 'lgbtq.support.friend' },
+    { en: 'what does being non-binary mean', es: 'qué significa ser no binario', key: 'lgbtq.nonbinary' },
+    { en: 'how to talk to kids about LGBTQ+', es: 'cómo hablar con los niños sobre LGBTQ+', key: 'lgbtq.talk.kids' },
+    { en: 'how to create a safe space for LGBTQ+ youth', es: 'cómo crear un espacio seguro para jóvenes LGBTQ+', key: 'lgbtq.safe.space' },
+    { en: 'what is gender dysphoria', es: 'qué es la disforia de género', key: 'lgbtq.gender.dysphoria' },
+    { en: 'what are some famous LGBTQ+ activists', es: 'quiénes son algunos activistas LGBTQ+ famosos', key: 'lgbtq.activists' },
+    { en: 'how to handle discrimination at work', es: 'cómo manejar la discriminación en el trabajo', key: 'lgbtq.discrimination.work' },
+    { en: 'what are some LGBTQ+ friendly places', es: 'cuáles son algunos lugares amigables LGBTQ+', key: 'lgbtq.friendly.places' },
+    { en: 'how to support LGBTQ+ rights', es: 'cómo apoyar los derechos LGBTQ+', key: 'lgbtq.support.rights' },
+    { en: 'what are pronouns and why are they important', es: 'qué son los pronombres y por qué son importantes', key: 'lgbtq.pronouns' },
+    { en: 'how to be an ally to LGBTQ+ people', es: 'cómo ser un aliado de las personas LGBTQ+', key: 'lgbtq.ally' },
+    { en: 'what are some LGBTQ+ support groups', es: 'cuáles son algunos grupos de apoyo LGBTQ+', key: 'lgbtq.support.groups' },
+    { en: 'how to come out to family', es: 'cómo salir del clóset con la familia', key: 'lgbtq.coming.out.family' },
+    { en: 'what is the history of the LGBTQ+ movement', es: 'cuál es la historia del movimiento LGBTQ+', key: 'lgbtq.history' },
+    { en: 'how to deal with internalized homophobia', es: 'cómo lidiar con la homofobia internalizada', key: 'lgbtq.internalized.homophobia' },
+    { en: 'how to support a transgender friend', es: 'cómo apoyar a un amigo transgénero', key: 'lgbtq.support.transgender' },
+];
 
-    manager.addAnswer('en', 'lgbt.info', 'The LGBT community is diverse and inclusive, encompassing a wide range of identities including lesbian, gay, bisexual, and transgender individuals.');
-    manager.addAnswer('es', 'lgbt.info', 'La comunidad LGBT es diversa e inclusiva, abarcando una amplia gama de identidades que incluyen a lesbianas, gays, bisexuales y personas transgénero.');
-    manager.addAnswer('en', 'lgbt.meaning', 'LGBT stands for Lesbian, Gay, Bisexual, and Transgender.');
-    manager.addAnswer('es', 'lgbt.meaning', 'LGBT significa Lesbianas, Gays, Bisexuales y Transgénero.');
-    manager.addAnswer('en', 'lgbtq.info', 'LGBTQ+ includes all of the identities in the LGBT acronym plus Queer and other identities.');
-    manager.addAnswer('es', 'lgbtq.info', 'LGBTQ+ incluye todas las identidades del acrónimo LGBT más Queer y otras identidades.');
-    manager.addAnswer('en', 'lgbtq.rights', 'LGBTQ+ rights vary by country and region. It\'s important to stay informed about local laws and advocate for equal rights everywhere.');
-    manager.addAnswer('es', 'lgbtq.rights', 'Los derechos LGBTQ+ varían según el país y la región. Es importante estar informado sobre las leyes locales y abogar por la igualdad de derechos en todas partes.');
-    manager.addAnswer('en', 'lgbtq.support.friend', 'Supporting a friend who is coming out can make a big difference. Be there for them, listen without judgment, and let them know they are loved.');
-    manager.addAnswer('es', 'lgbtq.support.friend', 'Apoyar a un amigo que está saliendo del clóset puede hacer una gran diferencia. Esté allí para ellos, escuche sin juzgar y hágales saber que son amados.');
-    manager.addAnswer('en', 'lgbtq.nonbinary', 'Being non-binary means not identifying exclusively as male or female. It is a valid and respected gender identity.');
-    manager.addAnswer('es', 'lgbtq.nonbinary', 'Ser no binario significa no identificarse exclusivamente como hombre o mujer. Es una identidad de género válida y respetada.');
-    manager.addAnswer('en', 'lgbtq.talk.kids', 'When talking to kids about LGBTQ+ topics, use age-appropriate language, be honest, and emphasize the importance of acceptance and diversity.');
-  
+for (const query of lgbtQueries) {
+    manager.addDocument('en', query.en, query.key);
+    manager.addDocument('es', query.es, query.key);
+}
 
-    manager.addAnswer('es', 'lgbtq.talk.kids', 'Cuando hables con niños sobre temas LGBTQ+, utiliza un lenguaje apropiado para su edad, sé honesto y enfatiza la importancia de la aceptación y la diversidad.');
-    manager.addAnswer('en', 'lgbtq.safe.space', 'Creating a safe space for LGBTQ+ youth involves fostering an environment of acceptance, respect, and support where they can freely express themselves without fear of judgment or discrimination.');
-    manager.addAnswer('es', 'lgbtq.safe.space', 'Crear un espacio seguro para los jóvenes LGBTQ+ implica fomentar un ambiente de aceptación, respeto y apoyo donde puedan expresarse libremente sin temor a ser juzgados o discriminados.');
-    manager.addAnswer('en', 'lgbtq.gender.dysphoria', 'Gender dysphoria refers to the distress or discomfort that may occur when a person\'s gender identity differs from the sex they were assigned at birth. It is important to provide support and understanding to individuals experiencing gender dysphoria.');
-    manager.addAnswer('es', 'lgbtq.gender.dysphoria', 'La disforia de género se refiere a la angustia o malestar que puede ocurrir cuando la identidad de género de una persona difiere del sexo asignado al nacer. Es importante brindar apoyo y comprensión a las personas que experimentan disforia de género.');
-    manager.addAnswer('en', 'lgbtq.activists', 'Some famous LGBTQ+ activists include Marsha P. Johnson, Harvey Milk, Sylvia Rivera, Audre Lorde, and Bayard Rustin, among others.');
-    manager.addAnswer('es', 'lgbtq.activists', 'Algunos activistas LGBTQ+ famosos incluyen a Marsha P. Johnson, Harvey Milk, Sylvia Rivera, Audre Lorde y Bayard Rustin, entre otros.');
-    manager.addAnswer('en', 'lgbtq.discrimination.work', 'Dealing with discrimination at work can be challenging. It\'s important to know your rights, document incidents, seek support from allies or advocacy groups, and consider reporting discrimination to relevant authorities.');
-    manager.addAnswer('es', 'lgbtq.discrimination.work', 'Lidiar con la discriminación en el trabajo puede ser desafiante. Es importante conocer tus derechos, documentar los incidentes, buscar apoyo de aliados o grupos de defensa, y considerar informar la discriminación a las autoridades pertinentes.');
-    manager.addAnswer('en', 'lgbtq.friendly.places', 'LGBTQ+ friendly places are establishments or communities that openly welcome and support LGBTQ+ individuals. These can include LGBTQ+ bars, community centers, businesses with inclusive policies, and events celebrating LGBTQ+ culture.');
-    manager.addAnswer('es', 'lgbtq.friendly.places', 'Los lugares amigables LGBTQ+ son establecimientos o comunidades que acogen y apoyan abiertamente a las personas LGBTQ+. Estos pueden incluir bares LGBTQ+, centros comunitarios, negocios con políticas inclusivas y eventos que celebran la cultura LGBTQ+.');
-    manager.addAnswer('en', 'lgbtq.support.rights', 'Supporting LGBTQ+ rights involves advocating for equal treatment, non-discrimination, and legal protections for LGBTQ+ individuals and communities. This can include participating in activism, educating others, and promoting inclusive policies.');
-    manager.addAnswer('es', 'lgbtq.support.rights', 'Apoyar los derechos LGBTQ+ implica abogar por un trato igualitario, la no discriminación y protecciones legales para las personas y comunidades LGBTQ+. Esto puede incluir participar en activismo, educar a otros y promover políticas inclusivas.');
+manager.addAnswer('en', 'lgbt.info', 'The LGBT community is diverse and inclusive, encompassing a wide range of identities including lesbian, gay, bisexual, and transgender individuals.');
+manager.addAnswer('es', 'lgbt.info', 'La comunidad LGBT es diversa e inclusiva, abarcando una amplia gama de identidades que incluyen a lesbianas, gays, bisexuales y personas transgénero.');
+manager.addAnswer('en', 'lgbt.meaning', 'LGBT stands for Lesbian, Gay, Bisexual, and Transgender.');
+manager.addAnswer('es', 'lgbt.meaning', 'LGBT significa Lesbianas, Gays, Bisexuales y Transgénero.');
+manager.addAnswer('en', 'lgbtq.info', 'LGBTQ+ includes all of the identities in the LGBT acronym plus Queer and other identities.');
+manager.addAnswer('es', 'lgbtq.info', 'LGBTQ+ incluye todas las identidades del acrónimo LGBT más Queer y otras identidades.');
+manager.addAnswer('en', 'lgbtq.rights', 'LGBTQ+ rights vary by country and region. It\'s important to stay informed about local laws and advocate for equal rights everywhere.');
+manager.addAnswer('es', 'lgbtq.rights', 'Los derechos LGBTQ+ varían según el país y la región. Es importante estar informado sobre las leyes locales y abogar por la igualdad de derechos en todas partes.');
+manager.addAnswer('en', 'lgbtq.support.friend', 'Supporting a friend who is coming out can make a big difference. Be there for them, listen without judgment, and let them know they are loved.');
+manager.addAnswer('es', 'lgbtq.support.friend', 'Apoyar a un amigo que está saliendo del clóset puede hacer una gran diferencia. Esté allí para ellos, escuche sin juzgar y hágales saber que son amados.');
+manager.addAnswer('en', 'lgbtq.nonbinary', 'Being non-binary means not identifying exclusively as male or female. It is a valid and respected gender identity.');
+manager.addAnswer('es', 'lgbtq.nonbinary', 'Ser no binario significa no identificarse exclusivamente como hombre o mujer. Es una identidad de género válida y respetada.');
+manager.addAnswer('en', 'lgbtq.talk.kids', 'When talking to kids about LGBTQ+ topics, use age-appropriate language, be honest, and emphasize the importance of acceptance and diversity.');
+manager.addAnswer('es', 'lgbtq.talk.kids', 'Cuando hables con niños sobre temas LGBTQ+, utiliza un lenguaje apropiado para su edad, sé honesto y enfatiza la importancia de la aceptación y la diversidad.');
+manager.addAnswer('en', 'lgbtq.safe.space', 'Creating a safe space for LGBTQ+ youth involves fostering an environment of acceptance, respect, and support where they can freely express themselves without fear of judgment or discrimination.');
 
   // Responder a situaciones personales
 const personalSituations = [
