@@ -108,37 +108,36 @@ const lgbtQuestionsEn = [
     manager.addAnswer('en', 'lgbtq.support.rights', 'Supporting LGBTQ+ rights involves advocating for equal treatment, non-discrimination, and legal protections for LGBTQ+ individuals and communities. This can include participating in activism, educating others, and promoting inclusive policies.');
     manager.addAnswer('es', 'lgbtq.support.rights', 'Apoyar los derechos LGBTQ+ implica abogar por un trato igualitario, la no discriminación y protecciones legales para las personas y comunidades LGBTQ+. Esto puede incluir participar en activismo, educar a otros y promover políticas inclusivas.');
 
-    // Responder a situaciones personales
-    const personalSituations = [
-        { en: 'I am feeling sad', es: 'me siento triste', key: 'emotion.sad' },
-        { en: 'I am feeling happy', es: 'me siento feliz', key: 'emotion.happy' },
-        { en: 'I need help', es: 'necesito ayuda', key: 'emotion.help' },
-        // Agrega más situaciones personales aquí
-    ];
+  // Responder a situaciones personales
+const personalSituations = [
+    { en: 'I am feeling sad', es: 'me siento triste', key: 'emotion.sad' },
+    { en: 'I am feeling happy', es: 'me siento feliz', key: 'emotion.happy' },
+    { en: 'I need help', es: 'necesito ayuda', key: 'emotion.help' },
+    // Agrega más situaciones personales aquí
+];
 
-    for (const situation of personalSituations) {
-        manager.addDocument('en', situation.en, situation.key);
-        manager.addDocument('es', situation.es, situation.key);
-    }
-
-    manager.addAnswer('en', 'emotion.sad', 'I am sorry to hear that you are feeling sad. If you need someone to talk to, there are many resources available to help you.');
-    manager.addAnswer('es', 'emotion.sad', 'Lamento escuchar que te sientes triste. Si necesitas hablar con alguien, hay muchos recursos disponibles para ayudarte.');
-    manager.addAnswer('en', 'emotion.happy', 'I am glad to hear that you are feeling happy! Remember, your happiness is important.');
-    manager.addAnswer('es', 'emotion.happy', '¡Me alegra saber que te sientes feliz! Recuerda, tu felicidad es importante.');
-    manager.addAnswer('en', 'emotion.help', 'It is okay to ask for help. If you need support, here are some resources that might be helpful for you.');
-    manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas apoyo, aquí tienes algunos recursos que pueden ser útiles para ti.');
+for (const situation of personalSituations) {
+    manager.addDocument('en', situation.en, situation.key);
+    manager.addDocument('es', situation.es, situation.key);
 }
-            if (response.intent === 'lgbt.info' || response.intent === 'lgbt.meaning' || response.intent === 'lgbtq.info') {
-                bot.sendMessage(chatId, i18n.__(response.answer));
-            } else {
-                bot.sendMessage(chatId, response.answer);
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        bot.sendMessage(chatId, i18n.__('Lo siento, ha ocurrido un error.'));
+
+manager.addAnswer('en', 'emotion.sad', 'I am sorry to hear that you are feeling sad. If you need someone to talk to, there are many resources available to help you.');
+manager.addAnswer('es', 'emotion.sad', 'Lamento escuchar que te sientes triste. Si necesitas hablar con alguien, hay muchos recursos disponibles para ayudarte.');
+manager.addAnswer('en', 'emotion.happy', 'I am glad to hear that you are feeling happy! Remember, your happiness is important.');
+manager.addAnswer('es', 'emotion.happy', '¡Me alegra saber que te sientes feliz! Recuerda, tu felicidad es importante.');
+manager.addAnswer('en', 'emotion.help', 'It is okay to ask for help. If you need support, here are some resources that might be helpful for you.');
+manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas apoyo, aquí tienes algunos recursos que pueden ser útiles para ti.');
+
+try {
+    if (response.intent === 'lgbt.info' || response.intent === 'lgbt.meaning' || response.intent === 'lgbtq.info') {
+        bot.sendMessage(chatId, i18n.__(response.answer));
+    } else {
+        bot.sendMessage(chatId, response.answer);
     }
-});
+} catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, i18n.__('Lo siento, ha ocurrido un error.'));
+}
 
 // Escuchar el evento de cambio de idioma
 bot.onText(/\/start/, (msg) => {
@@ -170,41 +169,6 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
 
     try {
-        const response = await manager.process(msg.from.language_code, msg.text);
-
-        if (!response.intent || response.intent === 'None') {
-            // Buscar en Wikipedia si no se detecta ninguna intención
-            const doc = await wtf.fetch(msg.text, 'es');
-            if (doc && doc.sections(0).paragraphs(0).sentences(0)) {
-                const summary = doc.sections(0).paragraphs(0).sentences(0).text();
-                bot.sendMessage(chatId, summary);
-            } else {
-                bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-            }
-        } else {
-            // Responder según la intención detectada por
-lgbtQuestionsEs.forEach((question, index) => {
-    manager.addDocument('es', question, `lgbt.topic${index}`);
-    manager.addAnswer('es', `lgbt.topic${index}`, `Aquí tienes información sobre "${question}".`);
-});
-
-      // Entrenar y guardar el modelo
-    await manager.train();
-    manager.save();
-}
-
-// Entrenar el modelo NLP
-trainNlp().then(() => {
-    console.log('Modelo entrenado y listo para recibir mensajes.');
-}).catch((err) => {
-    console.error('Error entrenando el modelo:', err);
-});
-
-// Función para manejar mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-
-    try {
         const language = msg.from.language_code && ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es'; // Corrección: Asegurarse de que el idioma esté definido
         const response = await manager.process(language, msg.text);
 
@@ -223,30 +187,8 @@ bot.on('message', async (msg) => {
         }
     } catch (error) {
         console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: language }));
+        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: 'es' })); // Corrección: Usar 'es' como idioma predeterminado
     }
-});
-
-// Función para manejar el evento de cambio de idioma
-bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    const opts = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: '🇬🇧 English', callback_data: 'en' }],
-                [{ text: '🇪🇸 Español', callback_data: 'es' }],
-            ],
-        }),
-    };
-    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
-});
-
-// Manejar el cambio de idioma
-bot.on('callback_query', (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const locale = callbackQuery.data;
-    i18n.setLocale(locale);
-    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
 // Función para manejar errores de polling
