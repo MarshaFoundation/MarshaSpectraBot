@@ -77,49 +77,54 @@ manager.addAnswer('es', 'emotion.happy', '¡Me alegra saber que te sientes feliz
 manager.addAnswer('en', 'emotion.help', 'It is okay to ask for help. If you need support, here are some resources that might be helpful for you.');
 manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas apoyo, aquí tienes algunos recursos que pueden ser útiles para ti.');
 
-// Entrenar y guardar el modelo
-(async () => {
+    // Entrenar y guardar el modelo
     await manager.train();
     manager.save();
-})();
+};
+
+trainNlp();
 
 // Función para manejar mensajes de texto
 bot.on('message', async (msg) => {
-    // Aquí agregamos la línea para obtener el chatId
     const chatId = msg.chat.id;
 
-    const response = await manager.process(msg.from.language_code, msg.text);
+    try {
+        const response = await manager.process(msg.from.language_code, msg.text);
 
-    // Verificar si la intención detectada es 'None' o si no se detectó ninguna intención
-    if (!response.intent || response.intent === 'None') {
-        // Buscar en Wikipedia si no se detecta ninguna intención
-        wtf.parse(msg.text, 'es').then(doc => {
-            console.log(doc); // Agregar este console.log para imprimir doc
-            const summary = doc.sections[0].sentences[0].text;
-            bot.sendMessage(chatId, summary);
-        }).catch(err => {
-            console.error('Error al buscar en Wikipedia:', err);
-            bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-        });
-        // Responder según la intención detectada por node-nlp
-        bot.sendMessage(chatId, response.answer);
+        if (!response.intent || response.intent === 'None') {
+            // Buscar en Wikipedia si no se detecta ninguna intención
+            wtf.fetch(msg.text, 'es').then((doc) => {
+                if (doc) {
+                    const summary = doc.sections(0).paragraphs(0).sentences(0).text();
+                    bot.sendMessage(chatId, summary);
+                } else {
+                    bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+                }
+            }).catch((err) => {
+                console.error('Error al buscar en Wikipedia:', err);
+                bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+            });
+        } else {
+            // Responder según la intención detectada por node-nlp
+            bot.sendMessage(chatId, response.answer);
+        }
+    } catch (error) {
+        console.error('Error al procesar el mensaje:', error);
+        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
     }
 });
 
 // Función para manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
-    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
 
 // Función para manejar errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
-    bot.sendMessage(chatId, 'Ha ocurrido un error crítico. Por favor, intenta nuevamente más tarde.');
 });
 
 // Función para manejar errores no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
-    bot.sendMessage(chatId, 'Ha ocurrido un error. Por favor, intenta nuevamente más tarde.');
 });
