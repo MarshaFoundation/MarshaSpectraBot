@@ -38,7 +38,13 @@ manager.addDocument('es', 'buenas noches', 'greetings.goodevening');
 manager.addDocument('en', 'good evening', 'greetings.goodevening');
 manager.addDocument('en', 'how are you', 'greetings.howareyou');
 manager.addDocument('es', 'como estas', 'greetings.howareyou');
+];
 
+    for (const greeting of greetings) {
+        manager.addDocument('en', greeting.en, greeting.key);
+        manager.addDocument('es', greeting.es, greeting.key);
+    }
+    
 manager.addAnswer('en', 'greetings.hello', 'Hello! How can I help you today?');
 manager.addAnswer('es', 'greetings.hello', '¡Hola! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.goodmorning', 'Good morning! How can I help you today?');
@@ -49,10 +55,9 @@ manager.addAnswer('en', 'greetings.goodevening', 'Good evening! How can I help y
 manager.addAnswer('es', 'greetings.goodevening', '¡Buenas noches! ¿Cómo puedo ayudarte hoy?');
 manager.addAnswer('en', 'greetings.howareyou', 'I am an AI bot, I am always fine! How about you?');
 manager.addAnswer('es', 'greetings.howareyou', 'Soy un bot de IA, ¡siempre estoy bien! ¿Y tú?');
-];
     
-// Consultas sobre la comunidad LGTBI+
-for (const greeting of greetings) { 
+ // Consultas sobre la comunidad LGTBI+
+    const lgbtQueries = [
         { en: 'tell me about LGBT', es: 'cuéntame sobre LGBT', key: 'lgbt.info' },
         { en: 'what does LGBT mean', es: 'qué significa LGBT', key: 'lgbt.meaning' },
         { en: 'what is LGBTQ+', es: 'qué es LGBTQ+', key: 'lgbtq.info' },
@@ -73,11 +78,11 @@ for (const greeting of greetings) {
         { en: 'what is the history of the LGBTQ+ movement', es: 'cuál es la historia del movimiento LGBTQ+', key: 'lgbtq.history' },
         { en: 'how to deal with internalized homophobia', es: 'cómo lidiar con la homofobia internalizada', key: 'lgbtq.internalized.homophobia' },
         { en: 'how to support a transgender friend', es: 'cómo apoyar a un amigo transgénero', key: 'lgbtq.support.transgender' },
-}
+];
 
-    for (const greeting of greetings) {
-        manager.addDocument('en', greeting.en, greeting.key);
-        manager.addDocument('es', greeting.es, greeting.key);
+    for (const query of lgbtQueries) {
+        manager.addDocument('en', query.en, query.key);
+        manager.addDocument('es', query.es, query.key);
     }
 
     manager.addAnswer('en', 'lgbt.info', 'The LGBT community is diverse and inclusive, encompassing a wide range of identities including lesbian, gay, bisexual, and transgender individuals.');
@@ -129,16 +134,6 @@ manager.addAnswer('es', 'emotion.happy', '¡Me alegra saber que te sientes feliz
 manager.addAnswer('en', 'emotion.help', 'It is okay to ask for help. If you need support, here are some resources that might be helpful for you.');
 manager.addAnswer('es', 'emotion.help', 'Está bien pedir ayuda. Si necesitas apoyo, aquí tienes algunos recursos que pueden ser útiles para ti.');
 
-try {
-    if (response.intent === 'lgbt.info' || response.intent === 'lgbt.meaning' || response.intent === 'lgbtq.info') {
-        bot.sendMessage(chatId, i18n.__(response.answer));
-    } else {
-        bot.sendMessage(chatId, response.answer);
-    }
-} catch (err) {
-    console.error(err);
-    bot.sendMessage(chatId, i18n.__('Lo siento, ha ocurrido un error.'));
-}
 
 // Escuchar el evento de cambio de idioma
 bot.onText(/\/start/, (msg) => {
@@ -197,14 +192,14 @@ bot.on('message', async (msg) => {
                 const summary = doc.sections(0).paragraphs(0).sentences(0).text();
                 bot.sendMessage(chatId, summary);
             } else {
-                bot.sendMessage(chatId, i18n.__({ phrase: 'Lo siento, no entiendo eso. ¿Podrías reformularlo?', locale: language }));
+                bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
             }
         } else {
             bot.sendMessage(chatId, response.answer);
         }
     } catch (error) {
         console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__({ phrase: 'Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.', locale: 'es' }));
+        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
     }
 });
 
@@ -212,9 +207,7 @@ bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
-process.on('uncaughtException',
-
-           (err) => {
+process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
