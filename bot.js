@@ -6,7 +6,7 @@ const axios = require('axios'); // Importar axios
 // Token del bot (¡reemplaza esto con tu propio token!)
 const token = '7164860622:AAGdgiNe_Po07H5aGkQWvA4aPFvfAxLEDO0';
 // Clave de API de OpenAI (¡reemplaza esto con tu propia clave API!)
-const openaiApiKey = 'sk-proj-4RNVrkdOiFBQjQqqeQagT3BlbkFJNRMC59ZyKdSCLds7pbXV';  // <-- Reemplaza esto con tu clave API de OpenAI
+const openaiApiKey = ;  // <-- Reemplaza esto con tu clave API de OpenAI
 
 // Configuración de i18n
 i18n.configure({
