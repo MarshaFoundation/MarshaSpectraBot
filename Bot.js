@@ -3,15 +3,6 @@ const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
 const axios = require('axios');
 require('dotenv').config();
-const { Pool } = require('pg');
-
-// Configurar la conexión a la base de datos PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -31,8 +22,9 @@ console.log('Bot iniciado correctamente');
 
 // Caché para almacenar respuestas de OpenAI
 const cachedResponses = new Map();
+const cacheMaxSize = 100; // Establecer el límite máximo de elementos en la caché
 
-// Función para hacer la llamada a OpenAI
+// Función para hacer la llamada a OpenAI con control de frecuencia
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
     if (cachedResponses.has(messagesKey)) {
@@ -54,33 +46,16 @@ async function getChatGPTResponse(messages) {
         const gptResponse = response.data.choices[0].message.content.trim();
         cachedResponses.set(messagesKey, gptResponse);
 
+        // Limpiar la caché si excede el límite máximo de tamaño
+        if (cachedResponses.size > cacheMaxSize) {
+            const keysToDelete = Array.from(cachedResponses.keys()).slice(0, cachedResponses.size - cacheMaxSize);
+            keysToDelete.forEach(key => cachedResponses.delete(key));
+        }
+
         return gptResponse;
     } catch (error) {
         console.error('Error al llamar a OpenAI:', error);
         return 'Lo siento, actualmente no puedo procesar tu solicitud.';
-    }
-}
-
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
-    try {
-        const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-        return res.rows.length > 0 ? res.rows[0].locale : 'es';
-    } catch (error) {
-        console.error('Error al obtener el idioma del usuario:', error);
-        return 'es';
-    }
-}
-
-// Función para actualizar/guardar el idioma del usuario en la base de datos
-async function setUserLocale(chatId, locale) {
-    try {
-        await pool.query(
-            'INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2',
-            [chatId, locale]
-        );
-    } catch (error) {
-        console.error('Error al configurar el idioma del usuario:', error);
     }
 }
 
@@ -100,7 +75,7 @@ bot.onText(/\/start/, async (msg) => {
             ],
         }),
     };
-    const locale = await getUserLocale(chatId);
+    const locale = 'es'; // Establecer el idioma predeterminado como español
     i18n.setLocale(locale);
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
@@ -110,7 +85,6 @@ bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const locale = callbackQuery.data;
     i18n.setLocale(locale);
-    await setUserLocale(chatId, locale);
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
@@ -119,25 +93,22 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
 
-    const locale = await getUserLocale(chatId);
-    i18n.setLocale(locale);
-
     try {
         const prompt = { role: 'user', content: userMessage };
         const messages = [prompt];
         const gptResponse = await getChatGPTResponse(messages);
 
         if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, locale);
+            const doc = await wtf.fetch(userMessage, 'es');
             const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
             bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
         } else {
             bot.sendMessage(chatId, gptResponse);
         }
     } catch (error) {
-        console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
-    }
+       
+ console.error('Error al procesar el mensaje:', error);
+    bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
 });
 
 // Manejar errores de polling
