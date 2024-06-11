@@ -93,23 +93,22 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
 
-    try {
-        const prompt = { role: 'user', content: userMessage };
-        const messages = [prompt];
-        const gptResponse = await getChatGPTResponse(messages);
+try {
+    const prompt = { role: 'user', content: userMessage };
+    const messages = [prompt];
+    const gptResponse = await getChatGPTResponse(messages);
 
-        if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, 'es');
-            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-        } else {
-            bot.sendMessage(chatId, gptResponse);
-        }
-    } catch (error) {
-       
- console.error('Error al procesar el mensaje:', error);
+    if (!gptResponse) {
+        const doc = await wtf.fetch(userMessage, 'es');
+        const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+        bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+    } else {
+        bot.sendMessage(chatId, gptResponse);
+    }
+} catch (error) {
+    console.error('Error al procesar el mensaje:', error);
     bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
-});
+}
 
 // Manejar errores de polling
 bot.on('polling_error', (error) => {
