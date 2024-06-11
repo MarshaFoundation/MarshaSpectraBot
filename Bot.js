@@ -65,28 +65,6 @@ async function handleError(chatId, errorMessage) {
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-// Manejar mensajes del usuario
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userMessage = sanitizeInput(msg.text);
-
-    try {
-        const prompt = { role: 'user', content: userMessage };
-        const messages = [prompt];
-        const gptResponse = await getChatGPTResponse(messages);
-
-        if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, 'es');
-            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-        } else {
-            bot.sendMessage(chatId, gptResponse);
-        }
-    } catch (error) {
-        await handleError(chatId, error.message);
-    }
-});
-
 // Función para sanitizar la entrada del usuario
 function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
@@ -134,8 +112,7 @@ bot.on('message', async (msg) => {
             bot.sendMessage(chatId, gptResponse);
         }
     } catch (error) {
-        console.error('Error al procesar el mensaje:', error);
-        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
+        await handleError(chatId, error.message);
     }
 });
 
@@ -153,3 +130,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
