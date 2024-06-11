@@ -29,9 +29,10 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Función para hacer la llamada a OpenAI
-const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
+// Caché para almacenar respuestas de OpenAI
+const cachedResponses = new Map();
 
+// Función para hacer la llamada a OpenAI
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
     if (cachedResponses.has(messagesKey)) {
@@ -64,11 +65,7 @@ async function getChatGPTResponse(messages) {
 async function getUserLocale(chatId) {
     try {
         const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-        if (res.rows.length > 0) {
-            return res.rows[0].locale;
-        } else {
-            return 'es';
-        }
+        return res.rows.length > 0 ? res.rows[0].locale : 'es';
     } catch (error) {
         console.error('Error al obtener el idioma del usuario:', error);
         return 'es';
@@ -78,7 +75,10 @@ async function getUserLocale(chatId) {
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
     try {
-        await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+        await pool.query(
+            'INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2',
+            [chatId, locale]
+        );
     } catch (error) {
         console.error('Error al configurar el idioma del usuario:', error);
     }
@@ -89,7 +89,7 @@ function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
 }
 
-// Escuchar el evento de cambio de idioma
+// Escuchar el evento de inicio para cambio de idioma
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
@@ -114,10 +114,11 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
+// Manejar mensajes del usuario
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
-    
+
     const locale = await getUserLocale(chatId);
     i18n.setLocale(locale);
 
@@ -139,14 +140,17 @@ bot.on('message', async (msg) => {
     }
 });
 
+// Manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
+// Manejar excepciones no capturadas
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
+// Manejar promesas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
