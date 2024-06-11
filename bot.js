@@ -3,6 +3,15 @@ const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
 const axios = require('axios');
 require('dotenv').config();
+const { Pool } = require('pg');
+
+// Configurar la conexión a la base de datos PostgreSQL
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -24,7 +33,6 @@ console.log('Bot iniciado correctamente');
 const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
 
 async function getChatGPTResponse(messages) {
-    // Verificar si la respuesta está en la caché
     const messagesKey = JSON.stringify(messages);
     if (cachedResponses.has(messagesKey)) {
         return cachedResponses.get(messagesKey);
@@ -43,50 +51,41 @@ async function getChatGPTResponse(messages) {
         });
 
         const gptResponse = response.data.choices[0].message.content.trim();
-        // Guardar respuesta en caché
         cachedResponses.set(messagesKey, gptResponse);
 
         return gptResponse;
     } catch (error) {
         console.error('Error al llamar a OpenAI:', error);
-        return null;
+        return 'Lo siento, actualmente no puedo procesar tu solicitud.';
     }
 }
 
-async function getChatGPTResponse(messages) {
-    // Verificar si la respuesta está en la caché
-    const messagesKey = JSON.stringify(messages);
-    if (cachedResponses.has(messagesKey)) {
-        return cachedResponses.get(messagesKey);
-    }
-
+// Función para obtener el idioma del usuario desde la base de datos
+async function getUserLocale(chatId) {
     try {
-        // Implementar una pausa de 2 segundos antes de la llamada a la API
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-3.5-turbo',
-            messages: messages,
-            temperature: 0.7,
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openaiApiKey}`
-            }
-        });
-
-        const gptResponse = response.data.choices[0].message.content.trim();
-        // Guardar respuesta en caché
-        cachedResponses.set(messagesKey, gptResponse);
-
-        return gptResponse;
+        const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+        if (res.rows.length > 0) {
+            return res.rows[0].locale;
+        } else {
+            return 'es';
+        }
     } catch (error) {
-        console.error('Error al llamar a OpenAI:', error);
-        return null;
+        console.error('Error al obtener el idioma del usuario:', error);
+        return 'es';
     }
 }
+
+// Función para actualizar/guardar el idioma del usuario en la base de datos
+async function setUserLocale(chatId, locale) {
+    try {
+        const res = await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    } catch (error) {
+        console.error('Error al configurar el idioma del usuario:', error);
+    }
+}
+
 // Escuchar el evento de cambio de idioma
-bot.onText(/\/start/, (msg) => {
+bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
         reply_markup: JSON.stringify({
@@ -96,21 +95,26 @@ bot.onText(/\/start/, (msg) => {
             ],
         }),
     };
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
 
 // Manejar el cambio de idioma
-bot.on('callback_query', (callbackQuery) => {
+bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const locale = callbackQuery.data;
     i18n.setLocale(locale);
+    await setUserLocale(chatId, locale);
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = msg.text;
-    const language = msg.from.language_code && ['en', 'es'].includes(msg.from.language_code) ? msg.from.language_code : 'es';
+    
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
 
     try {
         const prompt = { role: 'user', content: userMessage };
@@ -118,7 +122,7 @@ bot.on('message', async (msg) => {
         const gptResponse = await getChatGPTResponse(messages);
 
         if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, language);
+            const doc = await wtf.fetch(userMessage, locale);
             const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
             bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
         } else {
