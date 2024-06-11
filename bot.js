@@ -1,14 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
+const token = process.env.TELEGRAM_API_KEY; // Acceder a la clave de Telegram desde .env
+const openaiApiKey = process.env.OPENAI_API_KEY; // Acceder a la clave de OpenAI desde .env
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
 const axios = require('axios'); // Importar axios
 
 require('dotenv').config(); // Cargar variables de entorno desde .env
-
-const TelegramBot = require('node-telegram-bot-api');
-const token = process.env.TELEGRAM_API_KEY; // Acceder a la clave de Telegram desde .env
-const openaiApiKey = process.env.OPENAI_API_KEY; // Acceder a la clave de OpenAI desde .env
-
 
 // Configuración de i18n
 i18n.configure({
