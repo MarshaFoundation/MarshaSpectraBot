@@ -53,6 +53,38 @@ async function getChatGPTResponse(messages) {
     }
 }
 
+async function getChatGPTResponse(messages) {
+    // Verificar si la respuesta está en la caché
+    const messagesKey = JSON.stringify(messages);
+    if (cachedResponses.has(messagesKey)) {
+        return cachedResponses.get(messagesKey);
+    }
+
+    try {
+        // Implementar una pausa de 2 segundos antes de la llamada a la API
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo',
+            messages: messages,
+            temperature: 0.7,
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openaiApiKey}`
+            }
+        });
+
+        const gptResponse = response.data.choices[0].message.content.trim();
+        // Guardar respuesta en caché
+        cachedResponses.set(messagesKey, gptResponse);
+
+        return gptResponse;
+    } catch (error) {
+        console.error('Error al llamar a OpenAI:', error);
+        return null;
+    }
+}
 // Escuchar el evento de cambio de idioma
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
