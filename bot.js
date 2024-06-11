@@ -1,17 +1,27 @@
-// Elimina la declaración de la variable TelegramBot aquí
-// const TelegramBot = require('node-telegram-bot-api');
-
-const token = process.env.TELEGRAM_API_KEY; // Acceder a la clave de Telegram desde .env
-const openaiApiKey = process.env.OPENAI_API_KEY; // Acceder a la clave de OpenAI desde .env
+const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
-const axios = require('axios'); // Importar axios
+const axios = require('axios');
+require('dotenv').config();
 
-require('dotenv').config(); // Cargar variables de entorno desde .env
+const token = process.env.TELEGRAM_API_KEY;
+const openaiApiKey = process.env.OPENAI_API_KEY;
 
-// Crear instancia del bot directamente con TelegramBot
+// Configuración de i18n
+i18n.configure({
+    locales: ['en', 'es'],
+    directory: __dirname + '/locales',
+    defaultLocale: 'es',
+    queryParameter: 'lang',
+    cookie: 'locale',
+});
+
+// Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
+
+// Resto de tu código aquí...
+
 
 // Función para hacer la llamada a OpenAI
 async function getChatGPTResponse(messages) {
