@@ -20,11 +20,16 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Resto de tu código aquí...
-
-
 // Función para hacer la llamada a OpenAI
+const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
+
 async function getChatGPTResponse(messages) {
+    // Verificar si la respuesta está en la caché
+    const messagesKey = JSON.stringify(messages);
+    if (cachedResponses.has(messagesKey)) {
+        return cachedResponses.get(messagesKey);
+    }
+
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: 'gpt-3.5-turbo',
@@ -36,7 +41,12 @@ async function getChatGPTResponse(messages) {
                 'Authorization': `Bearer ${openaiApiKey}`
             }
         });
-        return response.data.choices[0].message.content.trim();
+
+        const gptResponse = response.data.choices[0].message.content.trim();
+        // Guardar respuesta en caché
+        cachedResponses.set(messagesKey, gptResponse);
+
+        return gptResponse;
     } catch (error) {
         console.error('Error al llamar a OpenAI:', error);
         return null;
