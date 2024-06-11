@@ -1,0 +1,17 @@
+{
+  "name": "my-telegram-bot",
+  "version": "1.0.0",
+  "description": "Bot de Telegram con integracion de OpenAI y soporte multilenguaje",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "dotenv": "^8.2.0",
+    "i18n": "^0.13.2",
+    "node-telegram-bot-api": "^0.53.0",
+    "pg": "^8.5.1",
+    "wtf_wikipedia": "^8.4.1"
+  }
+}
