@@ -59,6 +59,34 @@ async function getChatGPTResponse(messages) {
     }
 }
 
+// Función para manejar errores y enviar mensajes informativos al usuario
+async function handleError(chatId, errorMessage) {
+    console.error(errorMessage);
+    await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
+}
+
+// Manejar mensajes del usuario
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = sanitizeInput(msg.text);
+
+    try {
+        const prompt = { role: 'user', content: userMessage };
+        const messages = [prompt];
+        const gptResponse = await getChatGPTResponse(messages);
+
+        if (!gptResponse) {
+            const doc = await wtf.fetch(userMessage, 'es');
+            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        } else {
+            bot.sendMessage(chatId, gptResponse);
+        }
+    } catch (error) {
+        await handleError(chatId, error.message);
+    }
+});
+
 // Función para sanitizar la entrada del usuario
 function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
