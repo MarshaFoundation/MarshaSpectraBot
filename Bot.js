@@ -7,35 +7,68 @@ require('dotenv').config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 
-// Configuración de i18n
-i18n.configure({
+// Configuración del objeto de configuración
+const CONFIG = {
     locales: ['en', 'es'],
-    directory: __dirname + '/locales',
     defaultLocale: 'es',
+    cacheMaxSize: 100,
+    openaiApiUrl: 'https://api.openai.com/v1/chat/completions',
+    gptModel: 'gpt-3.5-turbo',
+    responseTemperature: 0.7,
+};
+
+i18n.configure({
+    locales: CONFIG.locales,
+    directory: __dirname + '/locales',
+    defaultLocale: CONFIG.defaultLocale,
     queryParameter: 'lang',
     cookie: 'locale',
 });
 
-// Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Caché para almacenar respuestas de OpenAI
-const cachedResponses = new Map();
-const cacheMaxSize = 100; // Establecer el límite máximo de elementos en la caché
+// Implementación de una caché LRU
+class LRUCache {
+    constructor(maxSize) {
+        this.maxSize = maxSize;
+        this.cache = new Map();
+    }
+
+    get(key) {
+        if (!this.cache.has(key)) {
+            return null;
+        }
+        const value = this.cache.get(key);
+        this.cache.delete(key);
+        this.cache.set(key, value);
+        return value;
+    }
+
+    set(key, value) {
+        if (this.cache.size >= this.maxSize) {
+            const keys = this.cache.keys();
+            this.cache.delete(keys.next().value);
+        }
+        this.cache.set(key, value);
+    }
+}
+
+const cache = new LRUCache(CONFIG.cacheMaxSize);
 
 // Función para hacer la llamada a OpenAI con control de frecuencia
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
-    if (cachedResponses.has(messagesKey)) {
-        return cachedResponses.get(messagesKey);
+    const cachedResponse = cache.get(messagesKey);
+    if (cachedResponse) {
+        return cachedResponse;
     }
 
     try {
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-3.5-turbo',
+        const response = await axios.post(CONFIG.openaiApiUrl, {
+            model: CONFIG.gptModel,
             messages: messages,
-            temperature: 0.7,
+            temperature: CONFIG.responseTemperature,
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -44,13 +77,7 @@ async function getChatGPTResponse(messages) {
         });
 
         const gptResponse = response.data.choices[0].message.content.trim();
-        cachedResponses.set(messagesKey, gptResponse);
-
-        // Limpiar la caché si excede el límite máximo de tamaño
-        if (cachedResponses.size > cacheMaxSize) {
-            const keysToDelete = Array.from(cachedResponses.keys()).slice(0, cachedResponses.size - cacheMaxSize);
-            keysToDelete.forEach(key => cachedResponses.delete(key));
-        }
+        cache.set(messagesKey, gptResponse);
 
         return gptResponse;
     } catch (error) {
@@ -59,18 +86,15 @@ async function getChatGPTResponse(messages) {
     }
 }
 
-// Función para manejar errores y enviar mensajes informativos al usuario
-async function handleError(chatId, errorMessage) {
-    console.error(errorMessage);
+async function handleError(chatId, errorMessage, errorDetails = '') {
+    console.error(errorMessage, errorDetails);
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-// Función para sanitizar la entrada del usuario
 function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
 }
 
-// Escuchar el evento de inicio para cambio de idioma
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
@@ -81,12 +105,11 @@ bot.onText(/\/start/, async (msg) => {
             ],
         }),
     };
-    const locale = 'es'; // Establecer el idioma predeterminado como español
+    const locale = CONFIG.defaultLocale;
     i18n.setLocale(locale);
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
 
-// Manejar el cambio de idioma
 bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const locale = callbackQuery.data;
@@ -94,7 +117,6 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
-// Manejar mensajes del usuario
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
@@ -112,22 +134,18 @@ bot.on('message', async (msg) => {
             bot.sendMessage(chatId, gptResponse);
         }
     } catch (error) {
-        await handleError(chatId, error.message);
+        await handleError(chatId, error.message, error);
     }
 });
 
-// Manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
-// Manejar excepciones no capturadas
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
-// Manejar promesas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
