@@ -56,6 +56,9 @@ class LRUCache {
 
 const cache = new LRUCache(CONFIG.cacheMaxSize);
 
+// Función para agregar retrasos
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 // Función para hacer la llamada a OpenAI con control de frecuencia
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
@@ -64,26 +67,39 @@ async function getChatGPTResponse(messages) {
         return cachedResponse;
     }
 
-    try {
-        const response = await axios.post(CONFIG.openaiApiUrl, {
-            model: CONFIG.gptModel,
-            messages: messages,
-            temperature: CONFIG.responseTemperature,
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openaiApiKey}`
+    const maxRetries = 3;
+    let retries = 0;
+
+    while (retries < maxRetries) {
+        try {
+            const response = await axios.post(CONFIG.openaiApiUrl, {
+                model: CONFIG.gptModel,
+                messages: messages,
+                temperature: CONFIG.responseTemperature,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${openaiApiKey}`
+                }
+            });
+
+            const gptResponse = response.data.choices[0].message.content.trim();
+            cache.set(messagesKey, gptResponse);
+
+            return gptResponse;
+        } catch (error) {
+            if (error.response && error.response.status === 429) {
+                console.warn('Rate limit reached. Waiting to retry...');
+                retries++;
+                await delay(2000); // Espera 2 segundos antes de reintentar
+            } else {
+                console.error('Error al llamar a OpenAI:', error);
+                return 'Lo siento, actualmente no puedo procesar tu solicitud.';
             }
-        });
-
-        const gptResponse = response.data.choices[0].message.content.trim();
-        cache.set(messagesKey, gptResponse);
-
-        return gptResponse;
-    } catch (error) {
-        console.error('Error al llamar a OpenAI:', error);
-        return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+        }
     }
+
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
 }
 
 // Nueva función de prueba de conexión
@@ -173,3 +189,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
