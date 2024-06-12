@@ -67,7 +67,7 @@ async function getChatGPTResponse(messages) {
         return cachedResponse;
     }
 
-    const maxRetries = 3;
+    const maxRetries = 5;
     let retries = 0;
 
     while (retries < maxRetries) {
@@ -91,7 +91,7 @@ async function getChatGPTResponse(messages) {
             if (error.response && error.response.status === 429) {
                 console.warn('Rate limit reached. Waiting to retry...');
                 retries++;
-                await delay(2000); // Espera 2 segundos antes de reintentar
+                await delay(5000); // Incrementar el tiempo de retraso a 5 segundos
             } else {
                 console.error('Error al llamar a OpenAI:', error);
                 return 'Lo siento, actualmente no puedo procesar tu solicitud.';
