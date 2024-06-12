@@ -86,6 +86,29 @@ async function getChatGPTResponse(messages) {
     }
 }
 
+// Nueva función de prueba de conexión
+async function testOpenAiConnection() {
+    const testMessage = "Dime un hecho curioso.";
+    const prompt = { role: 'user', content: testMessage };
+    const messages = [prompt];
+
+    try {
+        const response = await getChatGPTResponse(messages);
+
+        if (response) {
+            console.log("Conexión a OpenAI exitosa:", response);
+        } else {
+            console.error("No se recibió una respuesta válida de OpenAI.");
+        }
+    } catch (error) {
+        console.error("Error en la conexión a OpenAI:", error);
+    }
+}
+
+// Llama a la función de prueba al inicio para verificar la conexión
+testOpenAiConnection();
+
+// Funciones de utilidad
 async function handleError(chatId, errorMessage, errorDetails = '') {
     console.error(errorMessage, errorDetails);
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
@@ -95,6 +118,7 @@ function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
 }
 
+// Bot commands setup
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
