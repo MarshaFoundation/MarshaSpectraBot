@@ -1,20 +1,15 @@
 const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
-const axios = require('axios');
 require('dotenv').config();
 
 const token = process.env.TELEGRAM_API_KEY;
-const openaiApiKey = process.env.OPENAI_API_KEY;
 
 // Configuración del objeto de configuración
 const CONFIG = {
     locales: ['en', 'es'],
     defaultLocale: 'es',
     cacheMaxSize: 100,
-    openaiApiUrl: 'https://api.openai.com/v1/chat/completions',
-    gptModel: 'gpt-3.5-turbo',
-    responseTemperature: 0.7,
 };
 
 i18n.configure({
