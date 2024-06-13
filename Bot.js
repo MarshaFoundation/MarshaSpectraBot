@@ -1,7 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
-const axios = require('axios');
 require('dotenv').config();
 
 const token = process.env.TELEGRAM_API_KEY;
@@ -51,74 +50,6 @@ class LRUCache {
 }
 
 const cache = new LRUCache(CONFIG.cacheMaxSize);
-
-// Función para agregar retrasos
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-// Función para hacer la llamada a OpenAI con control de frecuencia
-async function getChatGPTResponse(messages) {
-    const messagesKey = JSON.stringify(messages);
-    const cachedResponse = cache.get(messagesKey);
-    if (cachedResponse) {
-        return cachedResponse;
-    }
-
-    const maxRetries = 5;
-    let retries = 0;
-
-    while (retries < maxRetries) {
-        try {
-            const response = await axios.post(CONFIG.openaiApiUrl, {
-                model: CONFIG.gptModel,
-                messages: messages,
-                temperature: CONFIG.responseTemperature,
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${openaiApiKey}`
-                }
-            });
-
-            const gptResponse = response.data.choices[0].message.content.trim();
-            cache.set(messagesKey, gptResponse);
-
-            return gptResponse;
-        } catch (error) {
-            if (error.response && error.response.status === 429) {
-                console.warn('Rate limit reached. Waiting to retry...');
-                retries++;
-                await delay(5000); // Incrementar el tiempo de retraso a 5 segundos
-            } else {
-                console.error('Error al llamar a OpenAI:', error);
-                return 'Lo siento, actualmente no puedo procesar tu solicitud.';
-            }
-        }
-    }
-
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
-}
-
-// Nueva función de prueba de conexión
-async function testOpenAiConnection() {
-    const testMessage = "Dime un hecho curioso.";
-    const prompt = { role: 'user', content: testMessage };
-    const messages = [prompt];
-
-    try {
-        const response = await getChatGPTResponse(messages);
-
-        if (response) {
-            console.log("Conexión a OpenAI exitosa:", response);
-        } else {
-            console.error("No se recibió una respuesta válida de OpenAI.");
-        }
-    } catch (error) {
-        console.error("Error en la conexión a OpenAI:", error);
-    }
-}
-
-// Llama a la función de prueba al inicio para verificar la conexión
-testOpenAiConnection();
 
 // Funciones de utilidad
 async function handleError(chatId, errorMessage, errorDetails = '') {
@@ -182,17 +113,9 @@ bot.on('message', async (msg) => {
     const userMessage = sanitizeInput(msg.text);
 
     try {
-        const prompt = { role: 'user', content: userMessage };
-        const messages = [prompt];
-        const gptResponse = await getChatGPTResponse(messages);
-
-        if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, 'es');
-            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-        } else {
-            bot.sendMessage(chatId, gptResponse);
-        }
+        const doc = await wtf.fetch(userMessage, 'es');
+        const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+        bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
     } catch (error) {
         await handleError(chatId, error.message, error);
     }
@@ -209,4 +132,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
