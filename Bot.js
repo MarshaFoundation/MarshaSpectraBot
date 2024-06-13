@@ -23,7 +23,7 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Funciones de utilidad
+// Función para limpiar la entrada de usuario
 function sanitizeInput(input) {
     return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
 }
@@ -82,13 +82,13 @@ bot.on('message', async (msg) => {
     try {
         const doc = await wtf.fetch(userMessage, 'es');
         
-        // Obtener el primer párrafo del primer sección si está disponible
-        const summary = doc && doc.sections(0) && doc.sections(0).paragraphs(0) && doc.sections(0).paragraphs(0).text();
+        // Obtener el primer párrafo del artículo si está disponible
+        const summary = doc && doc.sections(0) && doc.sections(0).text();
 
         if (summary) {
             bot.sendMessage(chatId, summary);
         } else {
-            bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+            bot.sendMessage(chatId, i18n.__('Lo siento, no pude encontrar información sobre eso en Wikipedia. ¿Podrías intentarlo de nuevo?'));
         }
     } catch (error) {
         await handleError(chatId, error.message, error);
@@ -107,4 +107,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
