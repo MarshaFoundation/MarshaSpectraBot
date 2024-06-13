@@ -34,8 +34,8 @@ async function handleError(chatId, errorMessage, errorDetails = '') {
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-// Evento de inicio del bot
-bot.onText(/\/start/, async (msg) => {
+// Evento de inicio del bot y manejo de cualquier comando
+bot.onText(/\/.+/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
         reply_markup: JSON.stringify({
