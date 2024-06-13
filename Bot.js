@@ -35,7 +35,13 @@ async function handleError(chatId, errorMessage, errorDetails = '') {
 }
 
 // Mensaje de bienvenida
-const welcomeMessage = `
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = sanitizeInput(msg.text);
+
+    // Saludo inicial
+    if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('buenos días') || userMessage.toLowerCase().includes('buenas tardes') || userMessage.toLowerCase().includes('buenas noches')) {
+        const welcomeMessage = `
 Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Permíteme ofrecerte una breve descripción de nosotros:
 
 🌟 En Marsha+, creemos en un mundo donde las finanzas descentralizadas ocupan un lugar fundamental en la sociedad.
@@ -58,17 +64,13 @@ Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Per
 
 ✨ Juntos, podemos crear un mundo donde todos tengan el poder de vivir su verdad. 🏳️‍🌈💪
 `;
-
-// Evento para manejar mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userMessage = sanitizeInput(msg.text);
+        bot.sendMessage(chatId, welcomeMessage);
+    }
 
     try {
-        // Utilizamos wtf_wikipedia para obtener el contenido de Wikipedia
-        const doc = await wtf.fetch(userMessage, { lang: 'es' });
-
-        // Verificamos si hay secciones y obtenemos el primer párrafo del artículo
+        const doc = await wtf.fetch(userMessage, 'es');
+        
+        // Obtener el texto del primer segmento (section) del artículo si está disponible
         const summary = doc && doc.sections(0) && doc.sections(0).text();
 
         if (summary) {
@@ -81,8 +83,6 @@ bot.on('message', async (msg) => {
     }
 });
 
-
-
 // Manejo de errores generales
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
@@ -94,10 +94,4 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
-});
-
-// Enviar mensaje de bienvenida al inicio
-bot.on('message', (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, welcomeMessage);
 });
