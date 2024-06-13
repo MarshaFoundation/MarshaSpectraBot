@@ -115,7 +115,12 @@ bot.on('message', async (msg) => {
     try {
         const doc = await wtf.fetch(userMessage, 'es');
         const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-        bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        
+        if (summary) {
+            bot.sendMessage(chatId, summary);
+        } else {
+            bot.sendMessage(chatId, i18n.__('Lo siento, no encontré información relevante en Wikipedia sobre eso.'));
+        }
     } catch (error) {
         await handleError(chatId, error.message, error);
     }
