@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
+const axios = require('axios');
 require('dotenv').config();
 
 const token = process.env.TELEGRAM_API_KEY;
