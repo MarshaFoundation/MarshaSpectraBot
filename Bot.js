@@ -34,21 +34,25 @@ async function handleError(chatId, errorMessage, errorDetails = '') {
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-// Evento de inicio del bot y manejo de cualquier comando
-bot.onText(/\/.+/, async (msg) => {
+// Evento para manejar mensajes de texto
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const opts = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: '🇬🇧 English', callback_data: 'en' }],
-                [{ text: '🇪🇸 Español', callback_data: 'es' }],
-            ],
-        }),
-    };
-    const locale = CONFIG.defaultLocale;
-    i18n.setLocale(locale);
-    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
-    const welcomeMessage = `
+    const userMessage = sanitizeInput(msg.text);
+
+    // Manejo del mensaje "hola" o cualquier saludo
+    if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('saludos')) {
+        const opts = {
+            reply_markup: JSON.stringify({
+                inline_keyboard: [
+                    [{ text: '🇬🇧 English', callback_data: 'en' }],
+                    [{ text: '🇪🇸 Español', callback_data: 'es' }],
+                ],
+            }),
+        };
+        const locale = CONFIG.defaultLocale;
+        i18n.setLocale(locale);
+        bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+        const welcomeMessage = `
 Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Permíteme ofrecerte una breve descripción de nosotros:
 
 🌟 En Marsha+, creemos en un mundo donde las finanzas descentralizadas ocupan un lugar fundamental en la sociedad.
@@ -71,20 +75,11 @@ Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Per
 
 ✨ Juntos, podemos crear un mundo donde todos tengan el poder de vivir su verdad. 🏳️‍🌈💪
 `;
-    bot.sendMessage(chatId, welcomeMessage, opts);
-});
-
-// Evento para manejar mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userMessage = sanitizeInput(msg.text);
-
-    // Manejo del mensaje "hola"
-    if (userMessage.toLowerCase() === 'hola') {
-        bot.sendMessage(chatId, i18n.__('¡Hola! Bienvenido de nuevo.'));
+        bot.sendMessage(chatId, welcomeMessage, opts);
         return;
     }
 
+    // Consulta a Wikipedia si el mensaje no es un saludo
     try {
         const doc = await wtf.fetch(userMessage, 'es');
         
