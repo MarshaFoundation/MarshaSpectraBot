@@ -34,25 +34,8 @@ async function handleError(chatId, errorMessage, errorDetails = '') {
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-// Evento para manejar mensajes de texto
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userMessage = sanitizeInput(msg.text);
-
-    // Manejo del mensaje "hola" o cualquier saludo
-    if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('saludos')) {
-        const opts = {
-            reply_markup: JSON.stringify({
-                inline_keyboard: [
-                    [{ text: '🇬🇧 English', callback_data: 'en' }],
-                    [{ text: '🇪🇸 Español', callback_data: 'es' }],
-                ],
-            }),
-        };
-        const locale = CONFIG.defaultLocale;
-        i18n.setLocale(locale);
-        bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
-        const welcomeMessage = `
+// Mensaje de bienvenida
+const welcomeMessage = `
 Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Permíteme ofrecerte una breve descripción de nosotros:
 
 🌟 En Marsha+, creemos en un mundo donde las finanzas descentralizadas ocupan un lugar fundamental en la sociedad.
@@ -75,16 +58,23 @@ Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Per
 
 ✨ Juntos, podemos crear un mundo donde todos tengan el poder de vivir su verdad. 🏳️‍🌈💪
 `;
-        bot.sendMessage(chatId, welcomeMessage, opts);
+
+// Evento para manejar mensajes de texto
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = sanitizeInput(msg.text);
+
+    // Manejo del mensaje "hola"
+    if (userMessage.toLowerCase() === 'hola') {
+        bot.sendMessage(chatId, i18n.__('¡Hola! Bienvenido de nuevo.'));
         return;
     }
 
-    // Consulta a Wikipedia si el mensaje no es un saludo
     try {
-        const doc = await wtf.fetch(userMessage, 'es');
+        const doc = await wtf.fetch(userMessage, { lang: 'es' });
         
         // Obtener el primer párrafo del artículo si está disponible
-        const summary = doc && doc.sections(0) && doc.sections(0).plaintext();
+        const summary = doc && doc.sections(0) && doc.sections(0).plaintext().substr(0, 1000);
 
         if (summary) {
             bot.sendMessage(chatId, summary);
@@ -107,4 +97,10 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
+});
+
+// Enviar mensaje de bienvenida al inicio
+bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, welcomeMessage);
 });
