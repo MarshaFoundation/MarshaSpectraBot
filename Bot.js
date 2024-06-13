@@ -64,17 +64,12 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
 
-    // Manejo del mensaje "hola"
-    if (userMessage.toLowerCase() === 'hola') {
-        bot.sendMessage(chatId, i18n.__('¡Hola! Bienvenido de nuevo.'));
-        return;
-    }
-
     try {
+        // Utilizamos wtf_wikipedia para obtener el contenido de Wikipedia
         const doc = await wtf.fetch(userMessage, { lang: 'es' });
-        
-        // Obtener el primer párrafo del artículo si está disponible
-        const summary = doc && doc.sections(0) && doc.sections(0).plaintext().substr(0, 1000);
+
+        // Verificamos si hay secciones y obtenemos el primer párrafo del artículo
+        const summary = doc && doc.sections(0) && doc.sections(0).plaintext();
 
         if (summary) {
             bot.sendMessage(chatId, summary);
@@ -85,6 +80,7 @@ bot.on('message', async (msg) => {
         await handleError(chatId, error.message, error);
     }
 });
+
 
 // Manejo de errores generales
 bot.on('polling_error', (error) => {
