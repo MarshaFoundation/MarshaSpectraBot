@@ -69,7 +69,7 @@ bot.on('message', async (msg) => {
         const doc = await wtf.fetch(userMessage, { lang: 'es' });
 
         // Verificamos si hay secciones y obtenemos el primer párrafo del artículo
-        const summary = doc && doc.sections(0) && doc.sections(0).plaintext();
+        const summary = doc && doc.sections(0) && doc.sections(0).text();
 
         if (summary) {
             bot.sendMessage(chatId, summary);
@@ -80,6 +80,7 @@ bot.on('message', async (msg) => {
         await handleError(chatId, error.message, error);
     }
 });
+
 
 
 // Manejo de errores generales
