@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
-const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
+const i18n = require('i18n');
 require('dotenv').config();
 
 const token = process.env.TELEGRAM_API_KEY;
@@ -23,45 +23,18 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Implementación de una caché LRU
-class LRUCache {
-    constructor(maxSize) {
-        this.maxSize = maxSize;
-        this.cache = new Map();
-    }
-
-    get(key) {
-        if (!this.cache.has(key)) {
-            return null;
-        }
-        const value = this.cache.get(key);
-        this.cache.delete(key);
-        this.cache.set(key, value);
-        return value;
-    }
-
-    set(key, value) {
-        if (this.cache.size >= this.maxSize) {
-            const keys = this.cache.keys();
-            this.cache.delete(keys.next().value);
-        }
-        this.cache.set(key, value);
-    }
+// Funciones de utilidad
+function sanitizeInput(input) {
+    return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
 }
 
-const cache = new LRUCache(CONFIG.cacheMaxSize);
-
-// Funciones de utilidad
+// Manejo de errores
 async function handleError(chatId, errorMessage, errorDetails = '') {
     console.error(errorMessage, errorDetails);
     await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
 }
 
-function sanitizeInput(input) {
-    return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
-}
-
-// Bot commands setup
+// Evento de inicio del bot
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
@@ -101,31 +74,28 @@ Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Per
     bot.sendMessage(chatId, welcomeMessage, opts);
 });
 
-bot.on('callback_query', async (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const locale = callbackQuery.data;
-    i18n.setLocale(locale);
-    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
-});
-
+// Evento para manejar mensajes de texto
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
 
     try {
         const doc = await wtf.fetch(userMessage, 'es');
-        const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
         
+        // Obtener el primer párrafo del primer sección si está disponible
+        const summary = doc && doc.sections(0) && doc.sections(0).paragraphs(0) && doc.sections(0).paragraphs(0).text();
+
         if (summary) {
             bot.sendMessage(chatId, summary);
         } else {
-            bot.sendMessage(chatId, i18n.__('Lo siento, no encontré información relevante en Wikipedia sobre eso.'));
+            bot.sendMessage(chatId, i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
         }
     } catch (error) {
         await handleError(chatId, error.message, error);
     }
 });
 
+// Manejo de errores generales
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
@@ -137,3 +107,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
