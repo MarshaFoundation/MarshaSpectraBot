@@ -148,6 +148,30 @@ bot.onText(/\/start/, async (msg) => {
     const locale = CONFIG.defaultLocale;
     i18n.setLocale(locale);
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+    const welcomeMessage = `
+Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Permíteme ofrecerte una breve descripción de nosotros:
+
+🌟 En Marsha+, creemos en un mundo donde las finanzas descentralizadas ocupan un lugar fundamental en la sociedad.
+
+🔄 El cambio y la transición ya están en marcha. Personas, bancos, gobiernos, empresas y medios de comunicación han hablado sobre BTC o este mundo en algún momento. ¡Es una realidad!
+
+🔍 Las herramientas que necesitas están aquí: educación financiera, transparencia, apoyo, tecnología y evolución son parte de Marsha+. Trabajamos para ti. 🌍❤️
+
+🚀 Nuestra iniciativa revolucionaria aprovecha el poder de la tecnología blockchain para empoderar y apoyar a la comunidad LGBTQ+.
+
+💡 Marsha+ es más que un activo digital; es un catalizador para acciones significativas. Construido en Ethereum y desplegado en la Binance Smart Chain, nuestro token garantiza transacciones seguras, transparentes, públicas y descentralizadas.
+
+🏳️‍🌈 Trabajamos incansablemente para convertirnos en la comunidad blockchain LGBTQ+ más grande del mundo.
+
+🤝 Además, el 25% de nuestra empresa está dedicado a propósitos de ayuda, asegurando que siempre contribuyamos al bienestar y apoyo de nuestra comunidad, no solo con palabras sino con acciones.
+
+🔥 Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ se erige como un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. 💫
+
+💪 Únete a nosotros en este viaje para fortalecer a la comunidad LGBTQ+ y proporcionar las herramientas necesarias para enfrentar los desafíos contemporáneos con confianza.
+
+✨ Juntos, podemos crear un mundo donde todos tengan el poder de vivir su verdad. 🏳️‍🌈💪
+`;
+    bot.sendMessage(chatId, welcomeMessage, opts);
 });
 
 bot.on('callback_query', async (callbackQuery) => {
