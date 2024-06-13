@@ -79,6 +79,12 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = sanitizeInput(msg.text);
 
+    // Manejo del mensaje "hola"
+    if (userMessage.toLowerCase() === 'hola') {
+        bot.sendMessage(chatId, i18n.__('¡Hola! Bienvenido de nuevo.'));
+        return;
+    }
+
     try {
         const doc = await wtf.fetch(userMessage, 'es');
         
