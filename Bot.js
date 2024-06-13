@@ -89,10 +89,10 @@ bot.on('message', async (msg) => {
         const doc = await wtf.fetch(userMessage, 'es');
         
         // Obtener el primer párrafo del artículo si está disponible
-        const summary = doc && doc.sections(0) && doc.sections(0).sentences(0);
+        const summary = doc && doc.sections(0) && doc.sections(0).plaintext();
 
         if (summary) {
-            bot.sendMessage(chatId, summary.text());
+            bot.sendMessage(chatId, summary);
         } else {
             bot.sendMessage(chatId, i18n.__('Lo siento, no pude encontrar información sobre eso en Wikipedia. ¿Podrías intentarlo de nuevo?'));
         }
