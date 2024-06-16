@@ -6,6 +6,11 @@ const axios = require('axios');
 require('dotenv').config();
 const { Pool } = require('pg');
 
+// Verificar que las variables de entorno están cargadas correctamente
+console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
+
 // Configurar la conexión a la base de datos PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
