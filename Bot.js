@@ -1,89 +1,140 @@
+
 const TelegramBot = require('node-telegram-bot-api');
-const wtf = require('wtf_wikipedia');
 const i18n = require('i18n');
+const wtf = require('wtf_wikipedia');
+const axios = require('axios');
 require('dotenv').config();
+const { Pool } = require('pg');
+
+// Configurar la conexión a la base de datos PostgreSQL
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 const token = process.env.TELEGRAM_API_KEY;
+const openaiApiKey = process.env.OPENAI_API_KEY;
 
-// Configuración del objeto de configuración
-const CONFIG = {
-    locales: ['en', 'es'],
-    defaultLocale: 'es',
-    cacheMaxSize: 100,
-};
-
+// Configuración de i18n
 i18n.configure({
-    locales: CONFIG.locales,
+    locales: ['en', 'es'],
     directory: __dirname + '/locales',
-    defaultLocale: CONFIG.defaultLocale,
+    defaultLocale: 'es',
     queryParameter: 'lang',
     cookie: 'locale',
 });
 
+// Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Función para limpiar la entrada de usuario
-function sanitizeInput(input) {
-    return input.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s.,?!]/g, '');
-}
+// Función para hacer la llamada a OpenAI
+const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
 
-// Manejo de errores
-async function handleError(chatId, errorMessage, errorDetails = '') {
-    console.error(errorMessage, errorDetails);
-    await bot.sendMessage(chatId, i18n.__('Ha ocurrido un error. Por favor, inténtalo nuevamente más tarde.'));
-}
-
-// Mensaje de bienvenida
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userMessage = sanitizeInput(msg.text);
-
-    // Saludo inicial
-    if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('buenos días') || userMessage.toLowerCase().includes('buenas tardes') || userMessage.toLowerCase().includes('buenas noches')) {
-        const welcomeMessage = `
-Hola, soy SylvIA+. ¡Bienvenido al mundo Marsha+! Estoy aquí para ayudarte. Permíteme ofrecerte una breve descripción de nosotros:
-
-🌟 En Marsha+, creemos en un mundo donde las finanzas descentralizadas ocupan un lugar fundamental en la sociedad.
-
-🔄 El cambio y la transición ya están en marcha. Personas, bancos, gobiernos, empresas y medios de comunicación han hablado sobre BTC o este mundo en algún momento. ¡Es una realidad!
-
-🔍 Las herramientas que necesitas están aquí: educación financiera, transparencia, apoyo, tecnología y evolución son parte de Marsha+. Trabajamos para ti. 🌍❤️
-
-🚀 Nuestra iniciativa revolucionaria aprovecha el poder de la tecnología blockchain para empoderar y apoyar a la comunidad LGBTQ+.
-
-💡 Marsha+ es más que un activo digital; es un catalizador para acciones significativas. Construido en Ethereum y desplegado en la Binance Smart Chain, nuestro token garantiza transacciones seguras, transparentes, públicas y descentralizadas.
-
-🏳️‍🌈 Trabajamos incansablemente para convertirnos en la comunidad blockchain LGBTQ+ más grande del mundo.
-
-🤝 Además, el 25% de nuestra empresa está dedicado a propósitos de ayuda, asegurando que siempre contribuyamos al bienestar y apoyo de nuestra comunidad, no solo con palabras sino con acciones.
-
-🔥 Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ se erige como un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. 💫
-
-💪 Únete a nosotros en este viaje para fortalecer a la comunidad LGBTQ+ y proporcionar las herramientas necesarias para enfrentar los desafíos contemporáneos con confianza.
-
-✨ Juntos, podemos crear un mundo donde todos tengan el poder de vivir su verdad. 🏳️‍🌈💪
-`;
-        bot.sendMessage(chatId, welcomeMessage);
+async function getChatGPTResponse(messages) {
+    const messagesKey = JSON.stringify(messages);
+    if (cachedResponses.has(messagesKey)) {
+        return cachedResponses.get(messagesKey);
     }
 
     try {
-        const doc = await wtf.fetch(userMessage, 'es');
-        
-        // Obtener el texto del primer segmento (section) del artículo si está disponible
-        const summary = doc && doc.sections(0) && doc.sections(0).text();
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo',
+            messages: messages,
+            temperature: 0.7,
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openaiApiKey}`
+            }
+        });
 
-        if (summary) {
-            bot.sendMessage(chatId, summary);
+        const gptResponse = response.data.choices[0].message.content.trim();
+        cachedResponses.set(messagesKey, gptResponse);
+
+        return gptResponse;
+    } catch (error) {
+        console.error('Error al llamar a OpenAI:', error);
+        return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    }
+}
+
+// Función para obtener el idioma del usuario desde la base de datos
+async function getUserLocale(chatId) {
+    try {
+        const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+        if (res.rows.length > 0) {
+            return res.rows[0].locale;
         } else {
-            bot.sendMessage(chatId, i18n.__('Lo siento, no pude encontrar información sobre eso en Wikipedia. ¿Podrías intentarlo de nuevo?'));
+            return 'es';
         }
     } catch (error) {
-        await handleError(chatId, error.message, error);
+        console.error('Error al obtener el idioma del usuario:', error);
+        return 'es';
+    }
+}
+
+// Función para actualizar/guardar el idioma del usuario en la base de datos
+async function setUserLocale(chatId, locale) {
+    try {
+        const res = await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    } catch (error) {
+        console.error('Error al configurar el idioma del usuario:', error);
+    }
+}
+
+// Escuchar el evento de cambio de idioma
+bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    const opts = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: '🇬🇧 English', callback_data: 'en' }],
+                [{ text: '🇪🇸 Español', callback_data: 'es' }],
+            ],
+        }),
+    };
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
+    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+});
+
+// Manejar el cambio de idioma
+bot.on('callback_query', async (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const locale = callbackQuery.data;
+    i18n.setLocale(locale);
+    await setUserLocale(chatId, locale);
+    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
+});
+
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = msg.text;
+    
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
+
+    try {
+        const prompt = { role: 'user', content: userMessage };
+        const messages = [prompt];
+        const gptResponse = await getChatGPTResponse(messages);
+
+        if (!gptResponse) {
+            const doc = await wtf.fetch(userMessage, locale);
+            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        } else {
+            bot.sendMessage(chatId, gptResponse);
+        }
+    } catch (error) {
+        console.error('Error al procesar el mensaje:', error);
+        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
     }
 });
 
-// Manejo de errores generales
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
