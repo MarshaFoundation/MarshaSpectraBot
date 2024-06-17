@@ -20,7 +20,7 @@ const pool = new Pool({
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const assistantName = 'SilvIA'; // Nombre del asistente
+const assistantName = 'SilvIA+'; // Nombre del asistente
 
 // Configuración de i18n
 i18n.configure({
@@ -99,7 +99,7 @@ function isGreeting(message) {
 
 // Función para determinar si el mensaje es una pregunta por el nombre del asistente
 function isAskingName(message) {
-    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?'];
+    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
     const normalizedMessage = message.trim().toLowerCase();
     return askingNames.includes(normalizedMessage);
 }
