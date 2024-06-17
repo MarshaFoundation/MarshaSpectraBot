@@ -35,6 +35,39 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
+// Escuchar todos los mensajes entrantes
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userMessage = msg.text;
+    
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
+
+    try {
+        // Verificar si es el primer comando del usuario (mensaje que empieza con '/')
+        if (userMessage.startsWith('/') && userMessage.length > 1) {
+            // Mostrar mensaje de bienvenida
+            const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
+            bot.sendMessage(chatId, welcomeMessage);
+        }
+
+        const prompt = { role: 'user', content: userMessage };
+        const messages = [prompt];
+        const gptResponse = await getChatGPTResponse(messages);
+
+        if (!gptResponse) {
+            const doc = await wtf.fetch(userMessage, locale);
+            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        } else {
+            bot.sendMessage(chatId, gptResponse);
+        }
+    } catch (error) {
+        console.error('Error al procesar el mensaje:', error);
+        bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
+    }
+});
+
 // Función para hacer la llamada a OpenAI
 const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
 
