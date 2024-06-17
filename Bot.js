@@ -101,14 +101,52 @@ bot.onText(/\/start/, async (msg) => {
         }),
     };
 
-    // Obtener idioma del usuario
-    const locale = await getUserLocale(chatId);
-    i18n.setLocale(locale);
+    // Verificar si es la primera interacción con el bot
+    const isFirstInteraction = await checkFirstInteraction(chatId);
+    if (isFirstInteraction) {
+        // Obtener idioma del usuario
+        const locale = await getUserLocale(chatId);
+        i18n.setLocale(locale);
 
-    // Enviar mensaje de bienvenida
-    const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
-    bot.sendMessage(chatId, welcomeMessage, opts);
+        // Enviar mensaje de bienvenida
+        const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
+        bot.sendMessage(chatId, welcomeMessage, opts);
+
+        // Marcar la interacción como completada
+        await markFirstInteractionComplete(chatId);
+    } else {
+        // Obtener idioma del usuario
+        const locale = await getUserLocale(chatId);
+        i18n.setLocale(locale);
+
+        // Enviar mensaje para elegir idioma
+        bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+    }
 });
+
+// Función para verificar si es la primera interacción con el bot
+async function checkFirstInteraction(chatId) {
+    try {
+        const res = await pool.query('SELECT first_interaction FROM users WHERE chat_id = $1', [chatId]);
+        if (res.rows.length > 0) {
+            return !res.rows[0].first_interaction; // true si no es la primera interacción
+        } else {
+            return true; // Si no hay registros previos, es la primera interacción
+        }
+    } catch (error) {
+        console.error('Error al verificar la primera interacción:', error);
+        return true; // En caso de error, considerar como primera interacción por precaución
+    }
+}
+
+// Función para marcar la primera interacción como completada
+async function markFirstInteractionComplete(chatId) {
+    try {
+        await pool.query('INSERT INTO users (chat_id, first_interaction) VALUES ($1, true) ON CONFLICT (chat_id) DO UPDATE SET first_interaction = true', [chatId]);
+    } catch (error) {
+        console.error('Error al marcar la primera interacción como completada:', error);
+    }
+}
 
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
@@ -148,4 +186,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
