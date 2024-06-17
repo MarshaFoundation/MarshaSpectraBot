@@ -20,6 +20,7 @@ const pool = new Pool({
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
+const assistantName = 'SilvIA'; // Nombre del asistente
 
 // Configuración de i18n
 i18n.configure({
@@ -89,6 +90,20 @@ async function setUserLocale(chatId, locale) {
     }
 }
 
+// Función para determinar si el mensaje es un saludo
+function isGreeting(message) {
+    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas'];
+    const normalizedMessage = message.trim().toLowerCase();
+    return greetings.includes(normalizedMessage);
+}
+
+// Función para determinar si el mensaje es una pregunta por el nombre del asistente
+function isAskingName(message) {
+    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?'];
+    const normalizedMessage = message.trim().toLowerCase();
+    return askingNames.includes(normalizedMessage);
+}
+
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
@@ -105,8 +120,7 @@ bot.on('message', async (msg) => {
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
             // Si el mensaje es una pregunta por el nombre del asistente
-            const response = await getChatGPTResponse([{ role: 'user', content: userMessage }]);
-            bot.sendMessage(chatId, response);
+            bot.sendMessage(chatId, assistantName);
         } else {
             // Otro tipo de mensaje, procesar según sea necesario
             const prompt = { role: 'user', content: userMessage };
@@ -127,31 +141,7 @@ bot.on('message', async (msg) => {
     }
 });
 
-// Función para determinar si el mensaje es una pregunta por el nombre del asistente
-function isAskingName(message) {
-    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?'];
-    const normalizedMessage = message.trim().toLowerCase();
-    return askingNames.includes(normalizedMessage);
-}
-
-// Función para verificar si el mensaje es un saludo
-function isGreeting(message) {
-    // Lista de saludos posibles
-    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenos días', 'buenas tardes', 'buenas noches'];
-
-    // Convertir el mensaje a minúsculas para una comparación sin distinción entre mayúsculas y minúsculas
-    const lowerCaseMessage = message.toLowerCase();
-
-    // Verificar si el mensaje contiene algún saludo
-    for (const greeting of greetings) {
-        if (lowerCaseMessage.includes(greeting)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Manejo del evento de cambio de idioma
+// Escuchar el evento de cambio de idioma
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
@@ -167,7 +157,7 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
 
-// Manejo del evento callback_query (cambio de idioma)
+// Manejar el cambio de idioma
 bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const locale = callbackQuery.data;
@@ -176,17 +166,17 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
-// Manejo de errores de polling
+// Manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
-// Manejo de errores no capturados
+// Manejar errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
-// Manejo de promesas no manejadas
+// Manejar rechazos no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
