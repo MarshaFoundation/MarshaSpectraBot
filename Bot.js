@@ -101,10 +101,14 @@ bot.on('message', async (msg) => {
     try {
         if (isGreeting(userMessage)) {
             // Si el mensaje es un saludo, enviar mensaje de bienvenida
-            const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
+            const welcomeMessage = `¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es ${assistantName}, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!`;
             bot.sendMessage(chatId, welcomeMessage);
+        } else if (isAskingName(userMessage)) {
+            // Si el mensaje es una pregunta por el nombre del asistente
+            const response = await getChatGPTResponse([{ role: 'user', content: userMessage }]);
+            bot.sendMessage(chatId, response);
         } else {
-            // Procesar el mensaje del usuario
+            // Otro tipo de mensaje, procesar según sea necesario
             const prompt = { role: 'user', content: userMessage };
             const messages = [prompt];
             const gptResponse = await getChatGPTResponse(messages);
@@ -122,6 +126,13 @@ bot.on('message', async (msg) => {
         bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
     }
 });
+
+// Función para determinar si el mensaje es una pregunta por el nombre del asistente
+function isAskingName(message) {
+    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?'];
+    const normalizedMessage = message.trim().toLowerCase();
+    return askingNames.includes(normalizedMessage);
+}
 
 // Función para verificar si el mensaje es un saludo
 function isGreeting(message) {
