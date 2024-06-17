@@ -89,65 +89,6 @@ async function setUserLocale(chatId, locale) {
     }
 }
 
-// Escuchar el evento de inicio (/start)
-bot.onText(/\/start/, async (msg) => {
-    const chatId = msg.chat.id;
-    const opts = {
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: '🇬🇧 English', callback_data: 'en' }],
-                [{ text: '🇪🇸 Español', callback_data: 'es' }],
-            ],
-        }),
-    };
-
-    // Verificar si es la primera interacción con el bot
-    const isFirstInteraction = await checkFirstInteraction(chatId);
-    if (isFirstInteraction) {
-        // Obtener idioma del usuario
-        const locale = await getUserLocale(chatId);
-        i18n.setLocale(locale);
-
-        // Enviar mensaje de bienvenida
-        const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
-        bot.sendMessage(chatId, welcomeMessage, opts);
-
-        // Marcar la interacción como completada
-        await markFirstInteractionComplete(chatId);
-    } else {
-        // Obtener idioma del usuario
-        const locale = await getUserLocale(chatId);
-        i18n.setLocale(locale);
-
-        // Enviar mensaje para elegir idioma
-        bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
-    }
-});
-
-// Función para verificar si es la primera interacción con el bot
-async function checkFirstInteraction(chatId) {
-    try {
-        const res = await pool.query('SELECT first_interaction FROM users WHERE chat_id = $1', [chatId]);
-        if (res.rows.length > 0) {
-            return !res.rows[0].first_interaction; // true si no es la primera interacción
-        } else {
-            return true; // Si no hay registros previos, es la primera interacción
-        }
-    } catch (error) {
-        console.error('Error al verificar la primera interacción:', error);
-        return true; // En caso de error, considerar como primera interacción por precaución
-    }
-}
-
-// Función para marcar la primera interacción como completada
-async function markFirstInteractionComplete(chatId) {
-    try {
-        await pool.query('INSERT INTO users (chat_id, first_interaction) VALUES ($1, true) ON CONFLICT (chat_id) DO UPDATE SET first_interaction = true', [chatId]);
-    } catch (error) {
-        console.error('Error al marcar la primera interacción como completada:', error);
-    }
-}
-
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
@@ -158,16 +99,23 @@ bot.on('message', async (msg) => {
     i18n.setLocale(locale);
 
     try {
-        const prompt = { role: 'user', content: userMessage };
-        const messages = [prompt];
-        const gptResponse = await getChatGPTResponse(messages);
-
-        if (!gptResponse) {
-            const doc = await wtf.fetch(userMessage, locale);
-            const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-            bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+        if (isGreeting(userMessage)) {
+            // Si el mensaje es un saludo, enviar mensaje de bienvenida
+            const welcomeMessage = "¡Hola! ¡Qué gusto tenerte por aquí! Mi nombre es SilvIA, una IA avanzada propiedad de Marsha+ Foundation. Soy el primer asistente LGTBI+ a nivel mundial más potente jamás creado. Estoy aquí para ayudarte en todo lo relacionado con la comunidad LGTBI, la tecnología blockchain y, por supuesto, conectarte con el ecosistema Marsha+. ¡Estoy aquí para asistirte en todo lo que necesites!";
+            bot.sendMessage(chatId, welcomeMessage);
         } else {
-            bot.sendMessage(chatId, gptResponse);
+            // Procesar el mensaje del usuario
+            const prompt = { role: 'user', content: userMessage };
+            const messages = [prompt];
+            const gptResponse = await getChatGPTResponse(messages);
+
+            if (!gptResponse) {
+                const doc = await wtf.fetch(userMessage, locale);
+                const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+                bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
+            } else {
+                bot.sendMessage(chatId, gptResponse);
+            }
         }
     } catch (error) {
         console.error('Error al procesar el mensaje:', error);
@@ -175,14 +123,59 @@ bot.on('message', async (msg) => {
     }
 });
 
+// Función para verificar si el mensaje es un saludo
+function isGreeting(message) {
+    // Lista de saludos posibles
+    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenos días', 'buenas tardes', 'buenas noches'];
+
+    // Convertir el mensaje a minúsculas para una comparación sin distinción entre mayúsculas y minúsculas
+    const lowerCaseMessage = message.toLowerCase();
+
+    // Verificar si el mensaje contiene algún saludo
+    for (const greeting of greetings) {
+        if (lowerCaseMessage.includes(greeting)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Manejo del evento de cambio de idioma
+bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    const opts = {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: '🇬🇧 English', callback_data: 'en' }],
+                [{ text: '🇪🇸 Español', callback_data: 'es' }],
+            ],
+        }),
+    };
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
+    bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+});
+
+// Manejo del evento callback_query (cambio de idioma)
+bot.on('callback_query', async (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const locale = callbackQuery.data;
+    i18n.setLocale(locale);
+    await setUserLocale(chatId, locale);
+    bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
+});
+
+// Manejo de errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
+// Manejo de errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
+// Manejo de promesas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
