@@ -123,7 +123,7 @@ bot.on('message', async (msg) => {
             
 Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi!, Sepan disculpar a Max por hablar tanto :P y espero que benito firme su contrato pronto! 
 
-¿En qué puedo asistirtlos hoy?`;
+            ¿En qué puedo asistirtlos hoy?`;
             
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
