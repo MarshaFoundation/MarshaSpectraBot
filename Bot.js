@@ -117,9 +117,13 @@ bot.on('message', async (msg) => {
         if (isGreeting(userMessage)) {
             // Si el mensaje es un saludo, enviar mensaje de bienvenida
             const welcomeMessage = ` Hola! Bienvenid@s! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. 
+           
+            www.marshafoundation.org 
+            info@marshafoundation.org
+            
+Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi!, Sepan disculpar a Max por hablar tanto :P y espero que benito firme su contrato pronto! 
 
-Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi!, Sepan disculpar a Max por hablar tanto :P y espero que benito firme su contrato pronto! ¿En qué puedo asistirtlos hoy?
-            www.marshafoundation.org `;
+¿En qué puedo asistirtlos hoy?`;
             
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
