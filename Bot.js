@@ -116,7 +116,7 @@ bot.on('message', async (msg) => {
     try {
         if (isGreeting(userMessage)) {
             // Si el mensaje es un saludo, enviar mensaje de bienvenida
-            const welcomeMessage = ` Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ www.marshafoundation.org, y el primer asistente LGTBI+ creado en el mundo. Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi! ¿En qué puedo asistirtlos hoy?`;
+            const welcomeMessage = ` Hola! Bienvenid@s! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =) www.marshafoundation.org, y el primer asistente LGTBI+ creado en el mundo. Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi! sepan disculpar a Max por hablar tanto :P y espero que benito firme su contrato pronto! ¿En qué puedo asistirtlos hoy?`;
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
             // Si el mensaje es una pregunta por el nombre del asistente
