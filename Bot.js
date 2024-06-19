@@ -99,7 +99,7 @@ function isGreeting(message) {
 
 // Función para determinar si el mensaje es una pregunta por el nombre del asistente
 function isAskingName(message) {
-    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
+    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?','¿como te llamas?', 'nombre?', 'dime tu nombre'];
     const normalizedMessage = message.trim().toLowerCase();
     return askingNames.includes(normalizedMessage);
 }
@@ -116,7 +116,7 @@ bot.on('message', async (msg) => {
     try {
         if (isGreeting(userMessage)) {
             // Si el mensaje es un saludo, enviar mensaje de bienvenida
-            const welcomeMessage = ` Hola! Bienvenid@! Qué gusto tenerte por aquí! Soy ${assistantName}, una IA avanzada propiedad de Marsha+, y el primer asistente LGTBI+ creado en el mundo. ¿En qué puedo asistirte hoy?`;
+            const welcomeMessage = ` Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ www.marshafoundation.org, y el primer asistente LGTBI+ creado en el mundo. Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi! ¿En qué puedo asistirtlos hoy?`;
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
             // Si el mensaje es una pregunta por el nombre del asistente
