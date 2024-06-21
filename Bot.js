@@ -120,8 +120,6 @@ bot.on('message', async (msg) => {
            
             www.marshafoundation.org 
             info@marshafoundation.org
-            
-Muchas gracias Frank, Martin, Benito y Hector por ser parte de la reunion de hoy y conocer un poco mas sobre mi!, Sepan disculpar a Max por hablar tanto :P y espero que benito firme su contrato pronto! 
 
           ¿En qué puedo asistirtlos hoy?`;
             
