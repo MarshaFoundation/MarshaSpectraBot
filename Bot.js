@@ -107,11 +107,6 @@ function isAskingName(message) {
 // Almacén temporal para mensajes por chat
 const chatMessageHistory = new Map();
 
-// Función para limpiar historial de mensajes
-function clearMessageHistory(chatId) {
-    chatMessageHistory.delete(chatId);
-}
-
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
@@ -145,6 +140,14 @@ bot.on('message', async (msg) => {
         } else if (isAskingName(userMessage)) {
             // Si el mensaje es una pregunta por el nombre del asistente
             bot.sendMessage(chatId, assistantName);
+        } else if (userMessage.toLowerCase().includes('/historial')) {
+            // Si el mensaje contiene "/historial", mostrar el historial de conversación
+            if (messageHistory.length > 0) {
+                const conversationHistory = messageHistory.join('\n');
+                bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
+            } else {
+                bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
+            }
         } else {
             // Otro tipo de mensaje, procesar según sea necesario
             const prompt = { role: 'user', content: userMessage };
@@ -165,11 +168,14 @@ bot.on('message', async (msg) => {
     }
 });
 
-// Manejar el cierre del asistente (simulado)
-bot.onText(/\/cerrar/, (msg) => {
-    const chatId = msg.chat.id;
+// Función para limpiar historial de mensajes
+function clearMessageHistory(chatId) {
+    chatMessageHistory.delete(chatId);
+}
+
+// Escuchar el evento de cierre del asistente (simulado)
+bot.on('close', (chatId) => {
     clearMessageHistory(chatId);
-    bot.sendMessage(chatId, 'Se ha limpiado el historial de conversación.');
 });
 
 // Escuchar el evento de cambio de idioma
