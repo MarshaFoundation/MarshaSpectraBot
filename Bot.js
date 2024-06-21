@@ -4,25 +4,23 @@ const wtf = require('wtf_wikipedia');
 const axios = require('axios');
 require('dotenv').config();
 const { Pool } = require('pg');
+const NodeCache = require('node-cache');
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-// Verificar que las variables de entorno están cargadas correctamente
-console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
-console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
+if (!process.env.TELEGRAM_API_KEY || !process.env.OPENAI_API_KEY || !process.env.DATABASE_URL) {
+    console.error('Error: Falta una o más variables de entorno.');
+    process.exit(1);
+}
 
-// Configurar la conexión a la base de datos PostgreSQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const assistantName = 'SilvIA+'; // Nombre del asistente
+const assistantName = 'SilvIA+';
 
-// Configuración de i18n
 i18n.configure({
     locales: ['en', 'es'],
     directory: __dirname + '/locales',
@@ -31,23 +29,13 @@ i18n.configure({
     cookie: 'locale',
 });
 
-// Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Función para hacer la llamada a OpenAI // Caché para almacenar respuestas de OpenAI
-const cacheLimit = 100; // Limite de entradas en el cache
-
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
-    if (cachedResponses.has(messagesKey)) {
-        return cachedResponses.get(messagesKey);
-    }
-
-    if (cachedResponses.size >= cacheLimit) {
-        // Remover el primer elemento insertado
-        const firstKey = cachedResponses.keys().next().value;
-        cachedResponses.delete(firstKey);
+    if (cache.has(messagesKey)) {
+        return cache.get(messagesKey);
     }
 
     try {
@@ -63,7 +51,7 @@ async function getChatGPTResponse(messages) {
         });
 
         const gptResponse = response.data.choices[0].message.content.trim();
-        cachedResponses.set(messagesKey, gptResponse);
+        cache.set(messagesKey, gptResponse);
 
         return gptResponse;
     } catch (error) {
@@ -72,69 +60,59 @@ async function getChatGPTResponse(messages) {
     }
 }
 
-// Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
     try {
         const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-        if (res.rows.length > 0) {
-            return res.rows[0].locale;
-        } else {
-            return 'es';
-        }
+        return res.rows.length > 0 ? res.rows[0].locale : 'es';
     } catch (error) {
         console.error('Error al obtener el idioma del usuario:', error);
         return 'es';
     }
 }
 
-// Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
     try {
-        const res = await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+        await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
     } catch (error) {
         console.error('Error al configurar el idioma del usuario:', error);
     }
 }
 
-// Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
-    const normalizedMessage = message.trim().toLowerCase();
-    return greetings.includes(normalizedMessage);
+    const greetings = /^(hola|hi|hello|qué tal|buenas|hey)$/i;
+    return greetings.test(message.trim().toLowerCase());
 }
 
-// Función para determinar si el mensaje es una pregunta por el nombre del asistente
 function isAskingName(message) {
-    const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?','¿como te llamas?', 'nombre?', 'dime tu nombre'];
-    const normalizedMessage = message.trim().toLowerCase();
-    return askingNames.includes(normalizedMessage);
+    const askingNames = /^(¿cuál es tu nombre\?|cuál es tu nombre\?|como te llamas\?|cómo te llamas\?|¿como te llamas\?|nombre\?|dime tu nombre)$/i;
+    return askingNames.test(message.trim().toLowerCase());
 }
 
-// Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = msg.text;
-    
-    // Obtener idioma del usuario
+
+    if (!userMessage || typeof userMessage !== 'string') {
+        bot.sendMessage(chatId, 'Lo siento, no entiendo eso. ¿Podrías reformularlo?');
+        return;
+    }
+
     const locale = await getUserLocale(chatId);
     i18n.setLocale(locale);
 
     try {
         if (isGreeting(userMessage)) {
-            // Si el mensaje es un saludo, enviar mensaje de bienvenida
-            const welcomeMessage = ` Hola! Bienvenid@s! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. 
-           
-            www.marshafoundation.org 
-            info@marshafoundation.org
+            const welcomeMessage = `¡Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo.
 
-          ¿En qué puedo asistirtlos hoy?`;
-            
+www.marshafoundation.org
+info@marshafoundation.org
+
+¿En qué puedo asistirte hoy?`;
+
             bot.sendMessage(chatId, welcomeMessage);
         } else if (isAskingName(userMessage)) {
-            // Si el mensaje es una pregunta por el nombre del asistente
             bot.sendMessage(chatId, assistantName);
         } else {
-            // Otro tipo de mensaje, procesar según sea necesario
             const prompt = { role: 'user', content: userMessage };
             const messages = [prompt];
             const gptResponse = await getChatGPTResponse(messages);
@@ -153,7 +131,6 @@ bot.on('message', async (msg) => {
     }
 });
 
-// Escuchar el evento de cambio de idioma
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const opts = {
@@ -169,7 +146,6 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
 });
 
-// Manejar el cambio de idioma
 bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const locale = callbackQuery.data;
@@ -178,17 +154,15 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
 });
 
-// Manejar errores de polling
 bot.on('polling_error', (error) => {
     console.error('Error de polling:', error);
 });
 
-// Manejar errores no capturados
 process.on('uncaughtException', (err) => {
     console.error('Error no capturado:', err);
 });
 
-// Manejar rechazos no manejados
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
