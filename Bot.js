@@ -5,6 +5,11 @@ const axios = require('axios');
 require('dotenv').config();
 const { Pool } = require('pg');
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false, // Desactivar SSL
+});
+
 // Verificar que las variables de entorno están cargadas correctamente
 console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
 console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
