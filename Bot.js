@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
 const wtf = require('wtf_wikipedia');
 const axios = require('axios');
+const cheerio = require('cheerio');
 require('dotenv').config();
 const { Pool } = require('pg');
 
@@ -24,8 +25,16 @@ pool.connect()
         locale VARCHAR(10) DEFAULT 'es'
       );
     `).then(() => {
+      return client.query(`
+        CREATE TABLE IF NOT EXISTS blog_posts (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          url VARCHAR(255) NOT NULL
+        );
+      `);
+    }).then(() => {
       client.release();
-      console.log('Tabla "users" verificada o creada');
+      console.log('Tablas verificadas o creadas: "users" y "blog_posts"');
     });
   })
   .catch(err => {
@@ -109,72 +118,76 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Función para determinar si el mensaje es un saludo
-function isGreeting(message) {
-  const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
-  const normalizedMessage = message.trim().toLowerCase();
-  return greetings.includes(normalizedMessage);
+// Función para scrapear los títulos de las publicaciones del blog en Wix
+async function scrapeBlogPosts() {
+  try {
+    const response = await axios.get('https://www.marshafoundation.org/blog');
+    const $ = cheerio.load(response.data);
+    const posts = [];
+    $('h2.blog-post-title').each((index, element) => {
+      const title = $(element).text().trim();
+      const url = $(element).find('a').attr('href');
+      posts.push({ title, url });
+    });
+    return posts;
+  } catch (error) {
+    console.error('Error al hacer scraping del blog:', error);
+    return [];
+  }
 }
 
-// Función para determinar si el mensaje es una pregunta por el nombre del asistente
-function isAskingName(message) {
-  const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
-  const normalizedMessage = message.trim().toLowerCase();
-  return askingNames.includes(normalizedMessage);
+// Función para almacenar los títulos de las publicaciones del blog en la base de datos
+async function saveBlogPostsToDB(posts) {
+  try {
+    const client = await pool.connect();
+    await client.query('DELETE FROM blog_posts'); // Limpiar tabla antes de insertar nuevos datos
+    for (const post of posts) {
+      await client.query('INSERT INTO blog_posts (title, url) VALUES ($1, $2)', [post.title, post.url]);
+    }
+    client.release();
+    console.log('Datos del blog almacenados en PostgreSQL');
+  } catch (error) {
+    console.error('Error al almacenar datos del blog en PostgreSQL:', error);
+  }
 }
 
-// Almacén temporal para mensajes por chat
-const chatMessageHistory = new Map();
+// Función para mostrar los títulos de las publicaciones del blog
+async function showBlogPosts(chatId) {
+  try {
+    const res = await pool.query('SELECT title, url FROM blog_posts');
+    if (res.rows.length > 0) {
+      const posts = res.rows.map(post => `${post.title}: ${post.url}`).join('\n');
+      bot.sendMessage(chatId, `Publicaciones del Blog:\n\n${posts}`);
+    } else {
+      bot.sendMessage(chatId, 'No hay publicaciones en el blog.');
+    }
+  } catch (error) {
+    console.error('Error al obtener las publicaciones del blog:', error);
+    bot.sendMessage(chatId, 'Ocurrió un error al obtener las publicaciones del blog.');
+  }
+}
 
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const userMessage = msg.text;
 
-  // Obtener o inicializar historial de mensajes para este chat
-  let messageHistory = chatMessageHistory.get(chatId);
-  if (!messageHistory) {
-    messageHistory = [];
-    chatMessageHistory.set(chatId, messageHistory);
-  }
-
-  // Guardar el mensaje actual en el historial
-  messageHistory.push({ role: 'user', content: userMessage });
-
-  // Obtener idioma del usuario
-  const locale = await getUserLocale(chatId);
-  i18n.setLocale(locale);
-
   try {
-    if (isGreeting(userMessage)) {
-      // Si el mensaje es un saludo, enviar mensaje de bienvenida
-      const welcomeMessage = `Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. www.marshafoundation.org info@marshafoundation.org ¿En qué puedo asistirte hoy?`;
-      bot.sendMessage(chatId, welcomeMessage);
-    } else if (isAskingName(userMessage)) {
-      // Si el mensaje es una pregunta por el nombre del asistente
-      bot.sendMessage(chatId, assistantName);
-    } else if (userMessage.toLowerCase().includes('/historial')) {
-      // Si el mensaje contiene "/historial", mostrar el historial de conversación
-      if (messageHistory.length > 0) {
-        const conversationHistory = messageHistory.map(m => m.content).join('\n');
-        bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
-      } else {
-        bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
-      }
+    if (userMessage.toLowerCase().includes('/blog')) {
+      // Comando para mostrar las publicaciones del blog
+      const locale = await getUserLocale(chatId);
+      i18n.setLocale(locale);
+      showBlogPosts(chatId);
     } else {
       // Otro tipo de mensaje, procesar según sea necesario
       const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt]; // Añadir el historial de mensajes
-
-      const gptResponse = await getChatGPTResponse(messages);
+      const gptResponse = await getChatGPTResponse([prompt]);
 
       if (!gptResponse) {
         const doc = await wtf.fetch(userMessage, locale);
         const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
         bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
       } else {
-        // Guardar la respuesta de ChatGPT en el historial antes de enviarla
-        messageHistory.push({ role: 'assistant', content: gptResponse });
         bot.sendMessage(chatId, gptResponse);
       }
     }
@@ -184,17 +197,7 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Función para limpiar historial de mensajes
-function clearMessageHistory(chatId) {
-  chatMessageHistory.delete(chatId);
-}
-
-// Escuchar el evento de cierre del asistente (simulado)
-bot.on('close', (chatId) => {
-  clearMessageHistory(chatId);
-});
-
-// Escuchar el evento de inicio del bot (/start)
+// Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const opts = {
@@ -233,4 +236,11 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
+// Ejecutar scraping y almacenamiento de datos del blog al iniciar el bot
+(async () => {
+  const blogPosts = await scrapeBlogPosts();
+  await saveBlogPostsToDB(blogPosts);
+  console.log('Proceso de scraping y almacenamiento completado');
+})();
 
