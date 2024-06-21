@@ -13,6 +13,16 @@ const pool = new Pool({
   }
 });
 
+// Verificar la conexión
+pool.connect()
+  .then(client => {
+    console.log('Conexión exitosa a PostgreSQL');
+    client.release();
+  })
+  .catch(err => {
+    console.error('Error de conexión a PostgreSQL:', err);
+  });
+
 // Verificar que las variables de entorno están cargadas correctamente
 console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
 console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
