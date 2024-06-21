@@ -104,10 +104,23 @@ function isAskingName(message) {
     return askingNames.includes(normalizedMessage);
 }
 
+// Almacén temporal para mensajes por chat
+const chatMessageHistory = new Map();
+
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userMessage = msg.text;
+
+// Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId);
+    if (!messageHistory) {
+        messageHistory = [];
+        chatMessageHistory.set(chatId, messageHistory);
+    }
+
+    // Guardar el mensaje actual en el historial
+    messageHistory.push(userMessage);
     
     // Obtener idioma del usuario
     const locale = await getUserLocale(chatId);
@@ -145,6 +158,16 @@ bot.on('message', async (msg) => {
         console.error('Error al procesar el mensaje:', error);
         bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
     }
+});
+
+// Función para limpiar historial de mensajes
+function clearMessageHistory(chatId) {
+    chatMessageHistory.delete(chatId);
+}
+
+// Escuchar el evento de cierre del asistente (simulado)
+bot.on('close', (chatId) => {
+    clearMessageHistory(chatId);
 });
 
 // Escuchar el evento de cambio de idioma
