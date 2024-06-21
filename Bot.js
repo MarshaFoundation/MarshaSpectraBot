@@ -139,7 +139,7 @@ bot.on('message', async (msg) => {
   }
 
   // Guardar el mensaje actual en el historial
-  messageHistory.push(userMessage);
+  messageHistory.push({ role: 'user', content: userMessage });
 
   // Obtener idioma del usuario
   const locale = await getUserLocale(chatId);
@@ -156,7 +156,7 @@ bot.on('message', async (msg) => {
     } else if (userMessage.toLowerCase().includes('/historial')) {
       // Si el mensaje contiene "/historial", mostrar el historial de conversación
       if (messageHistory.length > 0) {
-        const conversationHistory = messageHistory.join('\n');
+        const conversationHistory = messageHistory.map(m => m.content).join('\n');
         bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
       } else {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
@@ -164,7 +164,8 @@ bot.on('message', async (msg) => {
     } else {
       // Otro tipo de mensaje, procesar según sea necesario
       const prompt = { role: 'user', content: userMessage };
-      const messages = [prompt];
+      const messages = [...messageHistory, prompt]; // Añadir el historial de mensajes
+
       const gptResponse = await getChatGPTResponse(messages);
 
       if (!gptResponse) {
@@ -172,6 +173,8 @@ bot.on('message', async (msg) => {
         const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
         bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
       } else {
+        // Guardar la respuesta de ChatGPT en el historial antes de enviarla
+        messageHistory.push({ role: 'assistant', content: gptResponse });
         bot.sendMessage(chatId, gptResponse);
       }
     }
