@@ -35,13 +35,19 @@ i18n.configure({
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
-// Función para hacer la llamada a OpenAI
-const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
+// Función para hacer la llamada a OpenAI // Caché para almacenar respuestas de OpenAI
+const cacheLimit = 100; // Limite de entradas en el cache
 
 async function getChatGPTResponse(messages) {
     const messagesKey = JSON.stringify(messages);
     if (cachedResponses.has(messagesKey)) {
         return cachedResponses.get(messagesKey);
+    }
+
+    if (cachedResponses.size >= cacheLimit) {
+        // Remover el primer elemento insertado
+        const firstKey = cachedResponses.keys().next().value;
+        cachedResponses.delete(firstKey);
     }
 
     try {
@@ -92,7 +98,7 @@ async function setUserLocale(chatId, locale) {
 
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas'];
+    const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
     const normalizedMessage = message.trim().toLowerCase();
     return greetings.includes(normalizedMessage);
 }
