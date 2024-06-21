@@ -13,11 +13,20 @@ const pool = new Pool({
   }
 });
 
-// Verificar la conexión
+// Verificar la conexión y crear la tabla "users" si no existe
 pool.connect()
   .then(client => {
     console.log('Conexión exitosa a PostgreSQL');
-    client.release();
+    return client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        chat_id BIGINT UNIQUE NOT NULL,
+        locale VARCHAR(10) DEFAULT 'es'
+      );
+    `).then(() => {
+      client.release();
+      console.log('Tabla "users" verificada o creada');
+    });
   })
   .catch(err => {
     console.error('Error de conexión a PostgreSQL:', err);
@@ -139,7 +148,7 @@ bot.on('message', async (msg) => {
   try {
     if (isGreeting(userMessage)) {
       // Si el mensaje es un saludo, enviar mensaje de bienvenida
-      const welcomeMessage = `Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. www.marshafoundation.org info@marshafoundation.org ¿En qué puedo asistirlos hoy?`;
+      const welcomeMessage = `Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. www.marshafoundation.org info@marshafoundation.org ¿En qué puedo asistirte hoy?`;
       bot.sendMessage(chatId, welcomeMessage);
     } else if (isAskingName(userMessage)) {
       // Si el mensaje es una pregunta por el nombre del asistente
@@ -221,3 +230,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
