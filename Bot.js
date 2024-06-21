@@ -14,7 +14,7 @@ const pool = new Pool({
   }
 });
 
-// Verificar la conexión y crear la tabla "users" si no existe
+// Verificar la conexión y crear la tabla "users" y "blog_posts" si no existen
 pool.connect()
   .then(client => {
     console.log('Conexión exitosa a PostgreSQL');
@@ -167,6 +167,19 @@ async function showBlogPosts(chatId) {
   }
 }
 
+// Información adicional sobre Marsha+ Foundation
+const marshaplusInfo = `
+Marsha+ Foundation
+Web: www.marshafoundation.org
+Email: info@marshafoundation.org
+
+Introducing Marsha+: A revolutionary initiative designed to empower and support the LGBTQ+ community through blockchain technology. Our commitment is grounded in the belief that equality and human rights are fundamental, and Marsha+ stands as a beacon of positive change.
+
+This innovative token, built on Ethereum and deployed on the Binance Smart Chain, is more than just a digital asset; it's a catalyst for meaningful action. Marsha+ will facilitate secure and transparent transactions, fundraising initiatives, and various applications within the community. Our mission is clear: to strengthen the LGBTQ+ community by providing the necessary tools to face contemporary challenges.
+
+With a total supply of 8 billion tokens and an annual burn rate of 3%, Marsha+ represents a symbol of sustained commitment to equality, diversity, and a brighter future. Join Marsha+ and be part of the change!
+`;
+
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
@@ -178,6 +191,9 @@ bot.on('message', async (msg) => {
       const locale = await getUserLocale(chatId);
       i18n.setLocale(locale);
       showBlogPosts(chatId);
+    } else if (userMessage.toLowerCase().includes('/info')) {
+      // Comando para mostrar la información de Marsha+ Foundation
+      bot.sendMessage(chatId, marshaplusInfo);
     } else {
       // Otro tipo de mensaje, procesar según sea necesario
       const prompt = { role: 'user', content: userMessage };
