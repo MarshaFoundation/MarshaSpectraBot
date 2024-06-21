@@ -5,6 +5,7 @@ const axios = require('axios');
 require('dotenv').config();
 const { Pool } = require('pg');
 
+// Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: false, // Desactivar SSL
