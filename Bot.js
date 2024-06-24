@@ -56,7 +56,6 @@ i18n.configure({
 
 // Instancias de Google Cloud
 const speechClient = new speech.SpeechClient();
-const storage = new Storage();
 
 // Almacén temporal para mensajes por chat
 const chatMessageHistory = new Map();
