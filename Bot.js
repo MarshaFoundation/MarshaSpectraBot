@@ -54,6 +54,13 @@ i18n.configure({
   cookie: 'locale',
 });
 
+// Instancias de Google Cloud
+const speechClient = new speech.SpeechClient();
+const storage = new Storage();
+
+// Almacén temporal para mensajes por chat
+const chatMessageHistory = new Map();
+
 // Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
@@ -127,9 +134,6 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
-// Almacén temporal para mensajes por chat
-const chatMessageHistory = new Map();
-
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
@@ -165,6 +169,12 @@ bot.on('message', async (msg) => {
       } else {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
       }
+    } else if (msg.voice) {
+      // Si el mensaje es de voz
+      const voiceMessageId = msg.voice.file_id;
+      const voiceFilePath = await downloadVoiceFile(voiceMessageId);
+      const transcription = await transcribeAudio(voiceFilePath);
+      bot.sendMessage(chatId, transcription);
     } else {
       // Otro tipo de mensaje, procesar según sea necesario
       const prompt = { role: 'user', content: userMessage };
@@ -188,9 +198,53 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Función para limpiar historial de mensajes
-function clearMessageHistory(chatId) {
-  chatMessageHistory.delete(chatId);
+// Función para descargar el archivo de voz
+async function downloadVoiceFile(fileId) {
+  const filePath = `./${fileId}.ogg`;
+  const fileStream = fs.createWriteStream(filePath);
+  const fileLink = await bot.getFileLink(fileId);
+  const response = await axios({
+    url: fileLink,
+    method: 'GET',
+    responseType: 'stream'
+  });
+  response.data.pipe(fileStream);
+  return new Promise((resolve, reject) => {
+    fileStream.on('finish', () => resolve(filePath));
+    fileStream.on('error', error => reject(error));
+  });
+}
+
+// Función para transcribir audio utilizando Google Cloud Speech API
+async function transcribeAudio(filePath) {
+  const file = fs.readFileSync(filePath);
+  const audioBytes = file.toString('base64');
+
+  const audio = {
+    content: audioBytes,
+  };
+
+  const config = {
+    encoding: 'OGG_OPUS',
+    sampleRateHertz: 48000,
+    languageCode: 'es-ES',
+  };
+
+  const request = {
+    audio: audio,
+    config: config,
+  };
+
+  try {
+    const [response] = await speechClient.recognize(request);
+    const transcription = response.results
+      .map(result => result.alternatives[0].transcript)
+      .join('\n');
+    return transcription;
+  } catch (error) {
+    console.error('Error al transcribir audio:', error);
+    return 'Error al transcribir el mensaje de voz.';
+  }
 }
 
 // Escuchar el evento de cierre del asistente (simulado)
@@ -237,4 +291,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
