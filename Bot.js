@@ -1,13 +1,13 @@
 const TelegramBot = require('node-telegram-bot-api');
 const i18n = require('i18n');
-const wtf = require('wtf_wikipedia');
 const axios = require('axios');
-require('dotenv').config();
 const { Pool } = require('pg');
 const speech = require('@google-cloud/speech');
 const fs = require('fs');
 const { Storage } = require('@google-cloud/storage');
+const wtf = require('wtf_wikipedia');
 const ffmpeg = require('fluent-ffmpeg');
+require('dotenv').config();
 
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
@@ -136,24 +136,29 @@ function isAskingName(message) {
 
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const userMessage = msg.text;
-
-  // Obtener o inicializar historial de mensajes para este chat
-  let messageHistory = chatMessageHistory.get(chatId);
-  if (!messageHistory) {
-    messageHistory = [];
-    chatMessageHistory.set(chatId, messageHistory);
-  }
-
-  // Guardar el mensaje actual en el historial
-  messageHistory.push({ role: 'user', content: userMessage });
-
-  // Obtener idioma del usuario
-  const locale = await getUserLocale(chatId);
-  i18n.setLocale(locale);
-
   try {
+    if (!msg || !msg.text) {
+      console.error('Mensaje entrante no válido:', msg);
+      return;
+    }
+
+    const chatId = msg.chat.id;
+    const userMessage = msg.text;
+
+    // Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId);
+    if (!messageHistory) {
+      messageHistory = [];
+      chatMessageHistory.set(chatId, messageHistory);
+    }
+
+    // Guardar el mensaje actual en el historial
+    messageHistory.push({ role: 'user', content: userMessage });
+
+    // Obtener idioma del usuario
+    const locale = await getUserLocale(chatId);
+    i18n.setLocale(locale);
+
     if (isGreeting(userMessage)) {
       // Si el mensaje es un saludo, enviar mensaje de bienvenida
       const welcomeMessage = `Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. www.marshafoundation.org info@marshafoundation.org ¿En qué puedo asistirte hoy?`;
@@ -288,6 +293,26 @@ process.on('uncaughtException', (err) => {
 });
 
 // Manejar rechazos no manejados en promesas
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Error no manejado:', reason, 'promise:', promise);
+});
+
+// Función para limpiar el historial de mensajes de un chat
+function clearMessageHistory(chatId) {
+  chatMessageHistory.delete(chatId);
+}
+
+// Inicio del bot
+bot.on('polling_error', (error) => {
+  console.error('Error de polling:', error);
+});
+
+// Capturar errores no manejados
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+});
+
+// Capturar rechazos no manejados en promesas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
