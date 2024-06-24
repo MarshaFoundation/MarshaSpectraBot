@@ -4,6 +4,10 @@ const wtf = require('wtf_wikipedia');
 const axios = require('axios');
 require('dotenv').config();
 const { Pool } = require('pg');
+const speech = require('@google-cloud/speech');
+const fs = require('fs');
+const { Storage } = require('@google-cloud/storage');
+const ffmpeg = require('fluent-ffmpeg');
 
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
