@@ -166,134 +166,99 @@ function mentionsLostChild(message) {
     'vi a loan en el parque', 'loan fue visto cerca de mi casa', 'creo haber visto a loan ayer', 'loan podría estar en el centro comercial',
     'alguien vio a loan por aquí', 'loan desapareció hace una semana', 'me dijeron que loan fue visto en el parque',
     'loan fue encontrado por la policía', 'buscamos a loan por todos lados', 'loan necesita ser encontrado lo antes posible',
-    'loan podría estar en problemas', 'me preocupa la seguridad de loan', 'he visto a un niño solo que parece estar perdido, podría ser loan',
-    'loan fue encontrado sano y salvo', 'una persona dijo haber visto a loan en el metro', 'loan podría estar en la escuela',
-    'tengo un dato importante sobre loan', 'loan está conmocionado y necesita ayuda', 'loan tiene familiares buscándolo',
-    'necesitamos encontrar a loan rápidamente', 'loan se perdió en el parque de diversiones', 'hace horas que loan se perdió',
-    'loan está perdido en la zona norte', 'loan está perdido en la zona sur', 'loan está perdido en la zona este',
-    'loan está perdido en la zona oeste', 'loan necesita ayuda urgente', 'vi a un niño solo que podría ser loan',
-    'loan está perdido desde ayer por la tarde', 'loan está perdido desde la mañana', 'no he visto a loan desde ayer',
-    'loan fue visto por última vez en el centro de la ciudad', 'loan podría estar en el parque de atracciones',
-    'me dijeron que loan podría estar cerca del río', 'loan podría estar en el vecindario'
+    'loan podría estar en problemas', 'me preocupa la seguridad de loan', 'he visto a un niño perdido llamado loan',
+    'loan está a salvo?', 'alguien ha visto a loan?', 'necesitamos encontrar a loan', 'loan podría estar en el parque',
+    'loan podría estar cerca de la escuela', 'vi a loan en la tienda', 'loan necesita ayuda urgentemente', 'loan podría estar en la estación de autobuses',
+    'alguien ha visto a un niño llamado loan?', 'loan podría estar con alguien', 'necesitamos más información sobre loan',
+    'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
   const normalizedMessage = message.trim().toLowerCase();
-  return relatedPhrases.some(phrase => normalizedMessage.includes(phrase));
+  return relatedPhrases.includes(normalizedMessage);
 }
 
-// Manejar mensajes del usuario
-bot.on('message', async (msg) => {
-  try {
-    const chatId = msg.chat.id;
-    const userMessage = msg.text;
-    const messageHistory = await getMessageHistory(chatId);
+// Manejar mensajes
+async function handleMessage(bot, msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
 
-    // Función para detectar menciones relacionadas con el niño perdido llamado Loan
-    if (mentionsLostChild(userMessage)) {
-      const request = `
-        🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-        Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+  if (!messageText) return;
 
-        Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
-      `;
-      bot.sendMessage(chatId, request, {
-        reply_markup: {
-          keyboard: [
-            [{
-              text: "Compartir ubicación",
-              request_location: true // Solicitar ubicación
-            }]
-          ],
-          resize_keyboard: true
-        }
-      });
+  const userLocale = await getUserLocale(chatId);
+  const messageHistory = chatMessageHistory.get(chatId) || [];
+  messageHistory.push({ role: 'user', content: messageText });
 
-      // Opcional: Solicitud de detalles adicionales después de 3 segundos
-      setTimeout(() => {
-        const additionalInfoRequest = `
-          Además de su ubicación, ¿puede proporcionar más detalles sobre la última vez que vio a Loan o alguna característica distintiva que pueda ayudar?
-          Responda a este mensaje con la información adicional. Gracias por su colaboración.
-        `;
-        bot.sendMessage(chatId, additionalInfoRequest);
-      }, 3000); // Espera 3 segundos antes de enviar la solicitud de detalles adicionales
-    }
-    // Respuesta predeterminada del asistente para otros mensajes
-    else {
-      const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt];
-      const gptResponse = await getChatGPTResponse(messages);
-      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-    }
-  } catch (error) {
-    console.error('Error al manejar mensaje:', error);
+  if (isGreeting(messageText)) {
+    const greetingResponse = `¡Hola! Soy ${assistantName}, ${assistantDescription}`;
+    bot.sendMessage(chatId, greetingResponse);
+  } else if (isAskingName(messageText)) {
+    const nameResponse = `Mi nombre es ${assistantName}.`;
+    bot.sendMessage(chatId, nameResponse);
+  } else if (mentionsLostChild(messageText)) {
+    const childResponse = "Parece que mencionaste a Loan. Por favor proporciona más detalles.";
+    bot.sendMessage(chatId, childResponse);
+  } else {
+    const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+    const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+    const gptResponse = await getChatGPTResponse(messagesWithIntro);
+    bot.sendMessage(chatId, gptResponse);
+
+    messageHistory.push({ role: 'assistant', content: gptResponse });
+    chatMessageHistory.set(chatId, messageHistory);
   }
-});
+}
 
-// Manejar el evento de ubicación del usuario
-bot.on('location', async (msg) => {
-  try {
-    const chatId = msg.chat.id;
-    const latitude = msg.location.latitude;
-    const longitude = msg.location.longitude;
+// Manejar ubicación
+async function handleLocation(bot, msg) {
+  const chatId = msg.chat.id;
+  const location = msg.location;
 
-    // Agradecimiento por compartir la ubicación de manera amigable
-    const thankYouMessage = "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.";
-    await bot.sendMessage(chatId, thankYouMessage);
-  } catch (error) {
-    console.error('Error al manejar evento de ubicación:', error);
+  if (location) {
+    const response = `Recibí tu ubicación. Latitud: ${location.latitude}, Longitud: ${location.longitude}`;
+    bot.sendMessage(chatId, response);
   }
-});
+}
 
-// Manejar el evento de inicio del bot (/start)
-bot.onText(/\/start/, async (msg) => {
-  try {
-    const chatId = msg.chat.id;
-    const opts = {
-      reply_markup: JSON.stringify({
-        inline_keyboard: [
-          [{ text: '🇬🇧 English', callback_data: 'en' }],
-          [{ text: '🇪🇸 Español', callback_data: 'es' }],
-        ],
-      }),
-    };
-    const locale = await getUserLocale(chatId);
-    const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
-    bot.sendMessage(chatId, responseMessage, opts);
-  } catch (error) {
-    console.error('Error al manejar comando /start:', error);
-  }
-});
+// Manejar el comando /start
+async function handleStartCommand(bot, msg) {
+  const chatId = msg.chat.id;
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente personal. ${assistantDescription}`;
+  bot.sendMessage(chatId, welcomeMessage);
+}
 
-// Manejar el cambio de idioma desde los botones de selección
-bot.on('callback_query', async (callbackQuery) => {
-  try {
-    const chatId = callbackQuery.message.chat.id;
-    const locale = callbackQuery.data;
+// Manejar consultas callback
+async function handleCallbackQuery(bot, callbackQuery) {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  if (data.startsWith('setLocale_')) {
+    const locale = data.split('_')[1];
     await setUserLocale(chatId, locale);
-    bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
-  } catch (error) {
-    console.error('Error al manejar callback de cambio de idioma:', error);
+    bot.sendMessage(chatId, `Idioma configurado a ${locale}`);
   }
-});
+}
 
-// Manejar errores de polling del bot
+bot.on('message', (msg) => handleMessage(bot, msg));
+bot.on('location', (msg) => handleLocation(bot, msg));
+bot.onText(/\/start/, (msg) => handleStartCommand(bot, msg));
+bot.on('callback_query', (callbackQuery) => handleCallbackQuery(bot, callbackQuery));
+
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
 
-// Manejar errores no capturados en el proceso
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
-  // Aquí podrías implementar lógica adicional, como enviar un mensaje al administrador
-  process.exit(1); // Salir del proceso con un código de error
+  process.exit(1);
 });
 
-// Manejar rechazos no manejados en promesas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
 
 console.log('Configuración y manejo de eventos listos.');
+
 
 
 
