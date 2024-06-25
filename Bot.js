@@ -1,13 +1,17 @@
 const TelegramBot = require('node-telegram-bot-api');
-const i18n = require('i18n');
 const axios = require('axios');
 const { Pool } = require('pg');
-const speech = require('@google-cloud/speech');
+const { SpeechClient } = require('@google-cloud/speech');
 const fs = require('fs');
-const { Storage } = require('@google-cloud/storage');
 const wtf = require('wtf_wikipedia');
-const ffmpeg = require('fluent-ffmpeg');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const token = process.env.TELEGRAM_API_KEY;
+const openaiApiKey = process.env.OPENAI_API_KEY;
+const assistantName = 'SilvIA+';
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID del grupo administrativo
 
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
@@ -36,34 +40,12 @@ const pool = new Pool({
   }
 })();
 
-// Verificar que las variables de entorno están cargadas correctamente
-console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
-console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
-
-const token = process.env.TELEGRAM_API_KEY;
-const openaiApiKey = process.env.OPENAI_API_KEY;
-const assistantName = 'SilvIA+';
-const ADMIN_CHAT_ID = '637055957'; // ID del chat administrativo (reemplazar con el correcto)
-
-// Configuración de i18n
-i18n.configure({
-  locales: ['en', 'es'],
-  directory: __dirname + '/locales',
-  defaultLocale: 'es',
-  queryParameter: 'lang',
-  cookie: 'locale',
-});
-
-// Instancias de Google Cloud
-const speechClient = new speech.SpeechClient();
-
-// Almacén temporal para mensajes por chat
-const chatMessageHistory = new Map();
-
 // Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
+
+// Almacenamiento temporal para mensajes por chat
+const chatMessageHistory = new Map();
 
 // Función para hacer la llamada a OpenAI y cachear respuestas
 const cachedResponses = new Map();
@@ -166,7 +148,6 @@ bot.on('message', async (msg) => {
 
       // Obtener idioma del usuario
       const locale = await getUserLocale(chatId);
-      i18n.setLocale(locale);
 
       // Verificar si el mensaje contiene información sobre el niño perdido
       const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
@@ -180,18 +161,19 @@ bot.on('message', async (msg) => {
           bot.sendMessage(chatId, responseMessage);
         } else {
           // Caso general: frases como "Hemos encontrado a Loan"
-          const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${msg.text}`;
+          const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${msg.text}`;
           bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
         }
-      } else if (isGreeting(userMessage)) {
+      } else {
         // Saludo detectado
         const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
         bot.sendMessage(chatId, welcomeMessage);
-      } else if (isAskingName(userMessage)) {
-        // Pregunta por el nombre del asistente
+      }
+
+      // Otros casos como preguntas por el nombre del asistente, historial, etc.
+      if (isAskingName(userMessage)) {
         bot.sendMessage(chatId, assistantName);
       } else if (userMessage.toLowerCase().includes('/historial')) {
-        // Comando para mostrar historial de conversación
         if (messageHistory.length > 0) {
           const conversationHistory = messageHistory.map(m => m.content).join('\n');
           bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
@@ -230,6 +212,7 @@ async function downloadVoiceFile(fileId) {
   const fileStream = fs.createWriteStream(filePath);
 
   try {
+    
     // Obtener detalles del archivo de voz desde Telegram
     const fileDetails = await bot.getFile(fileId);
     console.log('Detalles del archivo:', fileDetails);
