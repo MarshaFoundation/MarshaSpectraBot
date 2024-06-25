@@ -56,8 +56,8 @@ async function getChatGPTResponse(messages) {
 
     return gptResponse;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error.response?.data || error.message);
-    return 'Lo siento, hubo un problema al procesar tu solicitud.';
+    console.error('Error al llamar a OpenAI:', error);
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
 
@@ -137,6 +137,7 @@ bot.on('message', async (msg) => {
     }
 
     const chatId = msg.chat.id;
+    const userId = msg.from.id;
     const userMessage = msg.text.trim().toLowerCase();
 
     // Obtener o inicializar historial de mensajes para este chat
@@ -146,7 +147,7 @@ bot.on('message', async (msg) => {
 
     // Saludo detectado
     if (isGreeting(userMessage)) {
-      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte?`;
+      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
       bot.sendMessage(chatId, responseMessage);
     }
     // Pregunta por el nombre del asistente
@@ -185,8 +186,9 @@ bot.on('location', async (msg) => {
   const latitude = msg.location.latitude;
   const longitude = msg.location.longitude;
 
-  // Aquí puedes manejar la ubicación recibida, por ejemplo, enviar un agradecimiento
-  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.");
+  // Agradecimiento por compartir la ubicación de manera amigable
+  const thankYouMessage = "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.";
+  await bot.sendMessage(chatId, thankYouMessage);
 });
 
 // Manejar el evento de inicio del bot (/start)
@@ -201,7 +203,8 @@ bot.onText(/\/start/, async (msg) => {
     }),
   };
   const locale = await getUserLocale(chatId);
-  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
+  const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
+  bot.sendMessage(chatId, responseMessage, opts);
 });
 
 // Manejar el cambio de idioma desde los botones de selección
@@ -212,24 +215,25 @@ bot.on('callback_query', async (callbackQuery) => {
   bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
-// Manejar errores de polling del bot (continuación)
+// Manejar errores de polling del bot
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
 
-// Manejar errores no capturados en el proceso (continuación)
+// Manejar errores no capturados en el proceso
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
   // Aquí podrías implementar lógica adicional, como enviar un mensaje al administrador
   process.exit(1); // Salir del proceso con un código de error
 });
 
-// Manejar rechazos no manejados en promesas (continuación)
+// Manejar rechazos no manejados en promesas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
 
 console.log('Configuración y manejo de eventos listos.');
+
 
 
 
