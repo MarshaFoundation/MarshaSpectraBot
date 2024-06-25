@@ -96,7 +96,7 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-  const greetings = ['hola!','hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
+  const greetings = ['hola!', 'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
   const normalizedMessage = message.trim().toLowerCase();
   return greetings.includes(normalizedMessage);
 }
@@ -109,19 +109,16 @@ function isAskingName(message) {
 }
 
 // Función para manejar el reporte de avistamiento del niño perdido
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const messageText = msg.text.toLowerCase();
+async function handleMissingChildReport(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text.toLowerCase();
 
-    if (messageText.includes('loan')) {
-        await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
-        await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
-        await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
-    } else {
-        // Manejar otros mensajes como se haría normalmente
-        await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
-    }
-});
+  if (messageText.includes('loan')) {
+    await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
+    await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
+    await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
+  }
+}
 
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
@@ -191,45 +188,32 @@ bot.on('callback_query', async (callbackQuery) => {
 
 // Solicitar ubicación al usuario
 bot.onText(/\/ubicacion/, (msg) => {
-    const chatId = msg.chat.id;
-    const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-    
-    bot.sendMessage(chatId, request, {
-        reply_markup: {
-            keyboard: [
-                [{
-                    text: "Compartir ubicación",
-                    request_location: true // Solicitar ubicación
-                }]
-            ],
-            resize_keyboard: true
-        }
-    });
+  const chatId = msg.chat.id;
+  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
+  
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
 });
 
 // Manejar la respuesta de ubicación del usuario
 bot.on('location', (msg) => {
-    const chatId = msg.chat.id;
-    const latitude = msg.location.latitude;
-    const longitude = msg.location.longitude;
-    
-    // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-    console.log(`Ubicación recibida de ${chatId}: (${latitude}, ${longitude})`);
-    
-    bot.sendMessage(chatId, "Gracias por compartir tu ubicación. La información será utilizada para ayudar en la búsqueda.");
-});
-
-// Manejar la respuesta de ubicación del usuario
-bot.on('location', async (msg) => {
   const chatId = msg.chat.id;
   const latitude = msg.location.latitude;
   const longitude = msg.location.longitude;
   
   // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+  console.log(`Ubicación recibida de ${chatId}: (${latitude}, ${longitude})`);
   
-  // Puedes enviar un agradecimiento o confirmación al usuario
-  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+  bot.sendMessage(chatId, "Gracias por compartir tu ubicación. La información será utilizada para ayudar en la búsqueda.");
 });
 
 // Escuchar errores de polling del bot
@@ -241,6 +225,9 @@ bot.on('polling_error', (error) => {
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
 });
+
+// Manejar rechazos no manejados en promesas
+process.on('unhandledRejection', (reason, promise
 
 // Manejar rechazos no manejados en promesas
 process.on('unhandledRejection', (reason, promise) => {
