@@ -209,45 +209,63 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, responseMessage);
     }
       
-   // Mención relacionada con un niño perdido
-else if (mentionsLostChild(userMessage)) {
-  const request = `
-    🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-    Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
-
-    Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
-  `;
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
+  // Mención relacionada con un niño perdido
+bot.on('message', async (msg) => {
+  try {
+    if (!msg || (!msg.text && !msg.voice)) {
+      console.error('Mensaje entrante no válido:', msg);
+      return;
     }
-  });
 
-  // Opcional: Solicitud de detalles adicionales
-  setTimeout(() => {
-    const additionalInfoRequest = `
-      Además de su ubicación, ¿puede proporcionar más detalles sobre la última vez que vio a Loan o alguna característica distintiva que pueda ayudar?
-      Responda a este mensaje con la información adicional. Gracias por su colaboración.
-    `;
-    bot.sendMessage(chatId, additionalInfoRequest);
-  }, 3000); // Espera 3 segundos antes de enviar la solicitud de detalles adicionales
-}
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const userMessage = msg.text.trim().toLowerCase();
 
-// Resto del manejo de mensajes
-else {
-  const prompt = { role: 'user', content: userMessage };
-  const messages = [...messageHistory, prompt];
-  const gptResponse = await getChatGPTResponse(messages);
-  bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-}
+    // Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: userMessage });
+    chatMessageHistory.set(chatId, messageHistory);
 
-    // Respuesta predeterminada del asistente
+    // Saludo detectado
+    if (isGreeting(userMessage)) {
+      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
+      bot.sendMessage(chatId, responseMessage);
+    }
+    // Pregunta por el nombre del asistente
+    else if (isAskingName(userMessage)) {
+      const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
+      bot.sendMessage(chatId, responseMessage);
+    }
+    // Mención relacionada con un niño perdido
+    else if (mentionsLostChild(userMessage)) {
+      const request = `
+        🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+        Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+        Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
+      `;
+      bot.sendMessage(chatId, request, {
+        reply_markup: {
+          keyboard: [
+            [{
+              text: "Compartir ubicación",
+              request_location: true // Solicitar ubicación
+            }]
+          ],
+          resize_keyboard: true
+        }
+      });
+
+      // Opcional: Solicitud de detalles adicionales después de 3 segundos
+      setTimeout(() => {
+        const additionalInfoRequest = `
+          Además de su ubicación, ¿puede proporcionar más detalles sobre la última vez que vio a Loan o alguna característica distintiva que pueda ayudar?
+          Responda a este mensaje con la información adicional. Gracias por su colaboración.
+        `;
+        bot.sendMessage(chatId, additionalInfoRequest);
+      }, 3000); // Espera 3 segundos antes de enviar la solicitud de detalles adicionales
+    }
+    // Respuesta predeterminada del asistente para otros mensajes
     else {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
@@ -270,7 +288,7 @@ bot.on('location', async (msg) => {
     const thankYouMessage = "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.";
     await bot.sendMessage(chatId, thankYouMessage);
   } catch (error) {
-    console.error('Error al manejar ubicación:', error);
+    console.error('Error al manejar evento de ubicación:', error);
   }
 });
 
