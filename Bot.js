@@ -233,6 +233,27 @@ bot.on('message', async (msg) => {
   }
 });
 
+// Mención relacionada con un niño perdido
+else if (mentionsLostChild(userMessage)) {
+  const request = `
+    🚨 ¡Atención! Usted esta compartiendo informacion valiosa, la misma sera enviada a las autoridades 🚨
+    Es crucial que compartas tu ubicación actual para ayudarnos en su búsqueda.
+
+    Por favor, pulsa el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
+  `;
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+}
+
 // Manejar el evento de ubicación del usuario
 bot.on('location', async (msg) => {
   try {
