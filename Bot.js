@@ -114,7 +114,7 @@ async function handleMissingChildReport(msg) {
   const userMessage = msg.text.trim().toLowerCase();
 
   // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
-  if (userMessage.includes('loan') && (userMessage.includes('niño perdido') || userMessage.includes('he visto'))) {
+  if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
     // Enviar alerta al grupo administrativo sobre el posible avistamiento
     const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
     bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
@@ -126,7 +126,7 @@ async function handleMissingChildReport(msg) {
     bot.sendMessage(chatId, responseMessage);
   } else if (userMessage.includes('loan')) {
     // Si se menciona "loan" pero no está claro si se refiere al niño perdido
-    const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
+    const clarificationMessage = `¿Te refieres al niño perdido llamado Loan?`;
     bot.sendMessage(chatId, clarificationMessage);
   } else {
     // Otros tipos de mensajes que no están relacionados con "loan"
@@ -161,9 +161,12 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
+    // Reporte de avistamiento del niño perdido
+    else if (userMessage.includes('loan')) {
+      await handleMissingChildReport(msg);
+    }
     // Consulta a OpenAI o Wikipedia
     else {
-      await handleMissingChildReport(msg); // Manejar reporte de avistamiento del niño perdido
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
       const gptResponse = await getChatGPTResponse(messages);
@@ -186,7 +189,7 @@ bot.onText(/\/start/, async (msg) => {
     }),
   };
   const locale = await getUserLocale(chatId);
-  await bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
+  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
 });
 
 // Manejar el cambio de idioma desde los botones de selección
@@ -194,26 +197,37 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const locale = callbackQuery.data;
   await setUserLocale(chatId, locale);
-  await bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
 // Solicitar ubicación al usuario
 bot.onText(/\/ubicacion/, (msg) => {
-  const chatId = msg.chat.id;
-  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-  
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard
-: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
-    }
-  });
+    const chatId = msg.chat.id;
+    const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
+    
+    bot.sendMessage(chatId, request, {
+        reply_markup: {
+            keyboard: [
+                [{
+                    text: "Compartir ubicación",
+                    request_location: true // Solicitar ubicación
+                }]
+            ],
+            resize_keyboard: true
+        }
+    });
+});
+
+// Manejar la respuesta de ubicación del usuario
+bot.on('location', (msg) => {
+    const chatId = msg.chat.id;
+    const latitude = msg.location.latitude;
+    const longitude = msg.location.longitude;
+    
+    // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
+    console.log(`Ubicación recibida de ${chatId}: (${latitude}, ${longitude})`);
+    
+    bot.sendMessage(chatId, "Gracias por compartir tu ubicación. La información será utilizada para ayudar en la búsqueda.");
 });
 
 // Manejar la respuesta de ubicación del usuario
