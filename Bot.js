@@ -204,19 +204,27 @@ bot.on('message', async (msg) => {
 
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
-  const filePath = `./${fileId}.ogg`;
+  const filePath = `./${fileId}.ogg`; // Cambia la extensión según el tipo de archivo
   const fileStream = fs.createWriteStream(filePath);
-  const fileLink = await bot.getFileLink(fileId);
-  const response = await axios({
-    url: fileLink,
-    method: 'GET',
-    responseType: 'stream'
-  });
-  response.data.pipe(fileStream);
-  return new Promise((resolve, reject) => {
-    fileStream.on('finish', () => resolve(filePath));
-    fileStream.on('error', error => reject(error));
-  });
+
+  try {
+    const fileLink = await bot.getFileLink(fileId);
+    const response = await axios({
+      url: fileLink,
+      method: 'GET',
+      responseType: 'stream'
+    });
+
+    response.data.pipe(fileStream);
+
+    return new Promise((resolve, reject) => {
+      fileStream.on('finish', () => resolve(filePath));
+      fileStream.on('error', error => reject(error));
+    });
+  } catch (error) {
+    console.error('Error al descargar el archivo de voz:', error);
+    throw error; // Lanza el error para manejarlo en el contexto superior
+  }
 }
 
 // Función para transcribir audio utilizando Google Cloud Speech API
@@ -229,26 +237,26 @@ async function transcribeAudio(filePath) {
   };
 
   const config = {
-    encoding: 'OGG_OPUS',
-    sampleRateHertz: 48000,
-     languageCode: 'es-ES',
-};
+    encoding: 'OGG_OPUS', // Asegúrate de que el formato y la configuración coincidan
+    sampleRateHertz: 48000, // Ajusta según las especificaciones de tu archivo de audio
+    languageCode: 'es-ES', // Código de idioma adecuado para tu audio
+  };
 
-const request = {
-  audio: audio,
-  config: config,
-};
+  const request = {
+    audio: audio,
+    config: config,
+  };
 
-try {
-  const [response] = await speechClient.recognize(request);
-  const transcription = response.results
-    .map(result => result.alternatives[0].transcript)
-    .join('\n');
-  return transcription;
-} catch (error) {
-  console.error('Error al transcribir audio:', error);
-  return 'Error al transcribir el mensaje de voz.';
-}
+  try {
+    const [response] = await speechClient.recognize(request);
+    const transcription = response.results
+      .map(result => result.alternatives[0].transcript)
+      .join('\n');
+    return transcription;
+  } catch (error) {
+    console.error('Error al transcribir audio:', error);
+    throw error; // Lanza el error para manejarlo en el contexto superior
+  }
 }
 
 // Escuchar el evento de cierre del asistente (simulado)
