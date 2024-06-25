@@ -338,7 +338,7 @@ bot.on('callback_query', async (callbackQuery) => {
   bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
-// Manejar errores de polling del bot
+// Escuchar errores de polling del bot
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
