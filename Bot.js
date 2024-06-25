@@ -119,12 +119,17 @@ async function handleTextMessage(msg) {
     messageHistory.push({ role: 'user', content: userMessage });
     chatMessageHistory.set(chatId, messageHistory);
 
+   // Escuchar todos los mensajes entrantes al grupo administrativo
+bot.on('message', async (msg) => {
+  try {
+    const chatId = msg.chat.id; // Obtener el chatId del grupo administrativo
+
     // Verificar si el mensaje contiene información sobre "Loan"
     const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
 
-    if (loanKeywords.some(keyword => userMessage.includes(keyword))) {
-      // Enviar alerta al grupo administrativo solo si el mensaje contiene frases específicas
-      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${userFirstName} (${userId}):\n${msg.text}`;
+    if (loanKeywords.some(keyword => msg.text.toLowerCase().includes(keyword))) {
+      // Enviar alerta al grupo administrativo
+      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
       bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
         .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
         .catch(error => console.error('Error al enviar mensaje de alerta:', error));
@@ -136,14 +141,20 @@ async function handleTextMessage(msg) {
         const mentionedChatId = msg.reply_to_message.chat.id;
 
         // Mensaje para responder al usuario mencionado
-        const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
-        bot.sendMessage(mentionedChatId, responseMessage)
+        const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
+
+        // Enviar mensaje directo al usuario mencionado
+        bot.sendMessage(mentionedChatId, respuestaMensaje)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
         console.log('No hay un mensaje al que responder.');
       }
-    } else if (isGreeting(userMessage)) {
+    }
+  } catch (error) {
+    console.error('Error al manejar mensaje en el grupo administrativo:', error);
+  }
+});
       // Saludo detectado
       const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
       bot.sendMessage(chatId, responseMessage);
