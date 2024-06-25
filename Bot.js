@@ -193,6 +193,37 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
+// Solicitar ubicación al usuario
+bot.onText(/\/ubicacion/, (msg) => {
+    const chatId = msg.chat.id;
+    const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
+    
+    bot.sendMessage(chatId, request, {
+        reply_markup: {
+            keyboard: [
+                [{
+                    text: "Compartir ubicación",
+                    request_location: true // Solicitar ubicación
+                }]
+            ],
+            resize_keyboard: true
+        }
+    });
+});
+
+// Manejar la respuesta de ubicación del usuario
+bot.on('location', (msg) => {
+    const chatId = msg.chat.id;
+    const latitude = msg.location.latitude;
+    const longitude = msg.location.longitude;
+    
+    // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
+    console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+    
+    // Puedes enviar un agradecimiento o confirmación al usuario
+    bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+});
+
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
