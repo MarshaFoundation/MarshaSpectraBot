@@ -162,11 +162,6 @@ bot.on('message', async (msg) => {
   }
 });
 
-    // Procesar mensaje de texto
-    handleTextMessage(msg);
-  }
-});
-
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
@@ -211,3 +206,4 @@ function clearMessageHistory(chatId) {
 }
 
 console.log('Bot iniciado correctamente');
+
