@@ -146,19 +146,7 @@ async function handleTextMessage(msg) {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
 
-      const gptResponse = await getChatGPTResponse(messages);
-      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-    }
-  } catch (error) {
-    console.error('Error al manejar mensaje de texto:', error);
-  }
-}
-
-      // Consulta a OpenAI o Wikipedia
-      const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt];
-
-      const gptResponse = await getChatGPTResponse(messages);
+      const gptResponse = await getChatGPTResponse(messages); // Espera aquí está bien dentro de una función async
       bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
   } catch (error) {
@@ -178,7 +166,7 @@ bot.on('message', async (msg) => {
     console.log('Mensaje de voz recibido:', msg.voice);
   } else {
     // Procesar mensaje de texto
-    handleTextMessage(msg);
+    await handleTextMessage(msg); // Asegúrate de usar await aquí si handleTextMessage es async
   }
 });
 
