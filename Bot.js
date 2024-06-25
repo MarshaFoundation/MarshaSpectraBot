@@ -182,24 +182,23 @@ bot.on('message', async (msg) => {
 Eventos Específicos y Manejo de Situaciones 
 
 
-    // Solicitar ubicación al usuario de manera contextual
-    const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
-    bot.sendMessage(chatId, request, {
-        reply_markup: {
-            keyboard: [
-                [{
-                    text: "Compartir ubicación",
-                    request_location: true // Solicitar ubicación
-                }]
-            ],
-            resize_keyboard: true
-        }
-    });
-  } else {
-    // Manejar otros mensajes como se haría normalmente
-    await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
-  }
-});
+// Solicitar ubicación al usuario de manera contextual
+const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
+bot.sendMessage(chatId, request, {
+    reply_markup: {
+        keyboard: [
+            [{
+                text: "Compartir ubicación",
+                request_location: true // Solicitar ubicación
+            }]
+        ],
+        resize_keyboard: true
+    }
+  });
+} else {
+  // Manejar otros mensajes como se haría normalmente
+  await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
+}
 
 // Manejar la respuesta de ubicación del usuario
 bot.on('location', async (msg) => {
