@@ -165,10 +165,10 @@ bot.on('message', async (msg) => {
       // Verificar si hay un mensaje al que responder
       if (msg.reply_to_message && msg.reply_to_message.from) {
         // Capturar el chat_id del usuario que mencionó "Loan"
-        const mentionedChatId = msg.reply_to_message.chat.id;
+        const mentionedChatId = msg.reply_to_message.from.id;
 
         // Mensaje para responder al usuario mencionado
-        const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
+        const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¡Hemos recibido tu mensaje sobre "Loan". ¿Cómo puedo ayudarte?`;
 
         // Enviar mensaje directo al usuario mencionado
         enviarMensajeDirecto(mentionedChatId, respuestaMensaje)
@@ -182,6 +182,16 @@ bot.on('message', async (msg) => {
     console.error('Error al manejar mensaje en el grupo administrativo:', error);
   }
 });
+
+// Función para enviar un mensaje directo a un usuario dado su chat_id
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+  }
+}
 
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
