@@ -155,7 +155,7 @@ bot.on('message', async (msg) => {
 
       // Obtener o inicializar historial de mensajes para este chat
       let messageHistory = chatMessageHistory.get(chatId) || [];
-      
+
       // Guardar el mensaje actual en el historial
       const userMessage = msg.text;
       messageHistory.push({ role: 'user', content: userMessage });
@@ -164,6 +164,17 @@ bot.on('message', async (msg) => {
       // Obtener idioma del usuario
       const locale = await getUserLocale(chatId);
       i18n.setLocale(locale);
+
+      // Verificar si el mensaje contiene información sobre el niño perdido
+      const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
+      const foundLoan = loanKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
+
+      if (foundLoan) {
+        // Alertar al grupo administrativo
+        const ADMIN_CHAT_ID = 'XXXXXXXXX'; // Reemplazar con el ID del chat administrativo
+        const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${userMessage}`;
+        bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
+      }
 
       if (isGreeting(userMessage)) {
         // Saludo detectado
@@ -181,7 +192,7 @@ bot.on('message', async (msg) => {
           bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
         }
       } else {
-        // Otro tipo de mensaje, procesar utilizando OpenAI o Wikipeda
+        // Otro tipo de mensaje, procesar utilizando OpenAI o Wikipedia
         const prompt = { role: 'user', content: userMessage };
         const messages = [...messageHistory, prompt];
 
@@ -190,7 +201,7 @@ bot.on('message', async (msg) => {
         if (!gptResponse) {
           const doc = await wtf.fetch(userMessage, locale);
           const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-                   bot.sendMessage(chatId, summary || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+          bot.sendMessage(chatId, summary || 'No entiendo tu solicitud. ¿Podrías reformularla?');
         } else {
           // Guardar la respuesta de ChatGPT en el historial antes de enviarla
           messageHistory.push({ role: 'assistant', content: gptResponse });
@@ -203,7 +214,6 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
   }
 });
-
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
   const filePath = `./${fileId}.ogg`; // Ruta local donde se guardará el archivo de voz
