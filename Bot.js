@@ -103,8 +103,7 @@ async function handleTextMessage(msg) {
     // Obtener o inicializar historial de mensajes para este chat
     let messageHistory = chatMessageHistory.get(chatId) || [];
 
-    // Dentro de la función handleTextMessage
-
+ // Función para manejar mensajes de texto
 async function handleTextMessage(msg) {
   try {
     const chatId = msg.chat.id; // ID del chat
@@ -112,44 +111,48 @@ async function handleTextMessage(msg) {
     const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
     const userMessage = msg.text.trim().toLowerCase(); // Mensaje del usuario
 
-   // Obtener o inicializar historial de mensajes para este chat
-let messageHistory = chatMessageHistory.get(chatId) || [];
+    // Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId) || [];
 
-// Guardar el mensaje actual en el historial
-messageHistory.push({ role: 'user', content: userMessage });
-chatMessageHistory.set(chatId, messageHistory);
+    // Guardar el mensaje actual en el historial
+    messageHistory.push({ role: 'user', content: userMessage });
+    chatMessageHistory.set(chatId, messageHistory);
 
-// Verificar si el mensaje contiene información sobre "Loan"
-const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
+    // Verificar si el mensaje contiene información sobre "Loan"
+    const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
 
-if (loanKeywords.some(keyword => userMessage.includes(keyword))) {
-  // Enviar alerta al grupo administrativo solo si el mensaje contiene frases específicas
-  const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-  bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
-    .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
-    .catch(error => console.error('Error al enviar mensaje de alerta:', error));
-} else if (isGreeting(userMessage)) {
-  // Saludo detectado
-  const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
-  bot.sendMessage(chatId, responseMessage);
-} else if (isAskingName(userMessage)) {
-  // Pregunta por el nombre del asistente
-  bot.sendMessage(chatId, assistantName);
-} else if (userMessage.includes('/historial')) {
-  // Comando /historial para obtener historial de conversación
-  if (messageHistory.length > 0) {
-    const conversationHistory = messageHistory.map(m => m.content).join('\n');
-    bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
-  } else {
-    bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
+    if (loanKeywords.some(keyword => userMessage.includes(keyword))) {
+      // Enviar alerta al grupo administrativo solo si el mensaje contiene frases específicas
+      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${userFirstName} (${userId}):\n${msg.text}`;
+      bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
+        .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
+        .catch(error => console.error('Error al enviar mensaje de alerta:', error));
+    } else if (isGreeting(userMessage)) {
+      // Saludo detectado
+      const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
+      bot.sendMessage(chatId, responseMessage);
+    } else if (isAskingName(userMessage)) {
+      // Pregunta por el nombre del asistente
+      bot.sendMessage(chatId, assistantName);
+    } else if (userMessage.includes('/historial')) {
+      // Comando /historial para obtener historial de conversación
+      if (messageHistory.length > 0) {
+        const conversationHistory = messageHistory.map(m => m.content).join('\n');
+        bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
+      } else {
+        bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
+      }
+    } else {
+      // Consulta a OpenAI o Wikipedia
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+    }
+  } catch (error) {
+    console.error('Error al manejar mensaje de texto:', error);
   }
-} else {
-  // Consulta a OpenAI o Wikipedia
-  const prompt = { role: 'user', content: userMessage };
-  const messages = [...messageHistory, prompt];
-
-  const gptResponse = await getChatGPTResponse(messages);
-  bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
 }
 
 // Escuchar todos los mensajes entrantes
