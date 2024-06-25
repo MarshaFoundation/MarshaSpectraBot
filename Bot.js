@@ -287,8 +287,14 @@ async function transcribeAudio(filePath) {
 
     return transcription;
   } catch (error) {
-    console.error('Error al transcribir el audio:', error);
-    throw error;
+    console.error('Error al transcribir el audio:', error.message);
+
+    // Manejar específicamente el error de credenciales no cargadas
+    if (error.message.includes('Could not load the default credentials')) {
+      throw new Error('No se pudieron cargar las credenciales de Google Cloud. Verifica la configuración.');
+    }
+
+    throw error; // Lanzar cualquier otro error para manejarlo en un contexto superior
   }
 }
 
