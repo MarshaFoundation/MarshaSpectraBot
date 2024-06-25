@@ -134,7 +134,6 @@ async function handleTextMessage(msg) {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
       }
     } else {
-      
       // Consulta a OpenAI o Wikipedia
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
@@ -145,7 +144,8 @@ async function handleTextMessage(msg) {
   } catch (error) {
     console.error('Error al manejar mensaje de texto:', error);
   }
-  
+}
+
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   if (!msg || (!msg.text && !msg.voice)) {
@@ -162,7 +162,12 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Escuchar el evento de inicio del bot (/start)
+    // Procesar mensaje de texto
+    handleTextMessage(msg);
+  }
+});
+
+// Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const opts = {
