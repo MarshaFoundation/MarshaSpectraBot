@@ -170,8 +170,8 @@ bot.on('message', async (msg) => {
         // Mensaje para responder al usuario mencionado
         const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¡Hemos recibido tu mensaje sobre "Loan". ¿Cómo puedo ayudarte?`;
 
-        // Enviar mensaje directo al usuario mencionado
-        enviarMensajeDirecto(mentionedChatId, respuestaMensaje)
+        // Enviar mensaje directo al usuario mencionado desde el grupo administrativo
+        bot.sendMessage(mentionedChatId, respuestaMensaje)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
