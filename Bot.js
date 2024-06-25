@@ -1,6 +1,3 @@
-Configuración e Inicialización
-
-
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
@@ -34,10 +31,6 @@ const chatMessageHistory = new Map();
 
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
-
-
-Funciones Auxiliares
-
 
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
@@ -102,30 +95,13 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
-
-Manejo de Mensajes y Eventos
-
-
 // Función para detectar saludos
 function isGreeting(message) {
   const greetings = [
-    'hola', 'hola!', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+    'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
     '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
-    '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!', '¿cómo te va?',
-    '¿qué onda?', 'buenas tardes', '¿estás ahí?', 'buenas noches', '¿qué tal?',
-    '¡hola!', 'buen día!', 'buenas!', '¡hey!', 'hey!', 'hi!', 'hello!', '¡saludos!',
-    'saludos!', '¿qué hay?','buenas tardes!','buenas noches!', '¿cómo va?','¿qué pasa?',
-    '¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes',
-    '¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!','¡hey!',
-    'hey!','hi!','hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!',
-    '¿cómo va?','¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?',
-    'buenas tardes','¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!',
-    '¡hey!','hey!','hi!','hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!',
-    '¿cómo va?','¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes',
-    '¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!','¡hey!','hey!','hi!',
-    'hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!','¿cómo va?',
-    '¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes','¿estás ahí?',
-    'buenas noches','¿qué tal?'
+    '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
+    '¿cómo te va?', '¿qué onda?', '¿estás ahí?'
   ];
 
   const normalizedMessage = message.trim().toLowerCase();
@@ -134,7 +110,7 @@ function isGreeting(message) {
 
 // Función para detectar preguntas por el nombre del asistente
 function isAskingName(message) {
-  const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
+  const askingNames = ['¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre'];
   const normalizedMessage = message.trim().toLowerCase();
   return askingNames.includes(normalizedMessage);
 }
@@ -167,7 +143,20 @@ bot.on('message', async (msg) => {
       bot.sendMessage(chatId, responseMessage);
     }
     // Consulta a OpenAI o Wikipedia
-    else {
+    else if (userMessage.includes('niño perdido')) {
+      const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
+      bot.sendMessage(chatId, request, {
+        reply_markup: {
+          keyboard: [
+            [{
+              text: "Compartir ubicación",
+              request_location: true // Solicitar ubicación
+            }]
+          ],
+          resize_keyboard: true
+        }
+      });
+    } else {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
       const gptResponse = await getChatGPTResponse(messages);
@@ -178,39 +167,14 @@ bot.on('message', async (msg) => {
   }
 });
 
-
-Eventos Específicos y Manejo de Situaciones 
-
-
-// Solicitar ubicación al usuario de manera contextual
-const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
-bot.sendMessage(chatId, request, {
-    reply_markup: {
-        keyboard: [
-            [{
-                text: "Compartir ubicación",
-                request_location: true // Solicitar ubicación
-            }]
-        ],
-        resize_keyboard: true
-    }
-  });
-} else {
-  // Manejar otros mensajes como se haría normalmente
-  await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
-}
-
-// Manejar la respuesta de ubicación del usuario
+// Manejar el evento de ubicación del usuario
 bot.on('location', async (msg) => {
   const chatId = msg.chat.id;
   const latitude = msg.location.latitude;
   const longitude = msg.location.longitude;
 
-  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
-
-  // Puedes enviar un agradecimiento o confirmación al usuario
-  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+  // Aquí puedes manejar la ubicación recibida, por ejemplo, enviar un agradecimiento
+  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.");
 });
 
 // Manejar el evento de inicio del bot (/start)
@@ -236,25 +200,7 @@ bot.on('callback_query', async (callbackQuery) => {
   bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
-// Solicitar ubicación al usuario
-bot.onText(/\/ubicacion/, (msg) => {
-  const chatId = msg.chat.id;
-  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
-    }
-  });
-});
-
-// Escuchar errores de polling del bot
+// Manejar errores de polling del bot
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
