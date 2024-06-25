@@ -158,32 +158,39 @@ bot.on('message', async (msg) => {
     const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
 
     if (loanKeywords.some(keyword => msg.text.toLowerCase().includes(keyword))) {
-      // Enviar alerta al grupo administrativo
-      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-      bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
-        .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
-        .catch(error => console.error('Error al enviar mensaje de alerta:', error));
+      // Verificar si el mensaje específicamente menciona "loan" como un crédito financiero
+      const financialLoanKeywords = ['préstamo', 'crédito', 'interés', 'pagar', 'devolver'];
+      const isFinancialContext = financialLoanKeywords.some(keyword => msg.text.toLowerCase().includes(keyword));
 
-      // Verificar si hay un mensaje al que responder
-      if (msg.reply_to_message && msg.reply_to_message.from) {
-        // Capturar el chat_id del usuario que mencionó "Loan"
-        const mentionedChatId = msg.reply_to_message.from.id;
+      if (!isFinancialContext) {
+        // Enviar alerta al grupo administrativo solo si no es un contexto financiero
+        const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
+        bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
+          .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
+          .catch(error => console.error('Error al enviar mensaje de alerta:', error));
 
-        // Mensaje para responder al usuario mencionado
-        const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¡Hemos recibido tu mensaje sobre "Loan". ¿Cómo puedo ayudarte?`;
+        // Verificar si hay un mensaje al que responder
+        if (msg.reply_to_message && msg.reply_to_message.from) {
+          // Capturar el chat_id del usuario que mencionó "Loan"
+          const mentionedChatId = msg.reply_to_message.from.id;
 
-        // Enviar mensaje directo al usuario mencionado desde el grupo administrativo
-        bot.sendMessage(mentionedChatId, respuestaMensaje)
-          .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
-          .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
-      } else {
-        console.log('No hay un mensaje al que responder.');
+          // Mensaje para responder al usuario mencionado
+          const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¡Hemos recibido tu mensaje sobre "Loan". ¿Cómo puedo ayudarte?`;
+
+          // Enviar mensaje directo al usuario mencionado desde el grupo administrativo
+          bot.sendMessage(mentionedChatId, respuestaMensaje)
+            .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
+            .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
+        } else {
+          console.log('No hay un mensaje al que responder.');
+        }
       }
     }
   } catch (error) {
     console.error('Error al manejar mensaje en el grupo administrativo:', error);
   }
 });
+
 
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
