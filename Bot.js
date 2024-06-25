@@ -92,20 +92,6 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
-// Función para determinar si el mensaje es un saludo
-function isGreeting(message) {
-  const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
-  const normalizedMessage = message.trim().toLowerCase();
-  return greetings.includes(normalizedMessage);
-}
-
-// Función para determinar si el mensaje es una pregunta por el nombre del asistente
-function isAskingName(message) {
-  const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
-  const normalizedMessage = message.trim().toLowerCase();
-  return askingNames.includes(normalizedMessage);
-}
-
 // Escuchar mensajes entrantes en el grupo administrativo
 bot.on('message', async (msg) => {
   try {
@@ -127,13 +113,13 @@ bot.on('message', async (msg) => {
       // Verificar si hay un mensaje al que responder
       if (msg.reply_to_message && msg.reply_to_message.from) {
         // Capturar el chat_id del usuario que mencionó "Loan"
-        const mentionedChatId = msg.reply_to_message.chat.id;
+        const mentionedChatId = msg.reply_to_message.from.id;
 
         // Mensaje para responder al usuario mencionado
         const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
 
         // Enviar mensaje directo al usuario mencionado
-        bot.sendMessage(mentionedChatId, respuestaMensaje)
+        enviarMensajeDirecto(mentionedChatId, respuestaMensaje)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
