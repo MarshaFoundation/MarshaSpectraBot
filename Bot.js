@@ -140,10 +140,6 @@ async function handleTextMessage(msg) {
         bot.sendMessage(mentionedChatId, responseMessage)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
-
-        // Además, enviar un mensaje directo al usuario mencionado
-        const mensajeDirecto = `¡Hola ${msg.reply_to_message.from.first_name}! Hemos recibido tu mensaje sobre "Loan". ¿En qué puedo ayudarte?`;
-        await enviarMensajeDirecto(mentionedUserId, mensajeDirecto);
       } else {
         console.log('No hay un mensaje al que responder.');
       }
