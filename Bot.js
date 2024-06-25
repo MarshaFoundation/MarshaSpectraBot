@@ -13,28 +13,28 @@ require('dotenv').config();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Permite conexiones SSL sin validación explícita
+    rejectUnauthorized: false // Conexión SSL sin validación explícita
   }
 });
 
 // Verificar la conexión y crear la tabla "users" si no existe
-pool.connect()
-  .then(client => {
+(async () => {
+  try {
+    const client = await pool.connect();
     console.log('Conexión exitosa a PostgreSQL');
-    return client.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         chat_id BIGINT UNIQUE NOT NULL,
         locale VARCHAR(10) DEFAULT 'es'
       );
-    `).then(() => {
-      client.release();
-      console.log('Tabla "users" verificada o creada');
-    });
-  })
-  .catch(err => {
+    `);
+    client.release();
+    console.log('Tabla "users" verificada o creada');
+  } catch (err) {
     console.error('Error de conexión a PostgreSQL:', err);
-  });
+  }
+})();
 
 // Verificar que las variables de entorno están cargadas correctamente
 console.log('TELEGRAM_API_KEY:', process.env.TELEGRAM_API_KEY);
@@ -65,7 +65,7 @@ const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
 
 // Función para hacer la llamada a OpenAI y cachear respuestas
-const cachedResponses = new Map(); // Caché para almacenar respuestas de OpenAI
+const cachedResponses = new Map();
 
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
@@ -99,11 +99,7 @@ async function getChatGPTResponse(messages) {
 async function getUserLocale(chatId) {
   try {
     const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    if (res.rows.length > 0) {
-      return res.rows[0].locale;
-    } else {
-      return 'es'; // Idioma predeterminado si no se encuentra en la base de datos
-    }
+    return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
     return 'es';
@@ -154,71 +150,57 @@ bot.on('message', async (msg) => {
 
       bot.sendMessage(chatId, transcription);
     } else {
-      // Otro tipo de mensaje, procesar según sea necesario
+      // Mensaje de texto recibido
       console.log('Mensaje de texto recibido:', msg.text);
 
-    // Obtener o inicializar historial de mensajes para este chat
-    let messageHistory = chatMessageHistory.get(chatId);
-    if (!messageHistory) {
-      messageHistory = [];
+      // Obtener o inicializar historial de mensajes para este chat
+      let messageHistory = chatMessageHistory.get(chatId) || [];
+      
+      // Guardar el mensaje actual en el historial
+      const userMessage = msg.text;
+      messageHistory.push({ role: 'user', content: userMessage });
       chatMessageHistory.set(chatId, messageHistory);
-    }
 
-    // Guardar el mensaje actual en el historial
-    messageHistory.push({ role: 'user', content: userMessage });
+      // Obtener idioma del usuario
+      const locale = await getUserLocale(chatId);
+      i18n.setLocale(locale);
 
-    // Obtener idioma del usuario
-    const locale = await getUserLocale(chatId);
-    i18n.setLocale(locale);
-
-    if (isGreeting(userMessage)) {
-      // Si el mensaje es un saludo, enviar mensaje de bienvenida
-      const welcomeMessage = `Hola! Bienvenid@! Soy ${assistantName}, una IA avanzada propiedad de Marsha+ =), y el primer asistente LGTBI+ creado en el mundo. www.marshafoundation.org info@marshafoundation.org ¿En qué puedo asistirte hoy?`;
-      bot.sendMessage(chatId, welcomeMessage);
-    } else if (isAskingName(userMessage)) {
-      // Si el mensaje es una pregunta por el nombre del asistente
-      bot.sendMessage(chatId, assistantName);
-    } else if (userMessage.toLowerCase().includes('/historial')) {
-      // Si el mensaje contiene "/historial", mostrar el historial de conversación
-      if (messageHistory.length > 0) {
-        const conversationHistory = messageHistory.map(m => m.content).join('\n');
-        bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
+      if (isGreeting(userMessage)) {
+        // Saludo detectado
+        const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
+        bot.sendMessage(chatId, welcomeMessage);
+      } else if (isAskingName(userMessage)) {
+        // Pregunta por el nombre del asistente
+        bot.sendMessage(chatId, assistantName);
+      } else if (userMessage.toLowerCase().includes('/historial')) {
+        // Comando para mostrar historial de conversación
+        if (messageHistory.length > 0) {
+          const conversationHistory = messageHistory.map(m => m.content).join('\n');
+          bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
+        } else {
+          bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
+        }
       } else {
-        bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
-      }
-    } else if (msg.voice) {
-      // Si el mensaje es de voz
-      const voiceMessageId = msg.voice.file_id;
-      console.log('Mensaje de voz recibido:', msg.voice);
+        // Otro tipo de mensaje, procesar utilizando OpenAI o Wikipeda
+        const prompt = { role: 'user', content: userMessage };
+        const messages = [...messageHistory, prompt];
 
-      try {
-        const voiceFilePath = await downloadVoiceFile(voiceMessageId);
-        const transcription = await transcribeAudio(voiceFilePath);
-        bot.sendMessage(chatId, transcription);
-      } catch (error) {
-        console.error('Error al procesar el mensaje de voz:', error);
-        bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje de voz.');
-      }
-    } else {
-      // Otro tipo de mensaje, procesar según sea necesario
-      const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt]; // Añadir el historial de mensajes
+        const gptResponse = await getChatGPTResponse(messages);
 
-      const gptResponse = await getChatGPTResponse(messages);
-
-      if (!gptResponse) {
-        const doc = await wtf.fetch(userMessage, locale);
-        const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
-        bot.sendMessage(chatId, summary || i18n.__('Lo siento, no entiendo eso. ¿Podrías reformularlo?'));
-      } else {
-        // Guardar la respuesta de ChatGPT en el historial antes de enviarla
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        bot.sendMessage(chatId, gptResponse);
+        if (!gptResponse) {
+          const doc = await wtf.fetch(userMessage, locale);
+          const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+                   bot.sendMessage(chatId, summary || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+        } else {
+          // Guardar la respuesta de ChatGPT en el historial antes de enviarla
+          messageHistory.push({ role: 'assistant', content: gptResponse });
+          bot.sendMessage(chatId, gptResponse);
+        }
       }
     }
   } catch (error) {
     console.error('Error al procesar el mensaje:', error);
-    bot.sendMessage(chatId, i18n.__('Ha ocurrido un error al procesar tu mensaje. Intenta nuevamente más tarde.'));
+    bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
   }
 });
 
@@ -328,7 +310,7 @@ bot.onText(/\/start/, async (msg) => {
   };
   const locale = await getUserLocale(chatId);
   i18n.setLocale(locale);
-  bot.sendMessage(chatId, i18n.__('¡Hola! Por favor, elige tu idioma.'), opts);
+  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
 });
 
 // Manejar el cambio de idioma desde los botones de selección
@@ -337,7 +319,7 @@ bot.on('callback_query', async (callbackQuery) => {
   const locale = callbackQuery.data;
   i18n.setLocale(locale);
   await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, i18n.__('Idioma cambiado a %s', i18n.getLocale()));
+  bot.sendMessage(chatId, `Idioma cambiado a ${i18n.getLocale()}`);
 });
 
 // Manejar errores de polling del bot
@@ -359,6 +341,13 @@ process.on('unhandledRejection', (reason, promise) => {
 function clearMessageHistory(chatId) {
   chatMessageHistory.delete(chatId);
 }
+
+// Iniciar el bot
+bot.on('polling_error', (error) => {
+  console.error('Error de polling:', error);
+});
+
+console.log('Bot iniciado correctamente');
 
 // Inicio del bot
 bot.on('polling_error', (error) => {
