@@ -104,43 +104,6 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
-// Función para responder al usuario que reportó información sobre el niño perdido desde el grupo administrativo
-async function responderPistaUsuario(mensaje) {
-  try {
-    const userId = chatMessageHistory.get('lastReportedUserId'); // Obtén el ID del usuario que reportó la pista
-
-    if (!userId) {
-      console.error('No hay usuario para responder.');
-      return;
-    }
-
-    const responseMessage = `Hola, gracias por tu información sobre el niño perdido:\n\n${mensaje}`;
-    await bot.sendMessage(userId, responseMessage);
-    console.log(`Mensaje enviado al usuario (${userId}): ${responseMessage}`);
-
-    // Limpiar el chat_id del último usuario que reportó la pista después de enviar el mensaje
-    chatMessageHistory.delete('lastReportedUserId');
-  } catch (error) {
-    console.error('Error al responder mensaje al usuario:', error);
-  }
-}
-
-// Escuchar todos los mensajes entrantes
-bot.on('message', async (msg) => {
-  if (!msg || (!msg.text && !msg.voice)) {
-    console.error('Mensaje entrante no válido:', msg);
-    return;
-  }
-
-  if (msg.voice) {
-    // Procesar mensaje de voz (implementación omitida para brevedad)
-    console.log('Mensaje de voz recibido:', msg.voice);
-  } else {
-    // Procesar mensaje de texto
-    await handleTextMessage(msg); // Asegúrate de usar await aquí si handleTextMessage es async
-  }
-});
-
 // Función para manejar mensajes de texto
 async function handleTextMessage(msg) {
   try {
@@ -166,12 +129,20 @@ async function handleTextMessage(msg) {
         .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
         .catch(error => console.error('Error al enviar mensaje de alerta:', error));
 
-      // Guardar el chat_id del usuario que proporcionó la pista
-      chatMessageHistory.set('lastReportedUserId', userId); // Guarda el ID del usuario que envió la pista
-    } else if (userMessage.includes('/responder')) {
-      // Ejemplo de comando para responder desde el grupo administrativo al último usuario que reportó información
-      const mensajeRespuesta = 'Gracias por tu información. Estamos investigando. Te mantendremos informado.';
-      responderPistaUsuario(mensajeRespuesta);
+      // Verificar si hay un mensaje al que responder
+      if (msg.reply_to_message && msg.reply_to_message.from) {
+        // Capturar el chat_id del usuario que mencionó "Loan"
+        const mentionedUserId = msg.reply_to_message.from.id;
+        const mentionedChatId = msg.reply_to_message.chat.id;
+
+        // Mensaje para responder al usuario mencionado
+        const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
+        bot.sendMessage(mentionedChatId, responseMessage)
+          .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
+          .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
+      } else {
+        console.log('No hay un mensaje al que responder.');
+      }
     } else if (isGreeting(userMessage)) {
       // Saludo detectado
       const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
@@ -192,7 +163,7 @@ async function handleTextMessage(msg) {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
 
-      const gptResponse = await getChatGPTResponse(messages); // Espera aquí está bien dentro de una función async
+      const gptResponse = await getChatGPTResponse(messages);
       bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
   } catch (error) {
