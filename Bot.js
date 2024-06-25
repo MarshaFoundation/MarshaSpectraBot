@@ -118,6 +118,14 @@ async function handleTextMessage(msg) {
       bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
         .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
         .catch(error => console.error('Error al enviar mensaje de alerta:', error));
+
+      // Capturar el chat_id del usuario que mencionó "Loan"
+      const mentionedUserId = msg.reply_to_message.from.id;
+      const mentionedChatId = msg.reply_to_message.chat.id;
+
+      // Mensaje para responder al usuario mencionado
+      const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
+      bot.sendMessage(mentionedChatId, responseMessage);
     } else if (isGreeting(userMessage)) {
       // Saludo detectado
       const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
@@ -134,6 +142,18 @@ async function handleTextMessage(msg) {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
       }
     } else {
+      // Consulta a OpenAI o Wikipedia
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+    }
+  } catch (error) {
+    console.error('Error al manejar mensaje de texto:', error);
+  }
+}
+
       // Consulta a OpenAI o Wikipedia
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
