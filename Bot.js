@@ -208,37 +208,10 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-   // Manejar mensajes de texto y comandos
-bot.on('message', async (msg) => {
-  try {
-    if (!msg || (!msg.text && !msg.voice)) {
-      console.error('Mensaje entrante no válido:', msg);
-      return;
-    }
-
-    const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const userMessage = msg.text.trim().toLowerCase();
-
-    // Obtener o inicializar historial de mensajes para este chat
-    let messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: userMessage });
-    chatMessageHistory.set(chatId, messageHistory);
-
-    // Saludo detectado
-    if (isGreeting(userMessage)) {
-      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
-      bot.sendMessage(chatId, responseMessage);
-    }
-    // Pregunta por el nombre del asistente
-    else if (isAskingName(userMessage)) {
-      const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
-      bot.sendMessage(chatId, responseMessage);
-    }
     // Mención relacionada con un niño perdido
     else if (mentionsLostChild(userMessage)) {
       const request = `
-        🚨 ¡Atención! Protocolo de seguridad activado 🚨 Usted está compartiendo información valiosa, la misma será enviada a las autoridades!
+        🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
         Es crucial que compartas tu ubicación actual para ayudarnos en su búsqueda.
 
         Por favor, pulsa el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
