@@ -175,6 +175,7 @@ bot.on('message', async (msg) => {
       }
     } else if (msg.voice) {
       // Si el mensaje es de voz
+      console.log('Mensaje de voz recibido:', msg);
       const voiceMessageId = msg.voice.file_id;
       const voiceFilePath = await downloadVoiceFile(voiceMessageId);
       const transcription = await transcribeAudio(voiceFilePath);
@@ -216,7 +217,8 @@ async function downloadVoiceFile(fileId) {
 
     // Verificar el tipo MIME del archivo
     if (fileDetails.file_path.endsWith('.ogg')) {
-      // Obtener enlace de descarga directa del archivo de voz
+
+            // Obtener enlace de descarga directa del archivo de voz
       const fileLink = await bot.getFileLink(fileId);
       console.log('Enlace del archivo:', fileLink);
 
@@ -354,3 +356,4 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
