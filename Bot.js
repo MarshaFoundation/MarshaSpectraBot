@@ -204,31 +204,37 @@ bot.on('message', async (msg) => {
 
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
-  const filePath = `./${fileId}.ogg`; // Cambia la extensión según el tipo de archivo
+  const filePath = `./${fileId}.ogg`; // Ruta local donde se guardará el archivo de voz
   console.log('Descargando archivo de voz. ID:', fileId);
 
   const fileStream = fs.createWriteStream(filePath);
 
   try {
+    // Obtener detalles del archivo de voz desde Telegram
     const fileDetails = await bot.getFile(fileId);
     console.log('Detalles del archivo:', fileDetails);
 
+    // Verificar el tipo MIME del archivo
     if (fileDetails.file_path.endsWith('.ogg')) {
+      // Obtener enlace de descarga directa del archivo de voz
       const fileLink = await bot.getFileLink(fileId);
       console.log('Enlace del archivo:', fileLink);
 
+      // Descargar el archivo de voz utilizando Axios
       const response = await axios({
         url: fileLink,
         method: 'GET',
         responseType: 'stream'
       });
 
+      // Piping para escribir el archivo de voz en el sistema de archivos local
       response.data.pipe(fileStream);
 
+      // Retornar una promesa para manejar la finalización de la descarga
       return new Promise((resolve, reject) => {
         fileStream.on('finish', () => {
           console.log('Archivo descargado correctamente:', filePath);
-          resolve(filePath);
+          resolve(filePath); // Devolver la ruta del archivo descargado
         });
         fileStream.on('error', error => {
           console.error('Error al descargar el archivo de voz:', error);
@@ -240,7 +246,7 @@ async function downloadVoiceFile(fileId) {
     }
   } catch (error) {
     console.error('Error al descargar el archivo de voz:', error);
-    throw error; // Lanza el error para manejarlo en el contexto superior
+    throw error; // Lanzar el error para manejarlo en un contexto superior
   }
 }
 
