@@ -13,18 +13,6 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID del grupo administrativo
 
-// Función para verificar si el chat_id está conectado y es válido
-async function isChatActive(chatId) {
-  try {
-    const chatInfo = await bot.getChat(chatId);
-    // Si no hay excepciones, el chat_id es válido y está conectado
-    return true;
-  } catch (error) {
-    console.error('Error al verificar el chat_id:', error.response.data);
-    return false;
-  }
-}
-
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -161,7 +149,7 @@ bot.on('message', async (msg) => {
       // Obtener idioma del usuario
       const locale = await getUserLocale(chatId);
 
-      // Verificar si el mensaje contiene información sobre el niño perdido
+      // Verificar si el mensaje contiene información sobre "Loan"
       const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
       const normalizedMessage = msg.text.toLowerCase().trim();
 
@@ -177,7 +165,7 @@ bot.on('message', async (msg) => {
           bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
         }
       } else {
-        // Saludo detectado
+        // Saludo detectado u otro tipo de mensaje
         const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
         bot.sendMessage(chatId, welcomeMessage);
       }
@@ -193,7 +181,7 @@ bot.on('message', async (msg) => {
           bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
         }
       } else {
-        // Otro tipo de mensaje, procesar utilizando OpenAI o Wikipedia
+        // Lógica para manejar solicitud de OpenAI o Wikipedia
         const prompt = { role: 'user', content: userMessage };
         const messages = [...messageHistory, prompt];
 
@@ -224,7 +212,6 @@ async function downloadVoiceFile(fileId) {
   const fileStream = fs.createWriteStream(filePath);
 
   try {
-    
     // Obtener detalles del archivo de voz desde Telegram
     const fileDetails = await bot.getFile(fileId);
     console.log('Detalles del archivo:', fileDetails);
