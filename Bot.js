@@ -129,13 +129,6 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
-// Función para determinar si el mensaje menciona a Loan
-function mentionsLoan(message) {
-  const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
-  const normalizedMessage = message.trim().toLowerCase();
-  return loanKeywords.some(keyword => normalizedMessage.includes(keyword));
-}
-
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   try {
@@ -156,6 +149,8 @@ bot.on('message', async (msg) => {
       console.log('Transcripción del audio:', transcription);
 
       bot.sendMessage(chatId, transcription);
+      // Eliminar el archivo temporal
+      fs.unlinkSync(voiceFilePath);
     } else {
       // Mensaje de texto recibido
       console.log('Mensaje de texto recibido:', msg.text);
@@ -172,13 +167,18 @@ bot.on('message', async (msg) => {
       const locale = await getUserLocale(chatId);
       i18n.setLocale(locale);
 
-      if (mentionsLoan(userMessage)) {
-        // Alerta al grupo administrativo
+      // Verificar si el mensaje contiene información sobre el niño perdido
+      const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
+      const foundLoan = loanKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
+
+      if (foundLoan) {
+        // Alertar al grupo administrativo
         const ADMIN_CHAT_ID = 'XXXXXXXXX'; // Reemplazar con el ID del chat administrativo
-        const alertMessage = `🚨 Posible avistamiento del niño perdido, Loan! 🚨\n\nMensaje: ${userMessage}`;
+        const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${userMessage}`;
         bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
-        bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos alertado al grupo administrativo.');
-      } else if (isGreeting(userMessage)) {
+      }
+
+      if (isGreeting(userMessage)) {
         // Saludo detectado
         const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
         bot.sendMessage(chatId, welcomeMessage);
@@ -284,7 +284,7 @@ async function transcribeAudio(filePath) {
     // Realizar la solicitud de transcripción
     const [response] = await speechClient.recognize({
       audio: {
-        content: file,
+        content: file.toString('base64'),
       },
       config: audioConfig,
     });
@@ -361,20 +361,4 @@ function clearMessageHistory(chatId) {
   chatMessageHistory.delete(chatId);
 }
 
-// Iniciar el bot
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
-
 console.log('Bot iniciado correctamente');
-
-// Capturar errores no manejados
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-});
-
-// Capturar rechazos no manejados en promesas
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Error no manejado:', reason, 'promise:', promise);
-});
-
