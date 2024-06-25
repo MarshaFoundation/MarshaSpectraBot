@@ -92,6 +92,58 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
+// Función para determinar si el mensaje es un saludo
+function isGreeting(message) {
+  const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
+  const normalizedMessage = message.trim().toLowerCase();
+  return greetings.includes(normalizedMessage);
+}
+
+// Función para determinar si el mensaje es una pregunta por el nombre del asistente
+function isAskingName(message) {
+  const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
+  const normalizedMessage = message.trim().toLowerCase();
+  return askingNames.includes(normalizedMessage);
+}
+
+// Manejar mensajes de texto y comandos
+bot.on('message', async (msg) => {
+  try {
+    if (!msg || (!msg.text && !msg.voice)) {
+      console.error('Mensaje entrante no válido:', msg);
+      return;
+    }
+
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const userMessage = msg.text.trim().toLowerCase();
+
+    // Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: userMessage });
+    chatMessageHistory.set(chatId, messageHistory);
+
+    // Saludo detectado
+    if (isGreeting(userMessage)) {
+      const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
+      bot.sendMessage(chatId, responseMessage);
+    }
+    // Pregunta por el nombre del asistente
+    else if (isAskingName(userMessage)) {
+      bot.sendMessage(chatId, assistantName);
+    }
+    // Consulta a OpenAI o Wikipedia
+    else {
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+    }
+  } catch (error) {
+    console.error('Error al manejar mensaje de texto:', error);
+  }
+});
+
 // Escuchar mensajes entrantes en el grupo administrativo
 bot.on('message', async (msg) => {
   try {
@@ -113,13 +165,13 @@ bot.on('message', async (msg) => {
       // Verificar si hay un mensaje al que responder
       if (msg.reply_to_message && msg.reply_to_message.from) {
         // Capturar el chat_id del usuario que mencionó "Loan"
-        const mentionedChatId = msg.reply_to_message.from.id;
+        const mentionedChatId = msg.reply_to_message.chat.id;
 
         // Mensaje para responder al usuario mencionado
         const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
 
         // Enviar mensaje directo al usuario mencionado
-        enviarMensajeDirecto(mentionedChatId, respuestaMensaje)
+        bot.sendMessage(mentionedChatId, respuestaMensaje)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
