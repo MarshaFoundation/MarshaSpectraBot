@@ -225,7 +225,7 @@ Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboraci
 }
 
 // Manejar mensajes
-async function handleMessage(bot, msg) {
+async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
 
@@ -256,26 +256,8 @@ async function handleMessage(bot, msg) {
   }
 }
 
-// Manejar ubicación
-async function handleLocation(bot, msg) {
-  const chatId = msg.chat.id;
-  const location = msg.location;
-
-  if (location) {
-    const response = `Recibí tu ubicación. Latitud: ${location.latitude}, Longitud: ${location.longitude}`;
-    bot.sendMessage(chatId, response);
-  }
-}
-
-// Manejar el comando /start
-async function handleStartCommand(bot, msg) {
-  const chatId = msg.chat.id;
-  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente personal. ${assistantDescription}`;
-  bot.sendMessage(chatId, welcomeMessage);
-}
-
 // Manejar consultas callback
-async function handleCallbackQuery(bot, callbackQuery) {
+async function handleCallbackQuery(callbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
 
@@ -286,10 +268,10 @@ async function handleCallbackQuery(bot, callbackQuery) {
   }
 }
 
-bot.on('message', (msg) => handleMessage(bot, msg));
-bot.on('location', (msg) => handleLocation(bot, msg));
-bot.onText(/\/start/, (msg) => handleStartCommand(bot, msg));
-bot.on('callback_query', (callbackQuery) => handleCallbackQuery(bot, callbackQuery));
+bot.on('message', handleMessage);
+bot.on('location', handleLocation);
+bot.onText(/\/start/, handleStartCommand);
+bot.on('callback_query', handleCallbackQuery);
 
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
@@ -303,8 +285,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
-console.log('Configuración y manejo de eventos listos.');
 
 
 
