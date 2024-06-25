@@ -119,13 +119,18 @@ async function handleTextMessage(msg) {
         .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
         .catch(error => console.error('Error al enviar mensaje de alerta:', error));
 
-      // Capturar el chat_id del usuario que mencionó "Loan"
-      const mentionedUserId = msg.reply_to_message.from.id;
-      const mentionedChatId = msg.reply_to_message.chat.id;
+      // Verificar si hay un mensaje al que responder
+      if (msg.reply_to_message && msg.reply_to_message.from) {
+        // Capturar el chat_id del usuario que mencionó "Loan"
+        const mentionedUserId = msg.reply_to_message.from.id;
+        const mentionedChatId = msg.reply_to_message.chat.id;
 
-      // Mensaje para responder al usuario mencionado
-      const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
-      bot.sendMessage(mentionedChatId, responseMessage);
+        // Mensaje para responder al usuario mencionado
+        const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
+        bot.sendMessage(mentionedChatId, responseMessage);
+      } else {
+        console.log('No hay un mensaje al que responder.');
+      }
     } else if (isGreeting(userMessage)) {
       // Saludo detectado
       const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
