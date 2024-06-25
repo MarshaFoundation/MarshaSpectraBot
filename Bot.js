@@ -115,19 +115,24 @@ async function handleMissingChildReport(msg) {
 
   // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
   if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
-    // Enviar alerta al grupo administrativo sobre el posible avistamiento
-    const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-    bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
-      .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
-      .catch(error => console.error('Error al enviar mensaje de alerta:', error));
+    try {
+      // Enviar alerta al grupo administrativo sobre el posible avistamiento
+      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
+      await bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
+      console.log('Mensaje de alerta enviado al grupo administrativo');
 
-    // Responder al usuario indicando que se ha registrado la información
-    const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
-    bot.sendMessage(chatId, responseMessage);
+      // Responder al usuario indicando que se ha registrado la información
+      const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
+      await bot.sendMessage(chatId, responseMessage);
+    } catch (error) {
+      console.error('Error al enviar mensaje de alerta o respuesta:', error);
+      // En caso de error al enviar mensaje de alerta o respuesta, notificar al usuario
+      await bot.sendMessage(chatId, 'Hubo un problema al procesar tu solicitud. Por favor, intenta nuevamente más tarde.');
+    }
   } else if (userMessage.includes('loan')) {
     // Si se menciona "loan" pero no está claro si se refiere al niño perdido
     const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
-    bot.sendMessage(chatId, clarificationMessage);
+    await bot.sendMessage(chatId, clarificationMessage);
   } else {
     // Otros tipos de mensajes que no están relacionados con "loan"
     // Aquí puedes manejar otros tipos de mensajes si es necesario
@@ -154,19 +159,19 @@ bot.on('message', async (msg) => {
     // Saludo detectado
     if (isGreeting(userMessage)) {
       const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte?`;
-      bot.sendMessage(chatId, responseMessage);
+      await bot.sendMessage(chatId, responseMessage);
     }
     // Pregunta por el nombre del asistente
     else if (isAskingName(userMessage)) {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
-      bot.sendMessage(chatId, responseMessage);
+      await bot.sendMessage(chatId, responseMessage);
     }
     // Consulta a OpenAI o Wikipedia
     else {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
       const gptResponse = await getChatGPTResponse(messages);
-      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+      await bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
   } catch (error) {
     console.error('Error al manejar mensaje de texto:', error);
@@ -185,7 +190,7 @@ bot.onText(/\/start/, async (msg) => {
     }),
   };
   const locale = await getUserLocale(chatId);
-  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
+  await bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
 });
 
 // Manejar el cambio de idioma desde los botones de selección
@@ -193,38 +198,39 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const locale = callbackQuery.data;
   await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+  await bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
 // Solicitar ubicación al usuario
 bot.onText(/\/ubicacion/, (msg) => {
-    const chatId = msg.chat.id;
-    const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-    
-    bot.sendMessage(chatId, request, {
-        reply_markup: {
-            keyboard: [
-                [{
-                    text: "Compartir ubicación",
-                    request_location: true // Solicitar ubicación
-                }]
-            ],
-            resize_keyboard: true
-        }
-    });
+  const chatId = msg.chat.id;
+  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
+  
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard
+: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
 });
 
 // Manejar la respuesta de ubicación del usuario
-bot.on('location', (msg) => {
-    const chatId = msg.chat.id;
-    const latitude = msg.location.latitude;
-    const longitude = msg.location.longitude;
-    
-    // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-    console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
-    
-    // Puedes enviar un agradecimiento o confirmación al usuario
-    bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+  const latitude = msg.location.latitude;
+  const longitude = msg.location.longitude;
+  
+  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
+  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+  
+  // Puedes enviar un agradecimiento o confirmación al usuario
+  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
 });
 
 // Escuchar errores de polling del bot
@@ -241,4 +247,5 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
