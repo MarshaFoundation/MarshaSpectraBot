@@ -96,7 +96,7 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-  const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
+  const greetings = ['hola!','hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
   const normalizedMessage = message.trim().toLowerCase();
   return greetings.includes(normalizedMessage);
 }
@@ -116,10 +116,10 @@ bot.on('message', async (msg) => {
     if (messageText.includes('loan')) {
         await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
         await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
-        await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
+        await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. por favor ponte en contacto con : ¿Puedo ayudarte con algo más?');
     } else {
         // Manejar otros mensajes como se haría normalmente
-        await bot.sendMessage(chatId, assistantDescription);
+        await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
     }
 });
 
