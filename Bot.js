@@ -129,6 +129,13 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
+// Función para determinar si el mensaje menciona a Loan
+function mentionsLoan(message) {
+  const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
+  const normalizedMessage = message.trim().toLowerCase();
+  return loanKeywords.some(keyword => normalizedMessage.includes(keyword));
+}
+
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   try {
@@ -165,18 +172,13 @@ bot.on('message', async (msg) => {
       const locale = await getUserLocale(chatId);
       i18n.setLocale(locale);
 
-      // Verificar si el mensaje contiene información sobre el niño perdido
-      const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
-      const foundLoan = loanKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
-
-      if (foundLoan) {
-        // Alertar al grupo administrativo
+      if (mentionsLoan(userMessage)) {
+        // Alerta al grupo administrativo
         const ADMIN_CHAT_ID = 'XXXXXXXXX'; // Reemplazar con el ID del chat administrativo
-        const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${userMessage}`;
+        const alertMessage = `🚨 Posible avistamiento del niño perdido, Loan! 🚨\n\nMensaje: ${userMessage}`;
         bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
-      }
-
-      if (isGreeting(userMessage)) {
+        bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos alertado al grupo administrativo.');
+      } else if (isGreeting(userMessage)) {
         // Saludo detectado
         const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
         bot.sendMessage(chatId, welcomeMessage);
@@ -214,6 +216,7 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
   }
 });
+
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
   const filePath = `./${fileId}.ogg`; // Ruta local donde se guardará el archivo de voz
@@ -364,11 +367,6 @@ bot.on('polling_error', (error) => {
 });
 
 console.log('Bot iniciado correctamente');
-
-// Inicio del bot
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
 
 // Capturar errores no manejados
 process.on('uncaughtException', (err) => {
