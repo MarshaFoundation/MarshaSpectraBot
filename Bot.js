@@ -175,11 +175,17 @@ bot.on('message', async (msg) => {
       }
     } else if (msg.voice) {
       // Si el mensaje es de voz
-      console.log('Mensaje de voz recibido:', msg);
       const voiceMessageId = msg.voice.file_id;
-      const voiceFilePath = await downloadVoiceFile(voiceMessageId);
-      const transcription = await transcribeAudio(voiceFilePath);
-      bot.sendMessage(chatId, transcription);
+      console.log('Mensaje de voz recibido:', msg.voice);
+
+      try {
+        const voiceFilePath = await downloadVoiceFile(voiceMessageId);
+        const transcription = await transcribeAudio(voiceFilePath);
+        bot.sendMessage(chatId, transcription);
+      } catch (error) {
+        console.error('Error al procesar el mensaje de voz:', error);
+        bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje de voz.');
+      }
     } else {
       // Otro tipo de mensaje, procesar según sea necesario
       const prompt = { role: 'user', content: userMessage };
@@ -217,8 +223,7 @@ async function downloadVoiceFile(fileId) {
 
     // Verificar el tipo MIME del archivo
     if (fileDetails.file_path.endsWith('.ogg')) {
-
-            // Obtener enlace de descarga directa del archivo de voz
+      // Obtener enlace de descarga directa del archivo de voz
       const fileLink = await bot.getFileLink(fileId);
       console.log('Enlace del archivo:', fileLink);
 
