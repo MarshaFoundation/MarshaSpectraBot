@@ -96,7 +96,7 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-  const greetings = ['hola!', 'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
+  const greetings = ['hola!','hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
   const normalizedMessage = message.trim().toLowerCase();
   return greetings.includes(normalizedMessage);
 }
@@ -111,12 +111,13 @@ function isAskingName(message) {
 // Función para manejar el reporte de avistamiento del niño perdido
 async function handleMissingChildReport(msg) {
   const chatId = msg.chat.id;
-  const messageText = msg.text.toLowerCase();
 
-  if (messageText.includes('loan')) {
+  try {
     await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
     await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
     await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
+  } catch (error) {
+    console.error(`Error al manejar el reporte de avistamiento del niño perdido:`, error);
   }
 }
 
@@ -190,7 +191,7 @@ bot.on('callback_query', async (callbackQuery) => {
 bot.onText(/\/ubicacion/, (msg) => {
   const chatId = msg.chat.id;
   const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-  
+
   bot.sendMessage(chatId, request, {
     reply_markup: {
       keyboard: [
@@ -205,15 +206,16 @@ bot.onText(/\/ubicacion/, (msg) => {
 });
 
 // Manejar la respuesta de ubicación del usuario
-bot.on('location', (msg) => {
+bot.on('location', async (msg) => {
   const chatId = msg.chat.id;
   const latitude = msg.location.latitude;
   const longitude = msg.location.longitude;
-  
+
   // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-  console.log(`Ubicación recibida de ${chatId}: (${latitude}, ${longitude})`);
-  
-  bot.sendMessage(chatId, "Gracias por compartir tu ubicación. La información será utilizada para ayudar en la búsqueda.");
+  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+
+  // Puedes enviar un agradecimiento o confirmación al usuario
+  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
 });
 
 // Escuchar errores de polling del bot
@@ -227,11 +229,78 @@ process.on('uncaughtException', (err) => {
 });
 
 // Manejar rechazos no manejados en promesas
-process.on('unhandledRejection', (reason, promise
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Error no manejado:', reason, 'promise:', promise);
+});
+
+// Iniciar el bot
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const opts = {
+    reply_markup: JSON.stringify({
+      inline_keyboard: [
+        [{ text: '🇬🇧 English', callback_data: 'en' }],
+        [{ text: '🇪🇸 Español', callback_data: 'es' }],
+      ],
+    }),
+  };
+  const locale = await getUserLocale(chatId);
+  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
+});
+
+// Manejar el cambio de idioma desde los botones de selección
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const locale = callbackQuery.data;
+  await setUserLocale(chatId, locale);
+  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+});
+
+// Solicitar ubicación al usuario
+bot.onText(/\/ubicacion/, (msg) => {
+  const chatId = msg.chat.id;
+  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
+
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+});
+
+// Manejar la respuesta de ubicación del usuario
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+  const latitude = msg.location.latitude;
+  const longitude = msg.location.longitude;
+
+  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
+  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+
+  // Puedes enviar un agradecimiento o confirmación al usuario
+  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+});
+
+// Escuchar errores de polling del bot
+bot.on('polling_error', (error) => {
+  console.error('Error de polling:', error);
+});
+
+// Manejar errores no capturados en el proceso
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+});
 
 // Manejar rechazos no manejados en promesas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
