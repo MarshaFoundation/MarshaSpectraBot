@@ -204,7 +204,7 @@ function mentionsLostChild(message) {
 }
 
 // Función para detectar menciones relacionadas con el niño perdido llamado Loan
-if (mentionsLostChild(messageText)) {
+if (mentionsLostChild(msg.text)) {
   const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
 Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
 
