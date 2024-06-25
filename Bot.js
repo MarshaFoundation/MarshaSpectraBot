@@ -79,7 +79,9 @@ async function getChatGPTResponse(messages) {
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
-    const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    const client = await pool.connect();
+    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
@@ -90,7 +92,9 @@ async function getUserLocale(chatId) {
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
   try {
-    await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    const client = await pool.connect();
+    await client.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    client.release();
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
   }
@@ -216,25 +220,7 @@ async function downloadVoiceFile(fileId) {
       const fileLink = await bot.getFileLink(fileId);
       console.log('Enlace del archivo:', fileLink);
 
-// Función para descargar el archivo de voz
-async function downloadVoiceFile(fileId) {
-  const filePath = `./${fileId}.ogg`; // Ruta local donde se guardará el archivo de voz
-  console.log('Descargando archivo de voz. ID:', fileId);
-
-  const fileStream = fs.createWriteStream(filePath);
-
-  try {
-    // Obtener detalles del archivo de voz desde Telegram
-    const fileDetails = await bot.getFile(fileId);
-    console.log('Detalles del archivo:', fileDetails);
-
-    // Verificar el tipo MIME del archivo
-    if (fileDetails.file_path.endsWith('.ogg') || fileDetails.file_path.endsWith('.oga')) {
-      // Obtener enlace de descarga directa del archivo de voz
-      const fileLink = await bot.getFileLink(fileId);
-      console.log('Enlace del archivo:', fileLink);
-
-      // Descargar el archivo de voz utilizando Axios
+            // Descargar el archivo de voz utilizando Axios
       const response = await axios({
         url: fileLink,
         method: 'GET',
@@ -359,3 +345,4 @@ function clearMessageHistory(chatId) {
 }
 
 console.log('Bot iniciado correctamente');
+
