@@ -103,6 +103,18 @@ async function handleTextMessage(msg) {
     // Obtener o inicializar historial de mensajes para este chat
     let messageHistory = chatMessageHistory.get(chatId) || [];
 
+    // Dentro de la función handleTextMessage
+
+async function handleTextMessage(msg) {
+  try {
+    const chatId = msg.chat.id; // ID del chat
+    const userId = msg.from.id; // ID del usuario que envió el mensaje
+    const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
+    const userMessage = msg.text.trim().toLowerCase(); // Mensaje del usuario
+
+    // Obtener o inicializar historial de mensajes para este chat
+    let messageHistory = chatMessageHistory.get(chatId) || [];
+
     // Guardar el mensaje actual en el historial
     messageHistory.push({ role: 'user', content: userMessage });
     chatMessageHistory.set(chatId, messageHistory);
