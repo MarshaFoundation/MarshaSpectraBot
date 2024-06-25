@@ -106,7 +106,7 @@ async function handleTextMessage(msg) {
 
     // Verificar si el mensaje contiene información sobre "Loan"
     const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
-    
+
     if (loanKeywords.some(keyword => userMessage.includes(keyword))) {
       // Enviar alerta al grupo administrativo solo si el mensaje contiene frases específicas
       const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${msg.text}`;
@@ -127,6 +127,19 @@ async function handleTextMessage(msg) {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
       }
     } else {
+      // Consulta a OpenAI o Wikipedia
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+    }
+  } catch (error) {
+    console.error('Error al procesar el mensaje:', error);
+    bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
+  }
+}
+
       // Consulta a OpenAI o Wikipedia
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
