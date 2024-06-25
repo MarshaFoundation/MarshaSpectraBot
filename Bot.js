@@ -80,6 +80,16 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
+// Función para enviar un mensaje directo a un usuario dado su chat_id
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+  }
+}
+
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
   const greetings = ['hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
@@ -130,6 +140,10 @@ async function handleTextMessage(msg) {
         bot.sendMessage(mentionedChatId, responseMessage)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
+
+        // Además, enviar un mensaje directo al usuario mencionado
+        const mensajeDirecto = `¡Hola ${msg.reply_to_message.from.first_name}! Hemos recibido tu mensaje sobre "Loan". ¿En qué puedo ayudarte?`;
+        await enviarMensajeDirecto(mentionedUserId, mensajeDirecto);
       } else {
         console.log('No hay un mensaje al que responder.');
       }
@@ -176,7 +190,6 @@ bot.on('message', async (msg) => {
     await handleTextMessage(msg); // Asegúrate de usar await aquí si handleTextMessage es async
   }
 });
-
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
