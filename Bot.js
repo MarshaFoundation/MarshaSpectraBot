@@ -9,15 +9,18 @@ dotenv.config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID del grupo administrativo
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // Asegúrate de definir ADMIN_CHAT_ID en tu .env
 
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Conexión SSL sin validación explícita
+    rejectUnauthorized: false // Conexión SSL sin validación explícita, ajusta esto en producción según sea necesario
   }
 });
+
+// Ejemplo de uso
+const bot = new TelegramBot(token);
 
 // Verificar la conexión y crear la tabla "users" si no existe
 (async () => {
