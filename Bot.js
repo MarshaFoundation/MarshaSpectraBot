@@ -19,28 +19,6 @@ const pool = new Pool({
   }
 });
 
-// Ejemplo de uso
-const bot = new TelegramBot(token);
-
-// Verificar la conexión y crear la tabla "users" si no existe
-(async () => {
-  try {
-    const client = await pool.connect();
-    console.log('Conexión exitosa a PostgreSQL');
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        chat_id BIGINT UNIQUE NOT NULL,
-        locale VARCHAR(10) DEFAULT 'es'
-      );
-    `);
-    client.release();
-    console.log('Tabla "users" verificada o creada');
-  } catch (err) {
-    console.error('Error de conexión a PostgreSQL:', err);
-  }
-})();
-
 // Crear instancia del bot después de haber definido TelegramBot
 const bot = new TelegramBot(token, { polling: true });
 console.log('Bot iniciado correctamente');
