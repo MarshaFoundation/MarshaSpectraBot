@@ -217,7 +217,7 @@ async function downloadVoiceFile(fileId) {
     console.log('Detalles del archivo:', fileDetails);
 
     // Verificar el tipo MIME del archivo
-    if (fileDetails.file_path.endsWith('.ogg')) {
+    if (fileDetails.file_path.endsWith('.ogg') || fileDetails.file_path.endsWith('.oga')) {
       // Obtener enlace de descarga directa del archivo de voz
       const fileLink = await bot.getFileLink(fileId);
       console.log('Enlace del archivo:', fileLink);
