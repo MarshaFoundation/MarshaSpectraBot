@@ -236,8 +236,15 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-    // Mención relacionada con un niño perdido
-    else if (mentionsLostChild(userMessage)) {
+  // Manejar mensajes del usuario
+bot.on('message', async (msg) => {
+  try {
+    const chatId = msg.chat.id;
+    const userMessage = msg.text;
+    const messageHistory = await getMessageHistory(chatId);
+
+    // Función para detectar menciones relacionadas con el niño perdido llamado Loan
+    if (mentionsLostChild(userMessage)) {
       const request = `
         🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
         Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
@@ -342,6 +349,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 console.log('Configuración y manejo de eventos listos.');
+
 
 
 
