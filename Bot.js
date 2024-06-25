@@ -153,8 +153,7 @@ async function handleTextMessage(msg) {
   } catch (error) {
     console.error('Error al manejar mensaje de texto:', error);
   }
-}
-
+  
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   if (!msg || (!msg.text && !msg.voice)) {
