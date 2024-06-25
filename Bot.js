@@ -93,7 +93,6 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
@@ -105,7 +104,6 @@ async function enviarMensajeDirecto(chatId, mensaje) {
     throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
   }
 }
-
 
 // Función para detectar saludos
 function isGreeting(message) {
@@ -126,7 +124,6 @@ function isGreeting(message) {
   const normalizedMessage = message.trim().toLowerCase();
   return greetings.includes(normalizedMessage);
 }
-
 
 // Función para detectar preguntas por el nombre del asistente
 function isAskingName(message) {
@@ -211,60 +208,76 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-// Mención relacionada con un niño perdido
-else if (mentionsLostChild(userMessage)) {
-  const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
+    // Mención relacionada con un niño perdido
+    else if (mentionsLostChild(userMessage)) {
+      const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
+      bot.sendMessage(chatId, request, {
+        reply_markup: {
+          keyboard: [
+            [{
+              text: "Compartir ubicación",
+              request_location: true // Solicitar ubicación
+            }]
+          ],
+          resize_keyboard: true
+        }
+      });
+    } else {
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
-  });
-} else {
-  const prompt = { role: 'user', content: userMessage };
-  const messages = [...messageHistory, prompt];
-  const gptResponse = await getChatGPTResponse(messages);
-  bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-}
+  } catch (error) {
+    console.error('Error al manejar mensaje:', error);
+  }
+});
 
 // Manejar el evento de ubicación del usuario
 bot.on('location', async (msg) => {
-  const chatId = msg.chat.id;
-  const latitude = msg.location.latitude;
-  const longitude = msg.location.longitude;
+  try {
+    const chatId = msg.chat.id;
+    const latitude = msg.location.latitude;
+    const longitude = msg.location.longitude;
 
-  // Agradecimiento por compartir la ubicación de manera amigable
-  const thankYouMessage = "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.";
-  await bot.sendMessage(chatId, thankYouMessage);
+    // Agradecimiento por compartir la ubicación de manera amigable
+    const thankYouMessage = "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda del niño perdido.";
+    await bot.sendMessage(chatId, thankYouMessage);
+  } catch (error) {
+    console.error('Error al manejar ubicación:', error);
+  }
 });
 
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const opts = {
-    reply_markup: JSON.stringify({
-      inline_keyboard: [
-        [{ text: '🇬🇧 English', callback_data: 'en' }],
-        [{ text: '🇪🇸 Español', callback_data: 'es' }],
-      ],
-    }),
-  };
-  const locale = await getUserLocale(chatId);
-  const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
-  bot.sendMessage(chatId, responseMessage, opts);
+  try {
+    const chatId = msg.chat.id;
+    const opts = {
+      reply_markup: JSON.stringify({
+        inline_keyboard: [
+          [{ text: '🇬🇧 English', callback_data: 'en' }],
+          [{ text: '🇪🇸 Español', callback_data: 'es' }],
+        ],
+      }),
+    };
+    const locale = await getUserLocale(chatId);
+    const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
+    bot.sendMessage(chatId, responseMessage, opts);
+  } catch (error) {
+    console.error('Error al manejar comando /start:', error);
+  }
 });
 
 // Manejar el cambio de idioma desde los botones de selección
 bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const locale = callbackQuery.data;
-  await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+  try {
+    const chatId = callbackQuery.message.chat.id;
+    const locale = callbackQuery.data;
+    await setUserLocale(chatId, locale);
+    bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+  } catch (error) {
+    console.error('Error al manejar callback de cambio de idioma:', error);
+  }
 });
 
 // Manejar errores de polling del bot
@@ -285,6 +298,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 console.log('Configuración y manejo de eventos listos.');
+
 
 
 
