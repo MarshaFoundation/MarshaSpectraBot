@@ -9,7 +9,7 @@ dotenv.config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
-const assistantDescription = ',el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
+const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -159,7 +159,7 @@ function isAskingName(message) {
 // Función para detectar menciones relacionadas con el niño perdido llamado Loan
 function mentionsLostChild(message) {
   const relatedPhrases = [
-    'loan perdido', 'vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
+    'loan perdido','loan','vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
     'loan está perdido', 'buscando a loan', 'vimos a loan', 'he visto a loan', 'he encontrado a loan',
     'loan desapareció', 'loan se perdió', 'loan necesita ayuda', 'loan encontrado', 'tengo información sobre loan',
     'loan está solo', 'he encontrado a un niño llamado loan', 'un niño llamado loan', 'ví a un niño llamado loan',
