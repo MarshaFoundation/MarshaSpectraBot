@@ -109,30 +109,19 @@ function isAskingName(message) {
 }
 
 // Función para manejar el reporte de avistamiento del niño perdido
-async function handleMissingChildReport(msg) {
-  const chatId = msg.chat.id;
-  const userMessage = msg.text.trim().toLowerCase();
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const messageText = msg.text.toLowerCase();
 
-  // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
-  if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
-    // Enviar alerta al grupo administrativo sobre el posible avistamiento
-    const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-    bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
-      .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
-      .catch(error => console.error('Error al enviar mensaje de alerta:', error));
-
-    // Responder al usuario indicando que se ha registrado la información
-    const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
-    bot.sendMessage(chatId, responseMessage);
-  } else if (userMessage.includes('loan')) {
-    // Si se menciona "loan" pero no está claro si se refiere al niño perdido
-    const clarificationMessage = `¿Te refieres al niño perdido llamado Loan?`;
-    bot.sendMessage(chatId, clarificationMessage);
-  } else {
-    // Otros tipos de mensajes que no están relacionados con "loan"
-    // Aquí puedes manejar otros tipos de mensajes si es necesario
-  }
-}
+    if (messageText.includes('loan')) {
+        await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
+        await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
+        await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
+    } else {
+        // Manejar otros mensajes como se haría normalmente
+        await bot.sendMessage(chatId, assistantDescription);
+    }
+});
 
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
