@@ -43,7 +43,7 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const assistantName = 'SilvIA+'; // Nombre del asistente
+const assistantName = 'SilvIA+';
 
 // Configuración de i18n
 i18n.configure({
@@ -231,24 +231,24 @@ async function transcribeAudio(filePath) {
   const config = {
     encoding: 'OGG_OPUS',
     sampleRateHertz: 48000,
-    languageCode: 'es-ES',
-  };
+     languageCode: 'es-ES',
+};
 
-  const request = {
-    audio: audio,
-    config: config,
-  };
+const request = {
+  audio: audio,
+  config: config,
+};
 
-  try {
-    const [response] = await speechClient.recognize(request);
-    const transcription = response.results
-      .map(result => result.alternatives[0].transcript)
-      .join('\n');
-    return transcription;
-  } catch (error) {
-    console.error('Error al transcribir audio:', error);
-    return 'Error al transcribir el mensaje de voz.';
-  }
+try {
+  const [response] = await speechClient.recognize(request);
+  const transcription = response.results
+    .map(result => result.alternatives[0].transcript)
+    .join('\n');
+  return transcription;
+} catch (error) {
+  console.error('Error al transcribir audio:', error);
+  return 'Error al transcribir el mensaje de voz.';
+}
 }
 
 // Escuchar el evento de cierre del asistente (simulado)
