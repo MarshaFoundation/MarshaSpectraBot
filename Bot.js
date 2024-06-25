@@ -173,7 +173,7 @@ bot.on('message', async (msg) => {
 
       if (foundLoan) {
         // Alertar al grupo administrativo
-        const ADMIN_CHAT_ID = 'XXXXXXXXX'; // Reemplazar con el ID del chat administrativo
+        const ADMIN_CHAT_ID = '637055957'; // Reemplazar con el ID del chat administrativo
         const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${userMessage}`;
         bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
       }
