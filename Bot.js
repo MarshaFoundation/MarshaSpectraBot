@@ -121,6 +121,31 @@ async function handleMissingChildReport(msg) {
   }
 }
 
+// Manejar el reporte de avistamiento del niño perdido
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const messageText = msg.text.toLowerCase();
+
+    if (messageText.includes('loan')) {
+        // Solicitar ubicación al usuario de manera contextual
+        const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
+        bot.sendMessage(chatId, request, {
+            reply_markup: {
+                keyboard: [
+                    [{
+                        text: "Compartir ubicación",
+                        request_location: true // Solicitar ubicación
+                    }]
+                ],
+                resize_keyboard: true
+            }
+        });
+    } else {
+        // Manejar otros mensajes como se haría normalmente
+        await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
+    }
+});
+
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
   try {
