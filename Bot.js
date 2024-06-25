@@ -108,19 +108,6 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
-// Función para manejar el reporte de avistamiento del niño perdido
-async function handleMissingChildReport(msg) {
-  const chatId = msg.chat.id;
-
-  try {
-    await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
-    await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
-    await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
-  } catch (error) {
-    console.error(`Error al manejar el reporte de avistamiento del niño perdido:`, error);
-  }
-}
-
 // Manejar el reporte de avistamiento del niño perdido
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
@@ -145,6 +132,19 @@ bot.on('message', async (msg) => {
         await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
     }
 });
+
+// Función para manejar el reporte de avistamiento del niño perdido
+async function handleMissingChildReport(msg) {
+  const chatId = msg.chat.id;
+
+  try {
+    await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
+    await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
+    await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
+  } catch (error) {
+    console.error(`Error al manejar el reporte de avistamiento del niño perdido:`, error);
+  }
+}
 
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
