@@ -181,62 +181,7 @@ function mentionsLostChild(message) {
   return relatedPhrases.some(phrase => normalizedMessage.includes(phrase));
 }
 
-// Manejar mensajes de texto y comandos
-bot.on('message', async (msg) => {
-  try {
-    if (!msg || (!msg.text && !msg.voice)) {
-      console.error('Mensaje entrante no válido:', msg);
-      return;
-    }
-
-    const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const userMessage = msg.text.trim().toLowerCase();
-
-    // Obtener o inicializar historial de mensajes para este chat
-    let messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: userMessage });
-    chatMessageHistory.set(chatId, messageHistory);
-
-    // Saludo detectado
-    if (isGreeting(userMessage)) {
-      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
-      bot.sendMessage(chatId, responseMessage);
-    }
-    // Pregunta por el nombre del asistente
-    else if (isAskingName(userMessage)) {
-      const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
-      bot.sendMessage(chatId, responseMessage);
-    }
-      
-  // Mención relacionada con un niño perdido
-bot.on('message', async (msg) => {
-  try {
-    if (!msg || (!msg.text && !msg.voice)) {
-      console.error('Mensaje entrante no válido:', msg);
-      return;
-    }
-
-    const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const userMessage = msg.text.trim().toLowerCase();
-
-    // Obtener o inicializar historial de mensajes para este chat
-    let messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: userMessage });
-    chatMessageHistory.set(chatId, messageHistory);
-
-    // Saludo detectado
-    if (isGreeting(userMessage)) {
-      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte hoy?`;
-      bot.sendMessage(chatId, responseMessage);
-    }
-    // Pregunta por el nombre del asistente
-    else if (isAskingName(userMessage)) {
-      const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
-      bot.sendMessage(chatId, responseMessage);
-    }
-  // Manejar mensajes del usuario
+// Manejar mensajes del usuario
 bot.on('message', async (msg) => {
   try {
     const chatId = msg.chat.id;
@@ -349,6 +294,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 console.log('Configuración y manejo de eventos listos.');
+
+
 
 
 
