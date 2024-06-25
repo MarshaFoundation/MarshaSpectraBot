@@ -208,26 +208,45 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-    // Mención relacionada con un niño perdido
-    else if (mentionsLostChild(userMessage)) {
-      const request = `
-        🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-        Es crucial que compartas tu ubicación actual para ayudarnos en su búsqueda.
+      
+   // Mención relacionada con un niño perdido
+else if (mentionsLostChild(userMessage)) {
+  const request = `
+    🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+    Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
 
-        Por favor, pulsa el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
-      `;
-      bot.sendMessage(chatId, request, {
-        reply_markup: {
-          keyboard: [
-            [{
-              text: "Compartir ubicación",
-              request_location: true // Solicitar ubicación
-            }]
-          ],
-          resize_keyboard: true
-        }
-      });
+    Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏
+  `;
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
     }
+  });
+
+  // Opcional: Solicitud de detalles adicionales
+  setTimeout(() => {
+    const additionalInfoRequest = `
+      Además de su ubicación, ¿puede proporcionar más detalles sobre la última vez que vio a Loan o alguna característica distintiva que pueda ayudar?
+      Responda a este mensaje con la información adicional. Gracias por su colaboración.
+    `;
+    bot.sendMessage(chatId, additionalInfoRequest);
+  }, 3000); // Espera 3 segundos antes de enviar la solicitud de detalles adicionales
+}
+
+// Resto del manejo de mensajes
+else {
+  const prompt = { role: 'user', content: userMessage };
+  const messages = [...messageHistory, prompt];
+  const gptResponse = await getChatGPTResponse(messages);
+  bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+}
+
     // Respuesta predeterminada del asistente
     else {
       const prompt = { role: 'user', content: userMessage };
