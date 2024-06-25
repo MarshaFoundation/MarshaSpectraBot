@@ -115,6 +115,19 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
+// Función para detectar menciones relacionadas con un niño perdido
+function mentionsLostChild(message) {
+  const relatedPhrases = [
+    'niño perdido', 'encontré al niño', 'vi al niño', 'vi a loan', 'encontré a loan', 'niño extraviado',
+    'busco a loan', 'dónde está loan', 'ayuda con loan', 'loan está perdido', 'buscando a loan',
+    'encontramos a un niño', 'vi a un niño solo', 'un niño está solo', 'he visto un niño', 'he encontrado un niño',
+    'he encontrado a un niño', 'un niño que parece perdido', 'he encontrado un niño solo'
+  ];
+
+  const normalizedMessage = message.trim().toLowerCase();
+  return relatedPhrases.some(phrase => normalizedMessage.includes(phrase));
+}
+
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
   try {
@@ -142,8 +155,8 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-    // Consulta a OpenAI o Wikipedia
-    else if (userMessage.includes('niño perdido')) {
+    // Mención relacionada con un niño perdido
+    else if (mentionsLostChild(userMessage)) {
       const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
       bot.sendMessage(chatId, request, {
         reply_markup: {
@@ -200,7 +213,7 @@ bot.on('callback_query', async (callbackQuery) => {
   bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
-// Manejar errores de polling del bot
+// Manejar errores de polling del bot (continuación)
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
@@ -214,6 +227,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
