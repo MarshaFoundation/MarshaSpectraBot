@@ -1,7 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
-const { SpeechClient } = require('@google-cloud/speech');
 const fs = require('fs');
 const wtf = require('wtf_wikipedia');
 const dotenv = require('dotenv');
@@ -146,9 +145,6 @@ bot.on('message', async (msg) => {
       messageHistory.push({ role: 'user', content: userMessage });
       chatMessageHistory.set(chatId, messageHistory);
 
-      // Obtener idioma del usuario
-      const locale = await getUserLocale(chatId);
-
       // Verificar si el mensaje contiene información sobre "Loan"
       const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
       const normalizedMessage = msg.text.toLowerCase().trim();
@@ -188,8 +184,7 @@ bot.on('message', async (msg) => {
         const gptResponse = await getChatGPTResponse(messages);
 
         if (!gptResponse) {
-          const doc = await wtf.fetch(userMessage, locale);
-          const summary = doc && doc.sections(0).paragraphs(0).sentences(0).text();
+          const summary = await fetchWikipediaSummary(userMessage);
           bot.sendMessage(chatId, summary || 'No entiendo tu solicitud. ¿Podrías reformularla?');
         } else {
           // Guardar la respuesta de ChatGPT en el historial antes de enviarla
@@ -203,6 +198,24 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
   }
 });
+
+// Función para descargar el archivo de voz
+async function downloadVoiceFile(fileId) {
+  const filePath = `./${fileId}.ogg`; // Ruta local donde se guardará el archivo de voz
+  console.log('Descargando archivo de voz. ID:', fileId);
+
+  const fileStream = fs.createWriteStream(filePath);
+
+  try {
+    // Obtener detalles del archivo de voz desde Telegram
+    const fileDetails = await bot.getFile(fileId);
+    console.log('Detalles del archivo:', fileDetails);
+
+    // Verificar el tipo MIME del archivo
+    if (fileDetails.file_path.endsWith('.ogg') || fileDetails.file_path.endsWith('.oga')) {
+      // Obtener enlace de descarga directa del archivo de voz
+      const fileLink = await bot.getFileLink(fileId);
+      console.log('Enlace del archivo:', fileLink);
 
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
@@ -315,7 +328,6 @@ bot.onText(/\/start/, async (msg) => {
     }),
   };
   const locale = await getUserLocale(chatId);
-  i18n.setLocale(locale);
   bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
 });
 
@@ -323,9 +335,8 @@ bot.onText(/\/start/, async (msg) => {
 bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const locale = callbackQuery.data;
-  i18n.setLocale(locale);
   await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, `Idioma cambiado a ${i18n.getLocale()}`);
+  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
 // Manejar errores de polling del bot
