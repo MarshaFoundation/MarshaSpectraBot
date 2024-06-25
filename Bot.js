@@ -1,3 +1,6 @@
+Parte 1: Configuración e Inicialización
+
+
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
@@ -5,7 +8,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Configuración de variables de entorno
+// Variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
@@ -13,11 +16,11 @@ const assistantDescription = 'Mi nombre es SilvIA, el primer asistente LGTBI+ en
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
-// Configuración de la conexión a PostgreSQL
+// Configuración de conexión a PostgreSQL
 const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Ajusta esta configuración según tu entorno de base de datos
+    rejectUnauthorized: false // Ajusta según tu entorno de base de datos
   }
 });
 
@@ -29,9 +32,14 @@ console.log('Bot iniciado correctamente');
 // Almacenamiento temporal para mensajes por chat
 const chatMessageHistory = new Map();
 
-// Función para hacer la llamada a OpenAI y cachear respuestas
+// Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
+
+Parte 2: Funciones Auxiliares
+
+
+// Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -84,7 +92,7 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Función para enviar un mensaje directo a un usuario dado su chat_id
+// Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
     await bot.sendMessage(chatId, mensaje);
@@ -94,7 +102,11 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
-// Función para determinar si el mensaje es un saludo
+
+Parte 3: Manejo de Mensajes y Eventos
+
+
+// Función para detectar saludos
 function isGreeting(message) {
   const greetings = [
     'hola', 'hola!', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
@@ -104,7 +116,7 @@ function isGreeting(message) {
     '¡hola!', 'buen día!', 'buenas!', '¡hey!', 'hey!', 'hi!', 'hello!', '¡saludos!',
     'saludos!', '¿qué hay?','buenas tardes!','buenas noches!', '¿cómo va?','¿qué pasa?',
     '¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes',
-    '¿estás ahí?','buenas noches', '¿qué tal?','¡hola!','buen día!','buenas!','¡hey!',
+    '¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!','¡hey!',
     'hey!','hi!','hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!',
     '¿cómo va?','¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?',
     'buenas tardes','¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!',
@@ -120,50 +132,11 @@ function isGreeting(message) {
   return greetings.includes(normalizedMessage);
 }
 
-
-// Función para determinar si el mensaje es una pregunta por el nombre del asistente
+// Función para detectar preguntas por el nombre del asistente
 function isAskingName(message) {
   const askingNames = ['¿cuál es tu nombre?', 'cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', '¿como te llamas?', 'nombre?', 'dime tu nombre'];
   const normalizedMessage = message.trim().toLowerCase();
   return askingNames.includes(normalizedMessage);
-}
-
-// Manejar el reporte de avistamiento del niño perdido
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const messageText = msg.text.toLowerCase();
-
-    if (messageText.includes('loan')) {
-        // Solicitar ubicación al usuario de manera contextual
-        const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
-        bot.sendMessage(chatId, request, {
-            reply_markup: {
-                keyboard: [
-                    [{
-                        text: "Compartir ubicación",
-                        request_location: true // Solicitar ubicación
-                    }]
-                ],
-                resize_keyboard: true
-            }
-        });
-    } else {
-        // Manejar otros mensajes como se haría normalmente
-        await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
-    }
-});
-
-// Función para manejar el reporte de avistamiento del niño perdido
-async function handleMissingChildReport(msg) {
-  const chatId = msg.chat.id;
-
-  try {
-    await bot.sendMessage(chatId, '🚨 ¡Posible avistamiento del niño perdido! 🚨');
-    await bot.sendMessage(ADMIN_CHAT_ID, `Mensaje de ${msg.from.first_name} | ${msg.chat.username || msg.chat.id}:\n${msg.text}`);
-    await bot.sendMessage(chatId, 'Gracias por tu mensaje. Hemos notificado a las autoridades competentes. ¿Puedo ayudarte con algo más?');
-  } catch (error) {
-    console.error(`Error al manejar el reporte de avistamiento del niño perdido:`, error);
-  }
 }
 
 // Manejar mensajes de texto y comandos
@@ -193,10 +166,6 @@ bot.on('message', async (msg) => {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
       bot.sendMessage(chatId, responseMessage);
     }
-    // Reporte de avistamiento del niño perdido
-    else if (userMessage.includes('loan')) {
-      await handleMissingChildReport(msg);
-    }
     // Consulta a OpenAI o Wikipedia
     else {
       const prompt = { role: 'user', content: userMessage };
@@ -209,77 +178,44 @@ bot.on('message', async (msg) => {
   }
 });
 
+
+Parte 4: Eventos Específicos y Manejo de Situaciones 
+
+
+    // Solicitar ubicación al usuario de manera contextual
+    const request = "¿Podrías compartir tu ubicación actual para ayudarnos en la búsqueda del niño perdido?";
+    bot.sendMessage(chatId, request, {
+        reply_markup: {
+            keyboard: [
+                [{
+                    text: "Compartir ubicación",
+                    request_location: true // Solicitar ubicación
+                }]
+            ],
+            resize_keyboard: true
+        }
+    });
+  } else {
+    // Manejar otros mensajes como se haría normalmente
+    await bot.sendMessage(chatId, '¡Hola! Soy SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org. ¿En qué puedo ayudarte?');
+  }
+});
+
+// Manejar la respuesta de ubicación del usuario
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+  const latitude = msg.location.latitude;
+  const longitude = msg.location.longitude;
+
+  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
+  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
+
+  // Puedes enviar un agradecimiento o confirmación al usuario
+  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
+});
+
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;4
-  const opts = {
-    reply_markup: JSON.stringify({
-      inline_keyboard: [
-        [{ text: '🇬🇧 English', callback_data: 'en' }],
-        [{ text: '🇪🇸 Español', callback_data: 'es' }],
-      ],
-    }),
-  };
-  const locale = await getUserLocale(chatId);
-  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
-});
-
-// Manejar el cambio de idioma desde los botones de selección
-bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const locale = callbackQuery.data;
-  await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
-});
-
-// Solicitar ubicación al usuario
-bot.onText(/\/ubicacion/, (msg) => {
-  const chatId = msg.chat.id;
-  const request = "Por favor, comparte tu ubicación actual para ayudarnos en la búsqueda del niño perdido.";
-
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
-    }
-  });
-});
-
-// Manejar la respuesta de ubicación del usuario
-bot.on('location', async (msg) => {
-  const chatId = msg.chat.id;
-  const latitude = msg.location.latitude;
-  const longitude = msg.location.longitude;
-
-  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
-
-  // Puedes enviar un agradecimiento o confirmación al usuario
-  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
-});
-
-// Escuchar errores de polling del bot
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
-
-// Manejar errores no capturados en el proceso
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-});
-
-// Manejar rechazos no manejados en promesas
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Error no manejado:', reason, 'promise:', promise);
-});
-
-// Iniciar el bot
-bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const opts = {
     reply_markup: JSON.stringify({
@@ -319,19 +255,6 @@ bot.onText(/\/ubicacion/, (msg) => {
   });
 });
 
-// Manejar la respuesta de ubicación del usuario
-bot.on('location', async (msg) => {
-  const chatId = msg.chat.id;
-  const latitude = msg.location.latitude;
-  const longitude = msg.location.longitude;
-
-  // Guardar o utilizar la ubicación recibida para ayudar en la búsqueda del niño perdido
-  console.log(`Ubicación recibida de ${chatId}: Latitud ${latitude}, Longitud ${longitude}`);
-
-  // Puedes enviar un agradecimiento o confirmación al usuario
-  await bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
-});
-
 // Escuchar errores de polling del bot
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
@@ -346,6 +269,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
