@@ -1,7 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
-const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -60,7 +59,9 @@ async function getChatGPTResponse(messages) {
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
-    const res = await pool.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    const client = await pool.connect();
+    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
@@ -71,7 +72,9 @@ async function getUserLocale(chatId) {
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
   try {
-    await pool.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    const client = await pool.connect();
+    await client.query('INSERT INTO users (chat_id, locale) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET locale = $2', [chatId, locale]);
+    client.release();
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
   }
@@ -131,19 +134,6 @@ async function handleTextMessage(msg) {
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
 
-      const gptResponse = await getChatGPTResponse(messages);
-      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-    }
-  } catch (error) {
-    console.error('Error al procesar el mensaje:', error);
-    bot.sendMessage(chatId, 'Ha ocurrido un error al procesar tu mensaje. Por favor, intenta nuevamente más tarde.');
-  }
-}
-
-      // Consulta a OpenAI o Wikipedia
-      const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt];
-      
       const gptResponse = await getChatGPTResponse(messages);
       bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
