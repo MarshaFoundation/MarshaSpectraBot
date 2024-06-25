@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Configuración de variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
@@ -107,6 +108,32 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
+// Función para manejar el reporte de avistamiento del niño perdido
+async function handleMissingChildReport(msg) {
+  const chatId = msg.chat.id;
+  const userMessage = msg.text.trim().toLowerCase();
+
+  // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
+  if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
+    // Enviar alerta al grupo administrativo sobre el posible avistamiento
+    const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
+    bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
+      .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
+      .catch(error => console.error('Error al enviar mensaje de alerta:', error));
+
+    // Responder al usuario indicando que se ha registrado la información
+    const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
+    bot.sendMessage(chatId, responseMessage);
+  } else if (userMessage.includes('loan')) {
+    // Si se menciona "loan" pero no está claro si se refiere al niño perdido
+    const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
+    bot.sendMessage(chatId, clarificationMessage);
+  } else {
+    // Otros tipos de mensajes que no están relacionados con "loan"
+    // Aquí puedes manejar otros tipos de mensajes si es necesario
+  }
+}
+
 // Manejar mensajes de texto y comandos
 bot.on('message', async (msg) => {
   try {
@@ -143,41 +170,6 @@ bot.on('message', async (msg) => {
     }
   } catch (error) {
     console.error('Error al manejar mensaje de texto:', error);
-  }
-});
-
-// Escuchar mensajes entrantes en el grupo administrativo
-bot.on('message', async (msg) => {
-  try {
-    if (!msg || !msg.text) {
-      console.error('Mensaje entrante no válido:', msg);
-      return;
-    }
-
-    const chatId = msg.chat.id;
-    const userMessage = msg.text.trim().toLowerCase();
-
-    // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
-    if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
-      // Enviar alerta al grupo administrativo sobre el posible avistamiento
-      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-      bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
-        .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
-        .catch(error => console.error('Error al enviar mensaje de alerta:', error));
-
-      // Responder al usuario indicando que se ha registrado la información
-      const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
-      bot.sendMessage(chatId, responseMessage);
-    } else if (userMessage.includes('loan')) {
-      // Si se menciona "loan" pero no está claro si se refiere al niño perdido
-      const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
-      bot.sendMessage(chatId, clarificationMessage);
-    } else {
-      // Otros tipos de mensajes que no están relacionados con "loan"
-      // Aquí puedes manejar otros tipos de mensajes si es necesario
-    }
-  } catch (error) {
-    console.error('Error al manejar mensaje en el grupo administrativo:', error);
   }
 });
 
