@@ -96,10 +96,30 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 
 // Función para determinar si el mensaje es un saludo
 function isGreeting(message) {
-  const greetings = ['hola!','hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey'];
+  const greetings = [
+    'hola', 'hola!', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+    '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
+    '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!', '¿cómo te va?',
+    '¿qué onda?', 'buenas tardes', '¿estás ahí?', 'buenas noches', '¿qué tal?',
+    '¡hola!', 'buen día!', 'buenas!', '¡hey!', 'hey!', 'hi!', 'hello!', '¡saludos!',
+    'saludos!', '¿qué hay?','buenas tardes!','buenas noches!', '¿cómo va?','¿qué pasa?',
+    '¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes',
+    '¿estás ahí?','buenas noches', '¿qué tal?','¡hola!','buen día!','buenas!','¡hey!',
+    'hey!','hi!','hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!',
+    '¿cómo va?','¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?',
+    'buenas tardes','¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!',
+    '¡hey!','hey!','hi!','hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!',
+    '¿cómo va?','¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes',
+    '¿estás ahí?','buenas noches','¿qué tal?','¡hola!','buen día!','buenas!','¡hey!','hey!','hi!',
+    'hello!','¡saludos!','saludos!','¿qué hay?','buenas tardes!','buenas noches!','¿cómo va?',
+    '¿qué pasa?','¿qué hubo?','¡buenos días!','¿cómo te va?','¿qué onda?','buenas tardes','¿estás ahí?',
+    'buenas noches','¿qué tal?'
+  ];
+
   const normalizedMessage = message.trim().toLowerCase();
   return greetings.includes(normalizedMessage);
 }
+
 
 // Función para determinar si el mensaje es una pregunta por el nombre del asistente
 function isAskingName(message) {
@@ -191,7 +211,7 @@ bot.on('message', async (msg) => {
 
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
+  const chatId = msg.chat.id;4
   const opts = {
     reply_markup: JSON.stringify({
       inline_keyboard: [
