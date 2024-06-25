@@ -114,25 +114,20 @@ async function handleMissingChildReport(msg) {
   const userMessage = msg.text.trim().toLowerCase();
 
   // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
-  if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
-    try {
-      // Enviar alerta al grupo administrativo sobre el posible avistamiento
-      const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
-      await bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
-      console.log('Mensaje de alerta enviado al grupo administrativo');
+  if (userMessage.includes('loan') && (userMessage.includes('niño perdido') || userMessage.includes('he visto'))) {
+    // Enviar alerta al grupo administrativo sobre el posible avistamiento
+    const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
+    bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
+      .then(() => console.log('Mensaje de alerta enviado al grupo administrativo'))
+      .catch(error => console.error('Error al enviar mensaje de alerta:', error));
 
-      // Responder al usuario indicando que se ha registrado la información
-      const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
-      await bot.sendMessage(chatId, responseMessage);
-    } catch (error) {
-      console.error('Error al enviar mensaje de alerta o respuesta:', error);
-      // En caso de error al enviar mensaje de alerta o respuesta, notificar al usuario
-      await bot.sendMessage(chatId, 'Hubo un problema al procesar tu solicitud. Por favor, intenta nuevamente más tarde.');
-    }
+    // Responder al usuario indicando que se ha registrado la información
+    const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
+    bot.sendMessage(chatId, responseMessage);
   } else if (userMessage.includes('loan')) {
     // Si se menciona "loan" pero no está claro si se refiere al niño perdido
     const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
-    await bot.sendMessage(chatId, clarificationMessage);
+    bot.sendMessage(chatId, clarificationMessage);
   } else {
     // Otros tipos de mensajes que no están relacionados con "loan"
     // Aquí puedes manejar otros tipos de mensajes si es necesario
@@ -159,19 +154,20 @@ bot.on('message', async (msg) => {
     // Saludo detectado
     if (isGreeting(userMessage)) {
       const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte?`;
-      await bot.sendMessage(chatId, responseMessage);
+      bot.sendMessage(chatId, responseMessage);
     }
     // Pregunta por el nombre del asistente
     else if (isAskingName(userMessage)) {
       const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
-      await bot.sendMessage(chatId, responseMessage);
+      bot.sendMessage(chatId, responseMessage);
     }
     // Consulta a OpenAI o Wikipedia
     else {
+      await handleMissingChildReport(msg); // Manejar reporte de avistamiento del niño perdido
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
       const gptResponse = await getChatGPTResponse(messages);
-      await bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
     }
   } catch (error) {
     console.error('Error al manejar mensaje de texto:', error);
