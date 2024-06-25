@@ -13,6 +13,18 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // ID del grupo administrativo
 
+// Función para verificar si el chat_id está conectado y es válido
+async function isChatActive(chatId) {
+  try {
+    const chatInfo = await bot.getChat(chatId);
+    // Si no hay excepciones, el chat_id es válido y está conectado
+    return true;
+  } catch (error) {
+    console.error('Error al verificar el chat_id:', error.response.data);
+    return false;
+  }
+}
+
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
