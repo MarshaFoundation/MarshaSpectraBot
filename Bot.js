@@ -171,7 +171,7 @@ bot.on('message', async (msg) => {
         const respuestaMensaje = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
 
         // Enviar mensaje directo al usuario mencionado
-        bot.sendMessage(mentionedChatId, respuestaMensaje)
+        enviarMensajeDirecto(mentionedChatId, respuestaMensaje)
           .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
