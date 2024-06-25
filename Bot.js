@@ -8,18 +8,20 @@ dotenv.config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID; // Asegúrate de definir ADMIN_CHAT_ID en tu .env
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const DATABASE_URL = process.env.DATABASE_URL;
 
 // Configuración de la conexión a PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Conexión SSL sin validación explícita, ajusta esto en producción según sea necesario
+    rejectUnauthorized: false // Ajusta esta configuración según tu entorno de base de datos
   }
 });
 
-// Crear instancia del bot después de haber definido TelegramBot
+// Crear instancia del bot
 const bot = new TelegramBot(token, { polling: true });
+
 console.log('Bot iniciado correctamente');
 
 // Almacenamiento temporal para mensajes por chat
@@ -104,25 +106,51 @@ function isAskingName(message) {
   return askingNames.includes(normalizedMessage);
 }
 
-// Función para manejar mensajes de texto
-async function handleTextMessage(msg) {
+// Manejar mensajes de texto y comandos
+bot.on('message', async (msg) => {
   try {
-    const chatId = msg.chat.id; // ID del chat donde se recibió el mensaje
-    const userId = msg.from.id; // ID del usuario que envió el mensaje
-    const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
-    const userMessage = msg.text.trim().toLowerCase(); // Mensaje del usuario
+    if (!msg || (!msg.text && !msg.voice)) {
+      console.error('Mensaje entrante no válido:', msg);
+      return;
+    }
+
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const userMessage = msg.text.trim().toLowerCase();
 
     // Obtener o inicializar historial de mensajes para este chat
     let messageHistory = chatMessageHistory.get(chatId) || [];
-
-    // Guardar el mensaje actual en el historial
     messageHistory.push({ role: 'user', content: userMessage });
     chatMessageHistory.set(chatId, messageHistory);
 
-   // Escuchar todos los mensajes entrantes al grupo administrativo
+    // Saludo detectado
+    if (isGreeting(userMessage)) {
+      const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
+      bot.sendMessage(chatId, responseMessage);
+    }
+    // Pregunta por el nombre del asistente
+    else if (isAskingName(userMessage)) {
+      bot.sendMessage(chatId, assistantName);
+    }
+    // Consulta a OpenAI o Wikipedia
+    else {
+      const prompt = { role: 'user', content: userMessage };
+      const messages = [...messageHistory, prompt];
+      const gptResponse = await getChatGPTResponse(messages);
+      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
+    }
+  } catch (error) {
+    console.error('Error al manejar mensaje de texto:', error);
+  }
+});
+
+// Escuchar mensajes entrantes en el grupo administrativo
 bot.on('message', async (msg) => {
   try {
-    const chatId = msg.chat.id; // Obtener el chatId del grupo administrativo
+    if (!msg || !msg.text) {
+      console.error('Mensaje entrante no válido:', msg);
+      return;
+    }
 
     // Verificar si el mensaje contiene información sobre "Loan"
     const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
@@ -137,7 +165,6 @@ bot.on('message', async (msg) => {
       // Verificar si hay un mensaje al que responder
       if (msg.reply_to_message && msg.reply_to_message.from) {
         // Capturar el chat_id del usuario que mencionó "Loan"
-        const mentionedUserId = msg.reply_to_message.from.id;
         const mentionedChatId = msg.reply_to_message.chat.id;
 
         // Mensaje para responder al usuario mencionado
@@ -145,7 +172,7 @@ bot.on('message', async (msg) => {
 
         // Enviar mensaje directo al usuario mencionado
         bot.sendMessage(mentionedChatId, respuestaMensaje)
-          .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
+          .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name}`))
           .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
         console.log('No hay un mensaje al que responder.');
@@ -155,48 +182,7 @@ bot.on('message', async (msg) => {
     console.error('Error al manejar mensaje en el grupo administrativo:', error);
   }
 });
-      // Saludo detectado
-      const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
-      bot.sendMessage(chatId, responseMessage);
-    } else if (isAskingName(userMessage)) {
-      // Pregunta por el nombre del asistente
-      bot.sendMessage(chatId, assistantName);
-    } else if (userMessage.includes('/historial')) {
-      // Comando /historial para obtener historial de conversación
-      if (messageHistory.length > 0) {
-        const conversationHistory = messageHistory.map(m => m.content).join('\n');
-        bot.sendMessage(chatId, `Historial de Conversación:\n\n${conversationHistory}`);
-      } else {
-        bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
-      }
-    } else {
-      // Consulta a OpenAI o Wikipedia
-      const prompt = { role: 'user', content: userMessage };
-      const messages = [...messageHistory, prompt];
 
-      const gptResponse = await getChatGPTResponse(messages);
-      bot.sendMessage(chatId, gptResponse || 'No entiendo tu solicitud. ¿Podrías reformularla?');
-    }
-  } catch (error) {
-    console.error('Error al manejar mensaje de texto:', error);
-  }
-}
-
-// Escuchar todos los mensajes entrantes
-bot.on('message', async (msg) => {
-  if (!msg || (!msg.text && !msg.voice)) {
-    console.error('Mensaje entrante no válido:', msg);
-    return;
-  }
-
-  if (msg.voice) {
-    // Procesar mensaje de voz (implementación omitida para brevedad)
-    console.log('Mensaje de voz recibido:', msg.voice);
-  } else {
-    // Procesar mensaje de texto
-    await handleTextMessage(msg); // Asegúrate de usar await aquí si handleTextMessage es async
-  }
-});
 // Manejar el evento de inicio del bot (/start)
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
@@ -234,11 +220,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
-// Función para limpiar el historial de mensajes de un chat
-function clearMessageHistory(chatId) {
-  chatMessageHistory.delete(chatId);
-}
-
-console.log('Bot iniciado correctamente');
-
