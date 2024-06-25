@@ -167,18 +167,23 @@ bot.on('message', async (msg) => {
       const locale = await getUserLocale(chatId);
       i18n.setLocale(locale);
 
-      // Verificar si el mensaje contiene información sobre el niño perdido
-      const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño'];
-      const foundLoan = loanKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
+// Verificar si el mensaje contiene información sobre el niño perdido
+const loanKeywords = ['loan', 'niño perdido', 'chico perdido', 'encontrado niño', 'vi a loan', 'se donde esta loan', 'encontre al niño', 'vi al nene', 'el nene esta'];
+const normalizedMessage = msg.text.toLowerCase().trim();
 
-      if (foundLoan) {
-        // Alertar al grupo administrativo
-        const ADMIN_CHAT_ID = '637055957'; // Reemplazar con el ID del chat administrativo
-        const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${userMessage}`;
-        bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
-      }
-
-      if (isGreeting(userMessage)) {
+if (loanKeywords.some(keyword => normalizedMessage.includes(keyword))) {
+  // Enviar alerta al grupo administrativo solo si el mensaje contiene frases específicas
+  if (normalizedMessage === 'loan' || normalizedMessage === 'loan.') {
+    // Caso específico: solo "Loan" sin contexto adicional
+    const responseMessage = `¿En qué puedo ayudarte con el tema de los préstamos?`;
+    bot.sendMessage(chatId, responseMessage);
+  } else {
+    // Caso general: frases como "Hemos encontrado a Loan"
+    const ADMIN_CHAT_ID = '637055957'; // Reemplazar con el ID del chat administrativo
+    const alertMessage = `🚨 Posible avistamiento del niño perdido! 🚨\n\nMensaje: ${msg.text}`;
+    bot.sendMessage(ADMIN_CHAT_ID, alertMessage);
+  }
+} else {
         // Saludo detectado
         const welcomeMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
         bot.sendMessage(chatId, welcomeMessage);
