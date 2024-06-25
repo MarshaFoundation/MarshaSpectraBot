@@ -2,7 +2,6 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
 const fs = require('fs');
-const wtf = require('wtf_wikipedia');
 const dotenv = require('dotenv');
 
 dotenv.config();
