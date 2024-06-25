@@ -158,7 +158,7 @@ bot.on('message', async (msg) => {
     const userMessage = msg.text.trim().toLowerCase();
 
     // Verificar si el mensaje menciona el nombre del niño perdido "Loan"
-    if (userMessage.includes('loan')) {
+    if (userMessage.includes('loan') && userMessage.includes('niño perdido')) {
       // Enviar alerta al grupo administrativo sobre el posible avistamiento
       const alertMessage = `🚨 ¡Posible avistamiento del niño perdido! 🚨\n\nMensaje de ${msg.from.first_name} (${msg.from.id}):\n${msg.text}`;
       bot.sendMessage(ADMIN_CHAT_ID, alertMessage)
@@ -168,8 +168,12 @@ bot.on('message', async (msg) => {
       // Responder al usuario indicando que se ha registrado la información
       const responseMessage = `Entendido. Estoy al tanto del posible avistamiento del niño perdido llamado "Loan". ¿Puedo ayudarte con algo más?`;
       bot.sendMessage(chatId, responseMessage);
+    } else if (userMessage.includes('loan')) {
+      // Si se menciona "loan" pero no está claro si se refiere al niño perdido
+      const clarificationMessage = `¿Te refieres a un préstamo o a alguien llamado Loan? ¿En qué contexto lo has visto?`;
+      bot.sendMessage(chatId, clarificationMessage);
     } else {
-      // Otro tipo de mensajes
+      // Otros tipos de mensajes que no están relacionados con "loan"
       // Aquí puedes manejar otros tipos de mensajes si es necesario
     }
   } catch (error) {
