@@ -136,13 +136,26 @@ function isAskingName(message) {
 // Escuchar todos los mensajes entrantes
 bot.on('message', async (msg) => {
   try {
-    if (!msg || !msg.text) {
+    if (!msg || (!msg.text && !msg.voice)) {
       console.error('Mensaje entrante no válido:', msg);
       return;
     }
 
     const chatId = msg.chat.id;
-    const userMessage = msg.text;
+
+    if (msg.voice) {
+      console.log('Mensaje de voz recibido:', msg.voice);
+
+      const voiceMessageId = msg.voice.file_id;
+      const voiceFilePath = await downloadVoiceFile(voiceMessageId);
+      const transcription = await transcribeAudio(voiceFilePath);
+
+      console.log('Transcripción del audio:', transcription);
+
+      bot.sendMessage(chatId, transcription);
+    } else {
+      // Otro tipo de mensaje, procesar según sea necesario
+      console.log('Mensaje de texto recibido:', msg.text);
 
     // Obtener o inicializar historial de mensajes para este chat
     let messageHistory = chatMessageHistory.get(chatId);
