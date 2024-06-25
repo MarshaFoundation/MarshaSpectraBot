@@ -208,24 +208,30 @@ async function downloadVoiceFile(fileId) {
   const fileStream = fs.createWriteStream(filePath);
 
   try {
-    const fileLink = await bot.getFileLink(fileId);
-    const response = await axios({
-      url: fileLink,
-      method: 'GET',
-      responseType: 'stream'
-    });
+    const fileDetails = await bot.getFile(fileId);
+    if (fileDetails.file_path.endsWith('.ogg')) {
+      const fileLink = await bot.getFileLink(fileId);
+      const response = await axios({
+        url: fileLink,
+        method: 'GET',
+        responseType: 'stream'
+      });
 
-    response.data.pipe(fileStream);
+      response.data.pipe(fileStream);
 
-    return new Promise((resolve, reject) => {
-      fileStream.on('finish', () => resolve(filePath));
-      fileStream.on('error', error => reject(error));
-    });
+      return new Promise((resolve, reject) => {
+        fileStream.on('finish', () => resolve(filePath));
+        fileStream.on('error', error => reject(error));
+      });
+    } else {
+      throw new Error('El archivo no es compatible. Se esperaba formato OGG.');
+    }
   } catch (error) {
     console.error('Error al descargar el archivo de voz:', error);
     throw error; // Lanza el error para manejarlo en el contexto superior
   }
 }
+
 
 // Función para transcribir audio utilizando Google Cloud Speech API
 async function transcribeAudio(filePath) {
