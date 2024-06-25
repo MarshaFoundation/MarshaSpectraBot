@@ -112,6 +112,16 @@ async function handleTextMessage(msg) {
     const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
     const userMessage = msg.text.trim().toLowerCase(); // Mensaje del usuario
 
+    // Función para enviar mensaje directo a un usuario por su chat_id
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a usuario con chat_id ${chatId}: ${mensaje}`);
+  } catch (error) {
+    console.error(`Error al enviar mensaje a usuario con chat_id ${chatId}:`, error);
+  }
+}
+
     // Obtener o inicializar historial de mensajes para este chat
     let messageHistory = chatMessageHistory.get(chatId) || [];
 
