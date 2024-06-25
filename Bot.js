@@ -97,7 +97,7 @@ function isAskingName(message) {
 // Función para manejar mensajes de texto
 async function handleTextMessage(msg) {
   try {
-    const chatId = msg.chat.id; // ID del chat
+    const chatId = msg.chat.id; // ID del chat donde se recibió el mensaje
     const userId = msg.from.id; // ID del usuario que envió el mensaje
     const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
     const userMessage = msg.text.trim().toLowerCase(); // Mensaje del usuario
@@ -127,7 +127,9 @@ async function handleTextMessage(msg) {
 
         // Mensaje para responder al usuario mencionado
         const responseMessage = `Hola, ${msg.reply_to_message.from.first_name}. ¿Cómo puedo ayudarte?`;
-        bot.sendMessage(mentionedChatId, responseMessage);
+        bot.sendMessage(mentionedChatId, responseMessage)
+          .then(() => console.log(`Mensaje enviado a ${msg.reply_to_message.from.first_name} (${mentionedUserId})`))
+          .catch(error => console.error(`Error al enviar mensaje a ${msg.reply_to_message.from.first_name}:`, error));
       } else {
         console.log('No hay un mensaje al que responder.');
       }
