@@ -97,15 +97,6 @@ function isAskingName(message) {
 // Función para manejar mensajes de texto
 async function handleTextMessage(msg) {
   try {
-    const chatId = msg.chat.id;
-    const userMessage = msg.text.trim().toLowerCase();
-
-    // Obtener o inicializar historial de mensajes para este chat
-    let messageHistory = chatMessageHistory.get(chatId) || [];
-
- // Función para manejar mensajes de texto
-async function handleTextMessage(msg) {
-  try {
     const chatId = msg.chat.id; // ID del chat
     const userId = msg.from.id; // ID del usuario que envió el mensaje
     const userFirstName = msg.from.first_name; // Primer nombre del usuario que envió el mensaje
@@ -143,6 +134,7 @@ async function handleTextMessage(msg) {
         bot.sendMessage(chatId, 'No hay historial de conversación disponible.');
       }
     } else {
+      
       // Consulta a OpenAI o Wikipedia
       const prompt = { role: 'user', content: userMessage };
       const messages = [...messageHistory, prompt];
@@ -214,4 +206,3 @@ function clearMessageHistory(chatId) {
 }
 
 console.log('Bot iniciado correctamente');
-
