@@ -8,6 +8,7 @@ dotenv.config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
+const assistantDescription = 'Mi nombre es SilvIA, el primer asistente LGTBI+ en el mundo. Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -125,12 +126,13 @@ bot.on('message', async (msg) => {
 
     // Saludo detectado
     if (isGreeting(userMessage)) {
-      const responseMessage = `¡Hola! Soy ${assistantName}, un asistente avanzado. ¿En qué puedo ayudarte?`;
+      const responseMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription}. ¿En qué puedo ayudarte?`;
       bot.sendMessage(chatId, responseMessage);
     }
     // Pregunta por el nombre del asistente
     else if (isAskingName(userMessage)) {
-      bot.sendMessage(chatId, assistantName);
+      const responseMessage = `Mi nombre es ${assistantName}, ${assistantDescription}`;
+      bot.sendMessage(chatId, responseMessage);
     }
     // Consulta a OpenAI o Wikipedia
     else {
@@ -183,15 +185,28 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Función para enviar un mensaje directo a un usuario dado su chat_id
-async function enviarMensajeDirecto(chatId, mensaje) {
-  try {
-    await bot.sendMessage(chatId, mensaje);
-    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
-  } catch (error) {
-    console.error(`Error al enviar mensaje a ${chatId}:`, error);
-  }
-}
+// Manejar el evento de inicio del bot (/start)
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const opts = {
+    reply_markup: JSON.stringify({
+      inline_keyboard: [
+        [{ text: '🇬🇧 English', callback_data: 'en' }],
+        [{ text: '🇪🇸 Español', callback_data: 'es' }],
+      ],
+    }),
+  };
+  const locale = await getUserLocale(chatId);
+  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
+});
+
+// Manejar el cambio de idioma desde los botones de selección
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const locale = callbackQuery.data;
+  await setUserLocale(chatId, locale);
+  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
+});
 
 // Solicitar ubicación al usuario
 bot.onText(/\/ubicacion/, (msg) => {
@@ -222,29 +237,6 @@ bot.on('location', (msg) => {
     
     // Puedes enviar un agradecimiento o confirmación al usuario
     bot.sendMessage(chatId, "¡Gracias por compartir tu ubicación! Esto nos ayuda mucho en la búsqueda.");
-});
-
-// Manejar el evento de inicio del bot (/start)
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const opts = {
-    reply_markup: JSON.stringify({
-      inline_keyboard: [
-        [{ text: '🇬🇧 English', callback_data: 'en' }],
-        [{ text: '🇪🇸 Español', callback_data: 'es' }],
-      ],
-    }),
-  };
-  const locale = await getUserLocale(chatId);
-  bot.sendMessage(chatId, '¡Hola! Por favor, elige tu idioma.', opts);
-});
-
-// Manejar el cambio de idioma desde los botones de selección
-bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const locale = callbackQuery.data;
-  await setUserLocale(chatId, locale);
-  bot.sendMessage(chatId, `Idioma cambiado a ${locale}`);
 });
 
 // Escuchar errores de polling del bot
