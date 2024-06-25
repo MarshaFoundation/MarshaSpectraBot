@@ -205,12 +205,18 @@ bot.on('message', async (msg) => {
 // Función para descargar el archivo de voz
 async function downloadVoiceFile(fileId) {
   const filePath = `./${fileId}.ogg`; // Cambia la extensión según el tipo de archivo
+  console.log('Descargando archivo de voz. ID:', fileId);
+
   const fileStream = fs.createWriteStream(filePath);
 
   try {
     const fileDetails = await bot.getFile(fileId);
+    console.log('Detalles del archivo:', fileDetails);
+
     if (fileDetails.file_path.endsWith('.ogg')) {
       const fileLink = await bot.getFileLink(fileId);
+      console.log('Enlace del archivo:', fileLink);
+
       const response = await axios({
         url: fileLink,
         method: 'GET',
@@ -220,8 +226,14 @@ async function downloadVoiceFile(fileId) {
       response.data.pipe(fileStream);
 
       return new Promise((resolve, reject) => {
-        fileStream.on('finish', () => resolve(filePath));
-        fileStream.on('error', error => reject(error));
+        fileStream.on('finish', () => {
+          console.log('Archivo descargado correctamente:', filePath);
+          resolve(filePath);
+        });
+        fileStream.on('error', error => {
+          console.error('Error al descargar el archivo de voz:', error);
+          reject(error);
+        });
       });
     } else {
       throw new Error('El archivo no es compatible. Se esperaba formato OGG.');
@@ -232,36 +244,43 @@ async function downloadVoiceFile(fileId) {
   }
 }
 
-
 // Función para transcribir audio utilizando Google Cloud Speech API
 async function transcribeAudio(filePath) {
-  const file = fs.readFileSync(filePath);
-  const audioBytes = file.toString('base64');
-
-  const audio = {
-    content: audioBytes,
-  };
-
-  const config = {
-    encoding: 'OGG_OPUS', // Asegúrate de que el formato y la configuración coincidan
-    sampleRateHertz: 48000, // Ajusta según las especificaciones de tu archivo de audio
-    languageCode: 'es-ES', // Código de idioma adecuado para tu audio
-  };
-
-  const request = {
-    audio: audio,
-    config: config,
-  };
-
   try {
-    const [response] = await speechClient.recognize(request);
+    console.log('Iniciando transcripción de audio. Ruta:', filePath);
+
+    // Configuración del reconocimiento de voz
+    const audioConfig = {
+      encoding: 'OGG_OPUS',
+      sampleRateHertz: 48000,
+      languageCode: 'es-ES',
+    };
+
+    // Leer el archivo de audio
+    const file = fs.readFileSync(filePath);
+    console.log('Archivo leído:', file);
+
+    // Realizar la solicitud de transcripción
+    const [response] = await speechClient.recognize({
+      audio: {
+        content: file,
+      },
+      config: audioConfig,
+    });
+
+    console.log('Respuesta de transcripción:', response);
+
+    // Obtener la transcripción
     const transcription = response.results
       .map(result => result.alternatives[0].transcript)
       .join('\n');
+
+    console.log('Transcripción completada:', transcription);
+
     return transcription;
   } catch (error) {
-    console.error('Error al transcribir audio:', error);
-    throw error; // Lanza el error para manejarlo en el contexto superior
+    console.error('Error al transcribir el audio:', error);
+    throw error;
   }
 }
 
