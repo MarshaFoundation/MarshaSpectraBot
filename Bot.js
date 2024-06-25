@@ -1,4 +1,4 @@
-Parte 1: Configuración e Inicialización
+Configuración e Inicialización
 
 
 const TelegramBot = require('node-telegram-bot-api');
@@ -36,7 +36,7 @@ const chatMessageHistory = new Map();
 const cachedResponses = new Map();
 
 
-Parte 2: Funciones Auxiliares
+Funciones Auxiliares
 
 
 // Función para obtener respuesta de OpenAI
@@ -103,7 +103,7 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 }
 
 
-Parte 3: Manejo de Mensajes y Eventos
+Manejo de Mensajes y Eventos
 
 
 // Función para detectar saludos
@@ -179,7 +179,7 @@ bot.on('message', async (msg) => {
 });
 
 
-Parte 4: Eventos Específicos y Manejo de Situaciones 
+Eventos Específicos y Manejo de Situaciones 
 
 
     // Solicitar ubicación al usuario de manera contextual
