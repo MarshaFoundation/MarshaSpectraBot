@@ -225,7 +225,6 @@ async function handleMessage(msg) {
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       // Verificar variantes de Marsha en el mensaje
-      // Verificar variantes de Marsha en el mensaje
 if (messageText.toLowerCase().includes('marsha')) {
   if (messageText.toLowerCase().includes('marsha+ foundation')) {
     await bot.sendMessage(chatId, responses.marshaPlusFoundation);
