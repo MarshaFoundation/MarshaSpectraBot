@@ -226,7 +226,7 @@ async function handleMessage(msg) {
       if (messageText.toLowerCase().includes('marsha')) {
         let responseMessage = '';
 
-        if (messageText.toLowerCase().includes('marsha+ foundation')) {
+        if (messageText.toLowerCase().includes('marsha+ foundation') || messageText.toLowerCase().includes('marsha foundation')) {
           responseMessage = responses.marshaPlusFoundation;
         } else if (messageText.toLowerCase().includes('marsha+')) {
           responseMessage = responses.marshaPlus;
@@ -251,13 +251,6 @@ async function handleMessage(msg) {
           await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
         }
 
-      } else if (matchPhrases(messageText, ['qué somos', 'que somos', 'quienes son', 'quiénes somos'])) {
-        const botIdentity = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ mediante la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
-
-Este token innovador, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
-
-Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`;
-        await bot.sendMessage(chatId, botIdentity);
       } else {
         const gptResponse = await getChatGPTResponse(messagesWithIntro);
         await bot.sendMessage(chatId, gptResponse);
@@ -271,6 +264,7 @@ Con un suministro total de 8 mil millones de tokens y una tasa de quema anual de
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
