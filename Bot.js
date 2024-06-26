@@ -217,41 +217,57 @@ async function handleMessage(msg) {
 
   if (!messageText) return;
 
-  const userLocale = await getUserLocale(chatId);
-  const messageHistory = chatMessageHistory.get(chatId) || [];
-  messageHistory.push({ role: 'user', content: messageText });
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
 
-  if (matchPhrases(messageText, greetings)) {
-    bot.sendMessage(chatId, responses.greeting);
-  } else if (matchPhrases(messageText, askingNames)) {
-    bot.sendMessage(chatId, responses.name);
-  } else if (matchPhrases(messageText, relatedPhrases)) {
-    const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+    if (matchPhrases(messageText, greetings)) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
+    } else {
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+  }
+}
+
+// Manejar el caso del niño perdido
+function handleLostChildCase(chatId) {
+  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
 Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
 
 Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
 
-    bot.sendMessage(chatId, request, {
-      reply_markup: {
-        keyboard: [
-          [{
-            text: "Compartir ubicación",
-            request_location: true // Solicitar ubicación
-          }]
-        ],
-        resize_keyboard: true
-      }
-    });
-  } else {
-    const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-    const messagesWithIntro = [assistantIntro, ...messageHistory];
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+}
 
-    const gptResponse = await getChatGPTResponse(messagesWithIntro);
-    bot.sendMessage(chatId, gptResponse);
-
-    messageHistory.push({ role: 'assistant', content: gptResponse });
-    chatMessageHistory.set(chatId, messageHistory);
-  }
+// Función para emparejar frases
+function matchPhrases(text, phrases) {
+  const normalizedText = text.trim().toLowerCase();
+  return phrases.some(phrase => normalizedText.includes(phrase));
 }
 
 // Manejar consultas callback
@@ -272,22 +288,19 @@ bot.on('location', (msg) => {
   const location = msg.location;
 
   console.log(`Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
-  
-  // Lógica adicional para manejar la ubicación:
-  // 1. Puedes enviar la ubicación a las autoridades relevantes.
-  // 2. Puedes almacenar la ubicación en una base de datos temporal para un seguimiento posterior.
-  // 3. Puedes utilizar la ubicación para proporcionar una respuesta personalizada al usuario.
-  // 4. Puedes enviar un mensaje de confirmación al usuario diciendo que la ubicación ha sido recibida.
 
-  // Ejemplo de respuesta personalizada:
+  // 1. Notificar a las autoridades (simulado con console.log)
+  console.log(`Notificar a las autoridades: Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 2. Almacenar la ubicación en la base de datos
+  storeLocation(chatId, location.latitude, location.longitude);
+
+  // 3. Respuesta personalizada
   const confirmationMessage = "Gracias por compartir tu ubicación. Estamos procesando tu información.";
   bot.sendMessage(chatId, confirmationMessage);
-
-  // Si decides almacenar la ubicación:
-  // storeLocation(chatId, location.latitude, location.longitude);
 });
 
-// Función hipotética para almacenar la ubicación en la base de datos (requiere implementación)
+// Función para almacenar la ubicación en la base de datos
 async function storeLocation(chatId, latitude, longitude) {
   try {
     const client = await pool.connect();
@@ -325,6 +338,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
