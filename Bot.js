@@ -225,25 +225,32 @@ async function handleMessage(msg) {
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       // Verificar variantes de Marsha en el mensaje
-      if (messageText.toLowerCase().includes('marsha')) {
-        if (messageText.toLowerCase().includes('marsha+ foundation')) {
-          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
-        } else if (messageText.toLowerCase().includes('marsha+')) {
-          await bot.sendMessage(chatId, responses.marshaPlus);
-        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-          await bot.sendMessage(chatId, responses.marshaWorldwide);
-        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-          await bot.sendMessage(chatId, responses.marshaFoundation);
-        } else {
-          await bot.sendMessage(chatId, responses.marsha);
-        }
-      } else {
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
-        await bot.sendMessage(chatId, gptResponse);
+      // Verificar variantes de Marsha en el mensaje
+if (messageText.toLowerCase().includes('marsha')) {
+  if (messageText.toLowerCase().includes('marsha+ foundation')) {
+    await bot.sendMessage(chatId, responses.marshaPlusFoundation);
+  } else if (messageText.toLowerCase().includes('marsha+')) {
+    await bot.sendMessage(chatId, responses.marshaPlus);
+  } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+    await bot.sendMessage(chatId, responses.marshaWorldwide);
+  } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+    await bot.sendMessage(chatId, responses.marshaFoundation);
+  } else if (messageText.toLowerCase().includes('fundación marsha')) {
+    await bot.sendMessage(chatId, responses.fundacionMarsha);
+  } else if (messageText.toLowerCase().includes('msa')) {
+    await bot.sendMessage(chatId, responses.msa);
+  } else if (messageText.toLowerCase().includes('marshaplus')) {
+    await bot.sendMessage(chatId, responses.marshaPlus);
+  } else {
+    await bot.sendMessage(chatId, responses.marsha);
+  }
+} else {
+  const gptResponse = await getChatGPTResponse(messagesWithIntro);
+  await bot.sendMessage(chatId, gptResponse);
 
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
-      }
+  messageHistory.push({ role: 'assistant', content: gptResponse });
+  chatMessageHistory.set(chatId, messageHistory);
+}
     }
   } catch (error) {
     console.error('Error handling message:', error);
