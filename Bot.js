@@ -208,10 +208,14 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
+    // Obtener la localización del usuario
     const userLocale = await getUserLocale(chatId);
+
+    // Obtener historial de mensajes o inicializar si es nuevo
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
+    // Manejo de diferentes tipos de mensajes
     if (matchPhrases(messageText, greetings)) {
       await bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
@@ -219,52 +223,55 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
+      // Introducción del asistente
       const assistantIntro = { role: 'system', content: `¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      // Verificar variantes de Marsha en el mensaje
-      if (messageText.toLowerCase().includes('marsha')) {
-        let responseMessage = '';
+      // Verificar menciones relacionadas con "Marsha"
+      const marshaResponses = {
+        'marsha+ foundation': responses.marshaPlusFoundation,
+        'marsha foundation': responses.marshaFoundation,
+        'marsha+': responses.marshaPlus,
+        'marshaplus': responses.marshaPlus,
+        'marsha worldwide': responses.marshaWorldwide,
+        'fundación marsha': responses.fundacionMarsha,
+        'msa': responses.msa
+      };
 
-        if (messageText.toLowerCase().includes('marsha+ foundation') || messageText.toLowerCase().includes('marsha foundation')) {
-          responseMessage = responses.marshaPlusFoundation;
-        } else if (messageText.toLowerCase().includes('marsha+')) {
-          responseMessage = responses.marshaPlus;
-        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-          responseMessage = responses.marshaWorldwide;
-        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-          responseMessage = responses.marshaFoundation;
-        } else if (messageText.toLowerCase().includes('fundación marsha')) {
-          responseMessage = responses.fundacionMarsha;
-        } else if (messageText.toLowerCase().includes('msa')) {
-          responseMessage = responses.msa;
-        } else if (messageText.toLowerCase().includes('marshaplus')) {
-          responseMessage = responses.marshaPlus;
-        } else {
-          responseMessage = responses.marsha;
+      let responseMessage = '';
+      const lowercaseMessage = messageText.toLowerCase();
+
+      // Buscar coincidencia de respuestas relacionadas con "Marsha"
+      Object.keys(marshaResponses).some(key => {
+        if (lowercaseMessage.includes(key)) {
+          responseMessage = marshaResponses[key];
+          return true;
         }
+        return false;
+      });
 
-        if (responseMessage.trim() !== '') {
-          await bot.sendMessage(chatId, responseMessage);
-        } else {
-          console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
-          await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
-        }
-
+      // Enviar respuesta sobre "Marsha" si encontró alguna
+      if (responseMessage.trim() !== '') {
+        await bot.sendMessage(chatId, responseMessage);
       } else {
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
-        await bot.sendMessage(chatId, gptResponse);
-
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
+        console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
+        await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
       }
+
+      // Obtener respuesta del asistente virtual
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      await bot.sendMessage(chatId, gptResponse);
+
+      // Registrar respuesta del asistente en historial de mensajes
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
+    // Manejo de errores
     console.error('Error handling message:', error);
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
