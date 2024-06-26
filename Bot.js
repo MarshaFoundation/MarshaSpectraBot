@@ -212,6 +212,7 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
+// Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
