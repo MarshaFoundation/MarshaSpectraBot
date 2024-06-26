@@ -105,6 +105,10 @@ const responses = {
   Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`
 };
 
+// Respuestas adicionales según las variantes de consultas
+responses.marshaFoundation = responses.foundationInfo;
+responses.marshaToken = responses.foundationInfo;
+responses.msa = responses.foundationInfo;
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -215,33 +219,27 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
-
-    if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
-    } else if (matchPhrases(messageText, relatedPhrases)) {
-      handleLostChildCase(chatId);
-    } else if (matchPhrases(messageText, ['qué es Marsha+?', 'quiénes son Marsha+ Foundation?', 'qué hace Marsha+?', 'Marsha+', 'Marsha+ Foundation'])) {
+    if (messageText.includes('Marsha+ Foundation') || messageText.includes('qué es Marsha+')) {
       bot.sendMessage(chatId, responses.foundationInfo);
+    } else if (messageText.includes('Marsha Foundation') || messageText.includes('Marsha Token') || messageText.includes('MSA')) {
+      // Manejar otras variantes de consultas
+      if (messageText.includes('Marsha Foundation')) {
+        bot.sendMessage(chatId, responses.marshaFoundation);
+      } else if (messageText.includes('Marsha Token')) {
+        bot.sendMessage(chatId, responses.marshaToken);
+      } else if (messageText.includes('MSA')) {
+        bot.sendMessage(chatId, responses.msa);
+      }
     } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
-
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+      // Aquí iría la lógica para manejar otros tipos de mensajes o preguntas
+      bot.sendMessage(chatId, 'Lo siento, no entendí tu pregunta.');
     }
   } catch (error) {
     console.error('Error handling message:', error);
     bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
