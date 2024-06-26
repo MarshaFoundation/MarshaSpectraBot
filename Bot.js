@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
+const axios = require('axios').default;
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
 
@@ -99,6 +99,7 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
+
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
@@ -114,8 +115,9 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
-  return phrases.some(phrase => normalizedMessage.includes(phrase));
+  return phrases.includes(normalizedMessage);
 }
+
 
 // Función para detectar saludos
 const greetings = [
@@ -159,118 +161,185 @@ const askingNames = [
 ];
 
 // Función para detectar menciones relacionadas con el niño perdido llamado Loan
-const relatedPhrases = [
-  'loan perdido','loan','dónde está loan','información de loan','buscando a loan',
-  'quién es loan','dime de loan','desaparecido loan','ayuda loan','perdí a loan',
-  'perdi a loan','ayuda con loan','sobre loan','que pasó con loan','que paso con loan',
-  'situación de loan','estado de loan','dónde está loan','donde está loan','quien es loan',
-  'loan information', 'lost loan', 'help find loan', 'loan missing', 'loan gone',
-  'where is loan', 'information about loan', 'who is loan', 'tell me about loan', 'lost child loan',
-  'loan whereabouts', 'loan situation', 'loan status', 'loan help', 'looking for loan',
-  'loan case', 'case of loan', 'find loan', 'seeking loan', 'loan search'
-];
+  const relatedPhrases = [
+    'loan perdido','loan','vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
+    'loan está perdido', 'buscando a loan', 'vimos a loan', 'he visto a loan', 'he encontrado a loan',
+    'loan desapareció', 'loan se perdió', 'loan necesita ayuda', 'loan encontrado', 'tengo información sobre loan',
+    'loan está solo', 'he encontrado a un niño llamado loan', 'un niño llamado loan', 'ví a un niño llamado loan',
+    'vi a loan en el parque', 'loan fue visto cerca de mi casa', 'creo haber visto a loan ayer', 'loan podría estar en el centro comercial',
+    'alguien vio a loan por aquí', 'loan desapareció hace una semana', 'me dijeron que loan fue visto en el parque',
+    'loan fue encontrado por la policía', 'buscamos a loan por todos lados', 'loan necesita ser encontrado lo antes posible',
+    'loan podría estar en problemas', 'me preocupa la seguridad de loan', 'no hemos encontrado a loan todavía',
+    'loan estaba jugando en el parque antes de desaparecer', 'creemos que loan se perdió en el centro',
+    'loan estaba usando una camiseta roja', 'alguien reportó haber visto a loan en la estación de tren',
+    'ayúdanos a encontrar a loan', 'loan está desaparecido desde ayer', 'loan se fue de casa',
+    'loan podría estar en peligro', 'si ves a loan, por favor contacta a las autoridades', 'loan se extravió en el supermercado',
+    'loan se perdió en el centro de la ciudad', 'loan fue visto por última vez cerca de la escuela',
+    'necesitamos encontrar a loan rápidamente', 'loan estaba con un adulto desconocido', 'alguien tiene información sobre loan',
+    'por favor, ayúdanos a encontrar a loan', 'se busca a un niño llamado loan', 'alguien ha visto a loan?',
+    'loan fue reportado como desaparecido', 'alguien ha visto a loan recientemente?', 'loan se fue de su casa',
+    'loan estaba jugando fuera antes de desaparecer', 'alguien ha visto a un niño pequeño llamado loan?',
+    'la familia de loan lo está buscando desesperadamente', 'loan fue visto en las cercanías del parque',
+    'loan está desaparecido desde hace horas', 'por favor, informa si tienes alguna noticia de loan',
+    'loan podría estar en el vecindario', 'alguien ha visto a loan hoy?', 'loan fue visto por última vez con una camiseta roja',
+    'alguien dijo haber visto a loan en la tienda', 'loan fue visto cerca de la estación de trenes',
+    'necesitamos ayuda para encontrar a loan', 'alguien ha encontrado a loan?', 'loan fue visto en el parque central',
+    'ayúdanos a localizar a loan', 'loan estaba solo cuando desapareció', 'necesitamos información sobre loan',
+    'loan fue visto en las inmediaciones', 'alguien ha visto a loan por aquí?', 'loan podría estar en el centro de la ciudad',
+    'se ha perdido un niño llamado loan', 'alguien ha visto a loan en el barrio?', 'loan podría estar en peligro',
+    'loan fue visto en la estación de autobuses', 'loan podría estar en el parque', 'loan estaba en el centro comercial antes de desaparecer',
+    'ayuda a buscar a loan', 'la familia de loan está muy preocupada', 'alguien tiene noticias de loan?', 'loan está desaparecido desde hace días',
+    'alguien ha visto a un niño perdido llamado loan?', 'necesitamos encontrar a loan urgentemente', 'loan podría estar herido',
+    'la policía está buscando a loan', 'loan podría estar con un adulto', 'alguien sabe algo sobre loan?',
+    'loan estaba jugando en el parque antes de desaparecer', 'loan podría estar cerca de aquí', 'necesitamos ayuda para localizar a loan',
+    'alguien tiene información sobre el paradero de loan?', 'loan fue visto por última vez en la plaza del pueblo', 'alguien ha visto a loan en el vecindario?',
+    'loan fue visto en el centro de la ciudad', 'alguien tiene noticias sobre loan?', 'loan se perdió cerca de la escuela',
+    'necesitamos saber dónde está loan', 'loan fue visto con un hombre desconocido', 'alguien ha visto a un niño pequeño llamado loan?',
+    'loan fue reportado como perdido', 'loan se perdió en el parque central', 'alguien ha encontrado a loan?', 'loan está a salvo?',
+    'alguien ha visto a loan?', 'necesitamos encontrar a loan', 'loan podría estar en el parque', 'loan podría estar cerca de la escuela',
+    'vi a loan en la tienda', 'loan necesita ayuda urgentemente', 'loan podría estar en la estación de autobuses',
+    'alguien ha visto a un niño llamado loan?', 'loan podría estar con alguien', 'necesitamos más información sobre loan',
+    'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
+  ];
 
-// Configurar comandos del bot
-bot.setMyCommands([
-  { command: '/start', description: 'Iniciar el bot' },
-  { command: '/help', description: 'Obtener ayuda' },
-  { command: '/about', description: 'Acerca de' },
-  { command: '/es', description: 'Cambiar idioma a español' },
-  { command: '/en', description: 'Change language to English' }
-]);
+// Función para manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
 
-// Manejar el comando /start
+  if (!messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    if (matchPhrases(messageText, greetings)) {
+      await bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      await bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
+    } else {
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      // Verificar variantes de Marsha en el mensaje
+      if (messageText.toLowerCase().includes('marsha')) {
+        if (messageText.toLowerCase().includes('marsha+ foundation')) {
+          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
+        } else if (messageText.toLowerCase().includes('marsha+')) {
+          await bot.sendMessage(chatId, responses.marshaPlus);
+        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+          await bot.sendMessage(chatId, responses.marshaWorldwide);
+        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+          await bot.sendMessage(chatId, responses.marshaFoundation);
+        } else {
+          await bot.sendMessage(chatId, responses.marsha);
+        }
+      } else {
+        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+        await bot.sendMessage(chatId, gptResponse);
+
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+  }
+}
+
+// Manejar el caso del niño perdido
+function handleLostChildCase(chatId) {
+  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
+
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+}
+
+// Manejar consultas callback
+async function handleCallbackQuery(callbackQuery) {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  if (data.startsWith('setLocale_')) {
+    const locale = data.split('_')[1];
+    await setUserLocale(chatId, locale);
+    bot.sendMessage(chatId, `Idioma configurado a ${locale}`);
+  }
+}
+
+// Manejar ubicación
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+  const location = msg.location;
+
+  console.log(`Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 1. Notificar a las autoridades (simulado con console.log)
+  console.log(`Notificar a las autoridades: Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 2. Almacenar la ubicación en la base de datos
+  await storeLocation(chatId, location.latitude, location.longitude);
+
+  // 3. Respuesta personalizada
+  const confirmationMessage = "Gracias por compartir tu ubicación. Estamos procesando tu información.";
+  bot.sendMessage(chatId, confirmationMessage);
+});
+
+// Función para almacenar la ubicación en la base de datos
+async function storeLocation(chatId, latitude, longitude) {
+  try {
+    const client = await pool.connect();
+    const queryText = `
+      INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
+      VALUES ($1, $2, $3, NOW())
+    `;
+    await client.query(queryText, [chatId, latitude, longitude]);
+    client.release();
+    console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
+  } catch (error) {
+    console.error('Error al almacenar la ubicación:', error);
+  }
+}
+
+// Manejar comandos
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const userFirstName = msg.from.first_name || '';
-
-  const welcomeMessage = `¡Hola ${userFirstName}! Soy ${assistantName}, tu asistente LGTBI+. ¿En qué puedo ayudarte hoy?`;
-  await bot.sendMessage(chatId, welcomeMessage);
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
+  bot.sendMessage(chatId, welcomeMessage);
 });
 
-// Manejar el comando /help
-bot.onText(/\/help/, async (msg) => {
-  const chatId = msg.chat.id;
+bot.on('message', handleMessage);
+bot.on('callback_query', handleCallbackQuery);
 
-  const helpMessage = `Puedo ayudarte con diversas consultas y tareas. Intenta preguntarme algo o usa los comandos disponibles.`;
-  await bot.sendMessage(chatId, helpMessage);
-});
-
-// Manejar el comando /about
-bot.onText(/\/about/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  const aboutMessage = `Soy ${assistantName}, un asistente desarrollado por la Fundación Marsha+ para apoyar a la comunidad LGTBI+. ${assistantDescription}`;
-  await bot.sendMessage(chatId, aboutMessage);
-});
-
-// Manejar el comando /es
-bot.onText(/\/es/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  await setUserLocale(chatId, 'es');
-  await bot.sendMessage(chatId, 'Idioma cambiado a español.');
-});
-
-// Manejar el comando /en
-bot.onText(/\/en/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  await setUserLocale(chatId, 'en');
-  await bot.sendMessage(chatId, 'Language changed to English.');
-});
-
-// Manejar mensajes de texto
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const messageText = msg.text.trim().toLowerCase();
-
-  // Detectar comandos o palabras específicas
-  if (matchPhrases(messageText, greetings)) {
-    await bot.sendMessage(chatId, responses.greeting);
-    return;
-  }
-
-  if (matchPhrases(messageText, askingNames)) {
-    await bot.sendMessage(chatId, responses.name);
-    return;
-  }
-
-  if (matchPhrases(messageText, relatedPhrases)) {
-    await bot.sendMessage(chatId, 'Lo siento, no tengo información sobre Loan en este momento.');
-    return;
-  }
-
-  // Obtener historial de mensajes para el chat
-  if (!chatMessageHistory.has(chatId)) {
-    chatMessageHistory.set(chatId, []);
-  }
-  const messageHistory = chatMessageHistory.get(chatId);
-
-  // Añadir el mensaje del usuario al historial
-  messageHistory.push({ role: 'user', content: msg.text });
-
-  // Limitar el historial a las últimas 10 interacciones para mantener el contexto
-  if (messageHistory.length > 10) {
-    messageHistory.shift();
-  }
-
-  // Obtener respuesta de OpenAI
-  const gptResponse = await getChatGPTResponse(messageHistory);
-
-  // Añadir la respuesta de OpenAI al historial
-  messageHistory.push({ role: 'assistant', content: gptResponse });
-
-  // Enviar respuesta al usuario
-  await bot.sendMessage(chatId, gptResponse);
-});
-
-// Manejar errores
 bot.on('polling_error', (error) => {
-  console.error('Error en el polling:', error);
-  // Notificar al administrador
-  enviarMensajeDirecto(ADMIN_CHAT_ID, `Error en el bot: ${error.message}`);
+  console.error('Error de polling:', error);
 });
+
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Error no manejado:', reason, 'promise:', promise);
+});
+
 
 
 
