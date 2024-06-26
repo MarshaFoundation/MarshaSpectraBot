@@ -1,3 +1,5 @@
+SILVIA actualizada a 26/6/2024
+
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
@@ -32,19 +34,14 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-const axios = require('axios'); // Asegúrate de tener axios instalado y requerido correctamente
-
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
-  
-  // Verificar si la respuesta está en la caché
   if (cachedResponses.has(messagesKey)) {
     return cachedResponses.get(messagesKey);
   }
 
   try {
-    // Llamar a la API de OpenAI para obtener una respuesta
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
@@ -52,49 +49,32 @@ async function getChatGPTResponse(messages) {
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}` // Asegúrate de tener openaiApiKey definido y válido
+        'Authorization': `Bearer ${openaiApiKey}`
       }
     });
 
-    // Verificar si la respuesta tiene la estructura esperada
-    if (response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message && response.data.choices[0].message.content) {
-      const gptResponse = response.data.choices[0].message.content.trim();
-      cachedResponses.set(messagesKey, gptResponse); // Almacenar la respuesta en la caché
-      return gptResponse; // Devolver la respuesta procesada
-    } else {
-      console.error('Respuesta inesperada de OpenAI:', response.data);
-      return 'Lo siento, ocurrió un problema al procesar tu solicitud.'; // Manejar caso de respuesta inesperada
-    }
+    const gptResponse = response.data.choices[0].message.content.trim();
+    cachedResponses.set(messagesKey, gptResponse);
+
+    return gptResponse;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error); // Manejar errores de la llamada a la API
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.'; // Devolver mensaje de error
+    console.error('Error al llamar a OpenAI:', error);
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
-
-// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
-module.exports = { getChatGPTResponse };
-
-
-const { pool } = require('./db'); // Asegúrate de tener pool definido correctamente
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
-    const client = await pool.connect(); // Conectar al pool de clientes
+    const client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release(); // Liberar cliente al finalizar la consulta
-
-    // Devolver el idioma del primer usuario encontrado o 'es' por defecto si no hay resultados
+    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
-    return 'es'; // Manejar error devolviendo 'es' como idioma por defecto
+    return 'es';
   }
 }
-
-// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
-module.exports = { getUserLocale };
-
 
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
@@ -115,22 +95,12 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
+// Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greeting: "¡Hola! Soy SilvIA+, una IA avanzada y el primer asistente LGTBI+ en el mundo. ¿En qué puedo ayudarte?",
+  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-  foundationInfo: `**Marsha+: Empoderando a la Comunidad LGBTQ+ a través de la Educacion y la Tecnología Blockchain**
-
-  Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ mediante la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
-
-  Este token innovador, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
-
-  Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`
 };
 
-// Respuestas adicionales según las variantes de consultas
-responses.marshaFoundation = responses.foundationInfo;
-responses.marshaToken = responses.foundationInfo;
-responses.msa = responses.foundationInfo;
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -234,7 +204,7 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-// Función para manejar mensajes
+// Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -247,54 +217,26 @@ async function handleMessage(msg) {
     messageHistory.push({ role: 'user', content: messageText });
 
     if (matchPhrases(messageText, greetings)) {
-      await bot.sendMessage(chatId, responses.greeting);
+      bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
-      await bot.sendMessage(chatId, responses.name);
+      bot.sendMessage(chatId, responses.name);
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      // Verificar variantes de Marsha en el mensaje
-      if (messageText.toLowerCase().includes('marsha')) {
-        if (messageText.toLowerCase().includes('marsha+ foundation')) {
-          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
-        } else if (messageText.toLowerCase().includes('marsha+')) {
-          await bot.sendMessage(chatId, responses.marshaPlus);
-        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-          await bot.sendMessage(chatId, responses.marshaWorldwide);
-        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-          await bot.sendMessage(chatId, responses.marshaFoundation);
-        } else {
-          await bot.sendMessage(chatId, responses.marsha);
-        }
-      } else {
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
-        await bot.sendMessage(chatId, gptResponse);
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
 
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
-      }
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
-    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
-// Otras respuestas o lógica de manejo de mensajes
-const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
-const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-// Obtener respuesta del modelo GPT
-const gptResponse = await getChatGPTResponse(messagesWithIntro);
-bot.sendMessage(chatId, gptResponse);
-
-// Registrar la respuesta del asistente en el historial de mensajes
-messageHistory.push({ role: 'assistant', content: gptResponse });
-chatMessageHistory.set(chatId, messageHistory);
-
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
@@ -390,6 +332,10 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
+
+
+
 
 
 
