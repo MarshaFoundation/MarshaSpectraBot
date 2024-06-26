@@ -243,8 +243,6 @@ async function handleMessage(msg) {
           bot.sendMessage(chatId, responses.marshaWorldwide);
         } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
           bot.sendMessage(chatId, responses.marshaFoundation);
-          } else if (messageText.toUpperCase().includes('MSA')) {
-          bot.sendMessage(chatId, responses.MSA);
         } else {
           bot.sendMessage(chatId, responses.marsha);
         }
@@ -261,6 +259,7 @@ async function handleMessage(msg) {
     bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
 
       // Otras respuestas o lógica de manejo de mensajes
       const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
