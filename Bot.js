@@ -219,7 +219,7 @@ async function handleMessage(msg) {
 
   if (!messageText) return;
 
-    try {
+  try {
     const userLocale = await getUserLocale(chatId);
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
@@ -260,7 +260,6 @@ async function handleMessage(msg) {
     bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
 
       // Otras respuestas o lógica de manejo de mensajes
       const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
