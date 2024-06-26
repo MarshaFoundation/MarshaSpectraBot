@@ -200,6 +200,7 @@ const askingNames = [
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
+// Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -211,46 +212,36 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
-    // Verificar coincidencias específicas relacionadas con "Marsha" y "Marsha Foundation"
-    if (messageText.toLowerCase().includes('marsha')) {
-      let responseMessage = '';
-
-      if (messageText.toLowerCase().includes('marsha+ foundation') || messageText.toLowerCase().includes('marsha foundation')) {
-        responseMessage = responses.marshaPlusFoundation;
-      } else if (messageText.toLowerCase().includes('marsha+')) {
-        responseMessage = responses.marshaPlus;
-      } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-        responseMessage = responses.marshaWorldwide;
-      } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-        responseMessage = responses.marshaFoundation;
-      } else if (messageText.toLowerCase().includes('fundación marsha')) {
-        responseMessage = responses.fundacionMarsha;
-      } else if (messageText.toLowerCase().includes('msa')) {
-        responseMessage = responses.msa;
-      } else if (messageText.toLowerCase().includes('marshaplus')) {
-        responseMessage = responses.marshaPlus;
-      } else {
-        responseMessage = responses.marsha;
-      }
-
-      if (responseMessage.trim() !== '') {
-        await bot.sendMessage(chatId, responseMessage);
-      } else {
-        console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
-        await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
-      }
+    if (matchPhrases(messageText, greetings)) {
+      await bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      await bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
     } else {
-      // Lógica para otros tipos de mensajes
-      const assistantIntro = { role: 'system', content: `¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?` };
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      // Obtener respuesta del asistente virtual
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      await bot.sendMessage(chatId, gptResponse);
+      // Verificar variantes de Marsha en el mensaje
+      if (messageText.toLowerCase().includes('marsha')) {
+        if (messageText.toLowerCase().includes('marsha+ foundation')) {
+          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
+        } else if (messageText.toLowerCase().includes('marsha+')) {
+          await bot.sendMessage(chatId, responses.marshaPlus);
+        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+          await bot.sendMessage(chatId, responses.marshaWorldwide);
+        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+          await bot.sendMessage(chatId, responses.marshaFoundation);
+        } else {
+          await bot.sendMessage(chatId, responses.marsha);
+        }
+      } else {
+        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+        await bot.sendMessage(chatId, gptResponse);
 
-      // Registrar respuesta del asistente en historial de mensajes
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     }
   } catch (error) {
     console.error('Error handling message:', error);
@@ -258,6 +249,17 @@ async function handleMessage(msg) {
   }
 }
 
+// Otras respuestas o lógica de manejo de mensajes
+const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+// Obtener respuesta del modelo GPT
+const gptResponse = await getChatGPTResponse(messagesWithIntro);
+bot.sendMessage(chatId, gptResponse);
+
+// Registrar la respuesta del asistente en el historial de mensajes
+messageHistory.push({ role: 'assistant', content: gptResponse });
+chatMessageHistory.set(chatId, messageHistory);
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
