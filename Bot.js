@@ -200,7 +200,6 @@ const askingNames = [
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-// Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -208,55 +207,42 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
-    // Obtener la localización del usuario
     const userLocale = await getUserLocale(chatId);
-
-    // Obtener historial de mensajes o inicializar si es nuevo
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
-    // Manejo de diferentes tipos de mensajes
-    if (matchPhrases(messageText, greetings)) {
-      await bot.sendMessage(chatId, responses.greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      await bot.sendMessage(chatId, responses.name);
-    } else if (matchPhrases(messageText, relatedPhrases)) {
-      handleLostChildCase(chatId);
-    } else {
-      // Introducción del asistente
-      const assistantIntro = { role: 'system', content: `¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      // Verificar menciones relacionadas con "Marsha"
-      const marshaResponses = {
-        'marsha+ foundation': responses.marshaPlusFoundation,
-        'marsha foundation': responses.marshaFoundation,
-        'marsha+': responses.marshaPlus,
-        'marshaplus': responses.marshaPlus,
-        'marsha worldwide': responses.marshaWorldwide,
-        'fundación marsha': responses.fundacionMarsha,
-        'msa': responses.msa
-      };
-
+    // Verificar coincidencias específicas relacionadas con "Marsha" y "Marsha Foundation"
+    if (messageText.toLowerCase().includes('marsha')) {
       let responseMessage = '';
-      const lowercaseMessage = messageText.toLowerCase();
 
-      // Buscar coincidencia de respuestas relacionadas con "Marsha"
-      Object.keys(marshaResponses).some(key => {
-        if (lowercaseMessage.includes(key)) {
-          responseMessage = marshaResponses[key];
-          return true;
-        }
-        return false;
-      });
+      if (messageText.toLowerCase().includes('marsha+ foundation') || messageText.toLowerCase().includes('marsha foundation')) {
+        responseMessage = responses.marshaPlusFoundation;
+      } else if (messageText.toLowerCase().includes('marsha+')) {
+        responseMessage = responses.marshaPlus;
+      } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+        responseMessage = responses.marshaWorldwide;
+      } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+        responseMessage = responses.marshaFoundation;
+      } else if (messageText.toLowerCase().includes('fundación marsha')) {
+        responseMessage = responses.fundacionMarsha;
+      } else if (messageText.toLowerCase().includes('msa')) {
+        responseMessage = responses.msa;
+      } else if (messageText.toLowerCase().includes('marshaplus')) {
+        responseMessage = responses.marshaPlus;
+      } else {
+        responseMessage = responses.marsha;
+      }
 
-      // Enviar respuesta sobre "Marsha" si encontró alguna
       if (responseMessage.trim() !== '') {
         await bot.sendMessage(chatId, responseMessage);
       } else {
         console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
         await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
       }
+    } else {
+      // Lógica para otros tipos de mensajes
+      const assistantIntro = { role: 'system', content: `¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       // Obtener respuesta del asistente virtual
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
@@ -267,11 +253,11 @@ async function handleMessage(msg) {
       chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
-    // Manejo de errores
     console.error('Error handling message:', error);
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
