@@ -113,7 +113,6 @@ function matchPhrases(message, phrases) {
 
 
 // Función para detectar saludos
-function isGreeting(message) {
   const greetings = [
     'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
     '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
@@ -128,14 +127,9 @@ function isGreeting(message) {
     'how’s your day been?', 'yo', 'what’s popping?'
   ];
 
-  const normalizedMessage = message.trim().toLowerCase();
-  return greetings.includes(normalizedMessage);
-}
-
 // Función para detectar preguntas por el nombre del asistente
-function isAskingName(message) {
   const askingNames = [
-    // Formas en español
+     // Formas en español
     '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
     'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
     'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
@@ -159,12 +153,7 @@ function isAskingName(message) {
     'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
   ];
 
-  const normalizedMessage = message.trim().toLowerCase();
-  return askingNames.includes(normalizedMessage);
-}
-
 // Función para detectar menciones relacionadas con el niño perdido llamado Loan
-function mentionsLostChild(message) {
   const relatedPhrases = [
     'loan perdido','loan','vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
     'loan está perdido', 'buscando a loan', 'vimos a loan', 'he visto a loan', 'he encontrado a loan',
@@ -205,10 +194,6 @@ function mentionsLostChild(message) {
     'alguien ha visto a un niño llamado loan?', 'loan podría estar con alguien', 'necesitamos más información sobre loan',
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
-
-  const normalizedMessage = message.trim().toLowerCase();
-  return relatedPhrases.includes(normalizedMessage);
-}
 
 // Manejar mensajes
 async function handleMessage(msg) {
