@@ -93,6 +93,13 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
+// Definición de respuestas para saludos y preguntas sobre el nombre
+const responses = {
+  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+};
+
+
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
