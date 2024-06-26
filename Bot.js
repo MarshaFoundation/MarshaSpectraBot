@@ -261,23 +261,18 @@ async function handleMessage(msg) {
   }
 }
 
-      // Otras respuestas o lógica de manejo de mensajes
-      const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
+// Otras respuestas o lógica de manejo de mensajes
+const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      // Obtener respuesta del modelo GPT
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
+// Obtener respuesta del modelo GPT
+const gptResponse = await getChatGPTResponse(messagesWithIntro);
+bot.sendMessage(chatId, gptResponse);
 
-      // Registrar la respuesta del asistente en el historial de mensajes
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
-  }
-}
+// Registrar la respuesta del asistente en el historial de mensajes
+messageHistory.push({ role: 'assistant', content: gptResponse });
+chatMessageHistory.set(chatId, messageHistory);
+
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
