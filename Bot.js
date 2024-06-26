@@ -224,38 +224,42 @@ Please press the "Share Location" button below. Your collaboration is vital to e
 };
 
 // Función para enviar mensajes según el idioma del usuario
-async function sendMessageInUserLocale(chatId, message) {
+async function sendMessageInUserLocale(chatId, messageText) {
   try {
     const userLocale = await getUserLocale(chatId);
+    let responseText = '';
+
     if (userLocale && responses[userLocale]) {
-      await bot.sendMessage(chatId, responses[userLocale].greeting, { parse_mode: 'Markdown' });
+      // Determinar qué tipo de mensaje enviar según el contenido de messageText
+      if (matchPhrases(messageText, greetings)) {
+        responseText = responses[userLocale].greeting;
+      } else if (matchPhrases(messageText, askingNames)) {
+        responseText = responses[userLocale].name;
+      } else if (matchPhrases(messageText, relatedPhrases)) {
+        await handleLostChildCase(chatId);
+        return; // No enviar mensaje directamente aquí si se maneja un caso especial como 'lostChild'
+      } else {
+        // Si no se identifica el tipo de mensaje, obtener una respuesta del modelo GPT
+        const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+        const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+        responseText = gptResponse;
+
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     } else {
       // Si el idioma del usuario no está definido o es desconocido, enviar en inglés como opción predeterminada
-      await bot.sendMessage(chatId, responses.en.greeting, { parse_mode: 'Markdown' });
+      responseText = responses.en.greeting;
     }
+
+    await bot.sendMessage(chatId, responseText, { parse_mode: 'Markdown' });
   } catch (error) {
     console.error('Error al enviar mensaje:', error);
     // Manejar el error de manera apropiada (puede ser útil enviar un mensaje genérico de error al usuario)
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al enviar el mensaje.');
   }
-}
-
-// Manejar mensajes de saludo
-if (matchPhrases(messageText, greetings)) {
-  await sendMessageInUserLocale(chatId, messageText);
-} else if (matchPhrases(messageText, askingNames)) {
-  await sendMessageInUserLocale(chatId, messageText);
-} else if (matchPhrases(messageText, relatedPhrases)) {
-  await handleLostChildCase(chatId);
-} else {
-  const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-  const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-  const gptResponse = await getChatGPTResponse(messagesWithIntro);
-  await sendMessageInUserLocale(chatId, gptResponse);
-
-  messageHistory.push({ role: 'assistant', content: gptResponse });
-  chatMessageHistory.set(chatId, messageHistory);
 }
 
 // Función para emparejar frases
