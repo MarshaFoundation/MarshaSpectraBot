@@ -93,10 +93,16 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  greeting: "¡Hola! Soy SilvIA+, una IA avanzada y el primer asistente LGTBI+ en el mundo. ¿En qué puedo ayudarte?",
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+  foundationInfo: `**Marsha+: Empoderando a la Comunidad LGBTQ+ a través de la Educacion y la Tecnología Blockchain**
+
+  Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ mediante la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
+
+  Este token innovador, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
+
+  Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`
 };
 
 
@@ -202,7 +208,6 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-// Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -220,6 +225,8 @@ async function handleMessage(msg) {
       bot.sendMessage(chatId, responses.name);
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
+    } else if (matchPhrases(messageText, ['qué es Marsha+?', 'quiénes son Marsha+ Foundation?', 'qué hace Marsha+?', 'Marsha+', 'Marsha+ Foundation'])) {
+      bot.sendMessage(chatId, responses.foundationInfo);
     } else {
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
