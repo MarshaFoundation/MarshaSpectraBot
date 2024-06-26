@@ -99,6 +99,11 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
+// Función genérica para comparar mensajes
+function matchPhrases(message, phrases) {
+  const normalizedMessage = message.trim().toLowerCase();
+  return phrases.includes(normalizedMessage);
+}
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -111,13 +116,6 @@ async function enviarMensajeDirecto(chatId, mensaje) {
     throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
   }
 }
-
-// Función genérica para comparar mensajes
-function matchPhrases(message, phrases) {
-  const normalizedMessage = message.trim().toLowerCase();
-  return phrases.includes(normalizedMessage);
-}
-
 
 // Función para detectar saludos
 const greetings = [
@@ -277,7 +275,7 @@ Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboraci
   });
 }
 
-// Manejar consultas callback
+// Función para manejar consultas callback
 async function handleCallbackQuery(callbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
