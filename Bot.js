@@ -219,7 +219,7 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const assistantIntro = { role: 'system', content: `¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       // Verificar variantes de Marsha en el mensaje
@@ -248,6 +248,7 @@ async function handleMessage(msg) {
           await bot.sendMessage(chatId, responseMessage);
         } else {
           console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
+          await bot.sendMessage(chatId, 'Lo siento, no tengo información disponible sobre eso en este momento.');
         }
 
       } else if (matchPhrases(messageText, ['qué somos', 'que somos', 'quienes son', 'quiénes somos'])) {
@@ -270,7 +271,6 @@ Con un suministro total de 8 mil millones de tokens y una tasa de quema anual de
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
