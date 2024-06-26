@@ -212,6 +212,7 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
+// Función para manejar mensajes entrantes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -219,10 +220,17 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
+    // Obtener el idioma del usuario si es necesario
+    const userLocale = await getUserLocale(chatId);
+
+    // Historial de mensajes del chat
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    // Respuestas según las consultas
     if (messageText.includes('Marsha+ Foundation') || messageText.includes('qué es Marsha+')) {
       bot.sendMessage(chatId, responses.foundationInfo);
     } else if (messageText.includes('Marsha Foundation') || messageText.includes('Marsha Token') || messageText.includes('MSA')) {
-      // Manejar otras variantes de consultas
       if (messageText.includes('Marsha Foundation')) {
         bot.sendMessage(chatId, responses.marshaFoundation);
       } else if (messageText.includes('Marsha Token')) {
@@ -231,15 +239,23 @@ async function handleMessage(msg) {
         bot.sendMessage(chatId, responses.msa);
       }
     } else {
-      // Aquí iría la lógica para manejar otros tipos de mensajes o preguntas
-      bot.sendMessage(chatId, 'Lo siento, no entendí tu pregunta.');
+      // Otras respuestas o lógica de manejo de mensajes
+      const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      // Obtener respuesta del modelo GPT
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      // Registrar la respuesta del asistente en el historial de mensajes
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
     bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
