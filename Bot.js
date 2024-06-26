@@ -105,6 +105,13 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
+// Función genérica para comparar mensajes
+function matchPhrases(message, phrases) {
+  const normalizedMessage = message.trim().toLowerCase();
+  return phrases.includes(normalizedMessage);
+}
+
+
 // Función para detectar saludos
 function isGreeting(message) {
   const greetings = [
@@ -203,29 +210,6 @@ function mentionsLostChild(message) {
   return relatedPhrases.includes(normalizedMessage);
 }
 
-// Función para detectar menciones relacionadas con el niño perdido llamado Loan
-if (msg && mentionsLostChild(msg.text)) {
-  const chatId = msg.chat.id;
-
-  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
-
-Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
-
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
-    }
-  });
-  return; // Añadimos este return para evitar que se siga procesando el mensaje en este punto
-}
-
 // Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -237,15 +221,27 @@ async function handleMessage(msg) {
   const messageHistory = chatMessageHistory.get(chatId) || [];
   messageHistory.push({ role: 'user', content: messageText });
 
-  if (isGreeting(messageText)) {
-    const greetingResponse = `¡Hola! Soy ${assistantName}, ${assistantDescription}`;
-    bot.sendMessage(chatId, greetingResponse);
-  } else if (isAskingName(messageText)) {
-    const nameResponse = `Mi nombre es ${assistantName}.`;
-    bot.sendMessage(chatId, nameResponse);
-  } else if (mentionsLostChild(messageText)) {
-    const childResponse = "Parece que mencionaste a Loan. Por favor proporciona más detalles.";
-    bot.sendMessage(chatId, childResponse);
+  if (matchPhrases(messageText, greetings)) {
+    bot.sendMessage(chatId, responses.greeting);
+  } else if (matchPhrases(messageText, askingNames)) {
+    bot.sendMessage(chatId, responses.name);
+  } else if (matchPhrases(messageText, relatedPhrases)) {
+    const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
+
+    bot.sendMessage(chatId, request, {
+      reply_markup: {
+        keyboard: [
+          [{
+            text: "Compartir ubicación",
+            request_location: true // Solicitar ubicación
+          }]
+        ],
+        resize_keyboard: true
+      }
+    });
   } else {
     const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
     const messagesWithIntro = [assistantIntro, ...messageHistory];
@@ -270,9 +266,51 @@ async function handleCallbackQuery(callbackQuery) {
   }
 }
 
+// Manejar ubicación
+bot.on('location', (msg) => {
+  const chatId = msg.chat.id;
+  const location = msg.location;
+
+  console.log(`Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+  
+  // Lógica adicional para manejar la ubicación:
+  // 1. Puedes enviar la ubicación a las autoridades relevantes.
+  // 2. Puedes almacenar la ubicación en una base de datos temporal para un seguimiento posterior.
+  // 3. Puedes utilizar la ubicación para proporcionar una respuesta personalizada al usuario.
+  // 4. Puedes enviar un mensaje de confirmación al usuario diciendo que la ubicación ha sido recibida.
+
+  // Ejemplo de respuesta personalizada:
+  const confirmationMessage = "Gracias por compartir tu ubicación. Estamos procesando tu información.";
+  bot.sendMessage(chatId, confirmationMessage);
+
+  // Si decides almacenar la ubicación:
+  // storeLocation(chatId, location.latitude, location.longitude);
+});
+
+// Función hipotética para almacenar la ubicación en la base de datos (requiere implementación)
+async function storeLocation(chatId, latitude, longitude) {
+  try {
+    const client = await pool.connect();
+    const queryText = `
+      INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
+      VALUES ($1, $2, $3, NOW())
+    `;
+    await client.query(queryText, [chatId, latitude, longitude]);
+    client.release();
+    console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
+  } catch (error) {
+    console.error('Error al almacenar la ubicación:', error);
+  }
+}
+
+// Manejar comandos
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
+  bot.sendMessage(chatId, welcomeMessage);
+});
+
 bot.on('message', handleMessage);
-bot.on('location', handleLocation);
-bot.onText(/\/start/, handleStartCommand);
 bot.on('callback_query', handleCallbackQuery);
 
 bot.on('polling_error', (error) => {
