@@ -223,37 +223,54 @@ async function handleMessage(msg) {
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       // Verificar variantes de Marsha en el mensaje
-if (messageText.toLowerCase().includes('marsha')) {
-  if (messageText.toLowerCase().includes('marsha+ foundation')) {
-    await bot.sendMessage(chatId, responses.marshaPlusFoundation);
-  } else if (messageText.toLowerCase().includes('marsha+')) {
-    await bot.sendMessage(chatId, responses.marshaPlus);
-  } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-    await bot.sendMessage(chatId, responses.marshaWorldwide);
-  } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-    await bot.sendMessage(chatId, responses.marshaFoundation);
-  } else if (messageText.toLowerCase().includes('fundación marsha')) {
-    await bot.sendMessage(chatId, responses.fundacionMarsha);
-  } else if (messageText.toLowerCase().includes('msa')) {
-    await bot.sendMessage(chatId, responses.msa);
-  } else if (messageText.toLowerCase().includes('marshaplus')) {
-    await bot.sendMessage(chatId, responses.marshaPlus);
-  } else {
-    await bot.sendMessage(chatId, responses.marsha);
-  }
-} else {
-  const gptResponse = await getChatGPTResponse(messagesWithIntro);
-  await bot.sendMessage(chatId, gptResponse);
+      if (messageText.toLowerCase().includes('marsha')) {
+        let responseMessage = '';
 
-  messageHistory.push({ role: 'assistant', content: gptResponse });
-  chatMessageHistory.set(chatId, messageHistory);
-}
+        if (messageText.toLowerCase().includes('marsha+ foundation')) {
+          responseMessage = responses.marshaPlusFoundation;
+        } else if (messageText.toLowerCase().includes('marsha+')) {
+          responseMessage = responses.marshaPlus;
+        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+          responseMessage = responses.marshaWorldwide;
+        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+          responseMessage = responses.marshaFoundation;
+        } else if (messageText.toLowerCase().includes('fundación marsha')) {
+          responseMessage = responses.fundacionMarsha;
+        } else if (messageText.toLowerCase().includes('msa')) {
+          responseMessage = responses.msa;
+        } else if (messageText.toLowerCase().includes('marshaplus')) {
+          responseMessage = responses.marshaPlus;
+        } else {
+          responseMessage = responses.marsha;
+        }
+
+        if (responseMessage.trim() !== '') {
+          await bot.sendMessage(chatId, responseMessage);
+        } else {
+          console.error('El mensaje relacionado con Marsha está vacío o no está configurado correctamente.');
+        }
+
+      } else if (matchPhrases(messageText, ['qué somos', 'que somos', 'quienes son', 'quiénes somos'])) {
+        const botIdentity = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ mediante la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
+
+Este token innovador, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
+
+Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`;
+        await bot.sendMessage(chatId, botIdentity);
+      } else {
+        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+        await bot.sendMessage(chatId, gptResponse);
+
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     }
   } catch (error) {
     console.error('Error handling message:', error);
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
 
 // Manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
