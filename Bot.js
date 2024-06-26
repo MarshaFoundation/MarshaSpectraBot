@@ -112,33 +112,6 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
-// Función para sentimientos
-from textblob import TextBlob
-
-def analyze_sentiment(text):
-    blob = TextBlob(text)
-    return blob.sentiment
-
-def process_user_message(user_message):
-    # Análisis de sentimientos del mensaje del usuario
-    sentiment = analyze_sentiment(user_message)
-    print(f"Sentimiento: {sentiment}")
-    
-    # Lógica del bot basada en el sentimiento
-    if sentiment.polarity > 0:
-        response = "¡Me alegra escuchar eso!"
-    elif sentiment.polarity < 0:
-        response = "Lamento escuchar eso. ¿Cómo puedo ayudarte a mejorar tu experiencia?"
-    else:
-        response = "Gracias por tus comentarios."
-    
-    return response
-
-# Ejemplo de uso dentro del flujo del bot
-user_message = "Estoy muy contento con el servicio"
-bot_response = process_user_message(user_message)
-print(f"Respuesta del bot: {bot_response}")
-
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
