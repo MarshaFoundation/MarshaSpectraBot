@@ -67,10 +67,10 @@ async function getUserLocale(chatId) {
     const client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
     client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
+    return res.rows.length > 0 ? res.rows[0].locale : null; // Devuelve el idioma si está registrado, o null si no lo está
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
+    return null; // Devuelve null en caso de error
   }
 }
 
@@ -202,13 +202,6 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-
-
-ChatGPT
-Parece que me he adelantado un poco en la explicación. No te preocupes, aquí tienes el fragmento de código que he agregado o modificado en tu implementación actual:
-
-javascript
-Copiar código
 // Función para manejar mensajes de texto
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -217,50 +210,69 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
+    // Obtener el idioma del usuario
     const userLocale = await getUserLocale(chatId);
+
+    // Definir respuestas en diferentes idiomas
+    const responses = {
+      es: {
+        greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+        name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+        lostChild: `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`
+      },
+      en: {
+        greeting: "Hello! I'm SilvIA+, your LGBTI+ assistant. How can I help you today?",
+        name: `My name is ${assistantName}. ${assistantDescription}`,
+        lostChild: `🚨 Attention! You are sharing valuable information, which will be forwarded to the authorities 🚨
+It's crucial that you share your current location and any additional details that could aid in the search.
+
+Please press the "Share Location" button below. Your collaboration is vital to ensure Loan's safety. 🙏`
+      }
+      // Puedes agregar más idiomas según sea necesario
+    };
+
+    // Función para enviar mensajes según el idioma del usuario
+    async function sendMessageInUserLocale(chatId, message) {
+      try {
+        if (userLocale && responses[userLocale]) {
+          await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        } else {
+          // Si el idioma del usuario no está definido o es desconocido, enviar en inglés como opción predeterminada
+          await bot.sendMessage(chatId, responses.en.greeting, { parse_mode: 'Markdown' });
+        }
+      } catch (error) {
+        console.error('Error al enviar mensaje:', error);
+        // Manejar el error de manera apropiada (puede ser útil enviar un mensaje genérico de error al usuario)
+        await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al enviar el mensaje.');
+      }
+    }
+
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
+      await sendMessageInUserLocale(chatId, responses[userLocale].greeting);
     } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
+      await sendMessageInUserLocale(chatId, responses[userLocale].name);
     } else if (matchPhrases(messageText, relatedPhrases)) {
-      handleLostChildCase(chatId);
+      await handleLostChildCase(chatId);
     } else {
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
+      await sendMessageInUserLocale(chatId, gptResponse);
 
       messageHistory.push({ role: 'assistant', content: gptResponse });
       chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
-}
-
-// Función para manejar el caso del niño perdido
-function handleLostChildCase(chatId) {
-  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
-
-Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
-
-  bot.sendMessage(chatId, request, {
-    reply_markup: {
-      keyboard: [
-        [{
-          text: "Compartir ubicación",
-          request_location: true // Solicitar ubicación
-        }]
-      ],
-      resize_keyboard: true
-    }
-  });
 }
 
 // Función para emparejar frases
