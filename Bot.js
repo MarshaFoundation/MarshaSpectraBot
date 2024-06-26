@@ -32,14 +32,19 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
+const axios = require('axios'); // Asegúrate de tener axios instalado y requerido correctamente
+
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
+  
+  // Verificar si la respuesta está en la caché
   if (cachedResponses.has(messagesKey)) {
     return cachedResponses.get(messagesKey);
   }
 
   try {
+    // Llamar a la API de OpenAI para obtener una respuesta
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
@@ -47,32 +52,49 @@ async function getChatGPTResponse(messages) {
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
+        'Authorization': `Bearer ${openaiApiKey}` // Asegúrate de tener openaiApiKey definido y válido
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
-    cachedResponses.set(messagesKey, gptResponse);
-
-    return gptResponse;
+    // Verificar si la respuesta tiene la estructura esperada
+    if (response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message && response.data.choices[0].message.content) {
+      const gptResponse = response.data.choices[0].message.content.trim();
+      cachedResponses.set(messagesKey, gptResponse); // Almacenar la respuesta en la caché
+      return gptResponse; // Devolver la respuesta procesada
+    } else {
+      console.error('Respuesta inesperada de OpenAI:', response.data);
+      return 'Lo siento, ocurrió un problema al procesar tu solicitud.'; // Manejar caso de respuesta inesperada
+    }
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    console.error('Error al llamar a OpenAI:', error); // Manejar errores de la llamada a la API
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.'; // Devolver mensaje de error
   }
 }
+
+// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
+module.exports = { getChatGPTResponse };
+
+
+const { pool } = require('./db'); // Asegúrate de tener pool definido correctamente
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
-    const client = await pool.connect();
+    const client = await pool.connect(); // Conectar al pool de clientes
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
+    client.release(); // Liberar cliente al finalizar la consulta
+
+    // Devolver el idioma del primer usuario encontrado o 'es' por defecto si no hay resultados
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
+    return 'es'; // Manejar error devolviendo 'es' como idioma por defecto
   }
 }
+
+// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
+module.exports = { getUserLocale };
+
 
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
