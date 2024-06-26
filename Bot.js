@@ -219,7 +219,7 @@ async function handleMessage(msg) {
 
   if (!messageText) return;
 
-  try {
+    try {
     const userLocale = await getUserLocale(chatId);
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
