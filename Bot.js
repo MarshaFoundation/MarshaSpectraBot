@@ -202,7 +202,14 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-// Manejar mensajes
+
+
+ChatGPT
+Parece que me he adelantado un poco en la explicación. No te preocupes, aquí tienes el fragmento de código que he agregado o modificado en tu implementación actual:
+
+javascript
+Copiar código
+// Función para manejar mensajes de texto
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -236,7 +243,7 @@ async function handleMessage(msg) {
   }
 }
 
-// Manejar el caso del niño perdido
+// Función para manejar el caso del niño perdido
 function handleLostChildCase(chatId) {
   const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
 Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
@@ -315,23 +322,25 @@ bot.onText(/\/start/, async (msg) => {
   bot.sendMessage(chatId, welcomeMessage);
 });
 
+// Manejar todos los mensajes
 bot.on('message', handleMessage);
 bot.on('callback_query', handleCallbackQuery);
 
+// Manejar errores de polling
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
 
+// Manejar excepciones no capturadas
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
   process.exit(1);
 });
 
+// Manejar promesas rechazadas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
-
 
 
 
