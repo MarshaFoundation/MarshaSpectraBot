@@ -9,7 +9,7 @@ dotenv.config();
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
-const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org.';
+const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -67,10 +67,10 @@ async function getUserLocale(chatId) {
     const client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
     client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : null; // Devuelve el idioma si está registrado, o null si no lo está
+    return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
-    return null; // Devuelve null en caso de error
+    return 'es';
   }
 }
 
@@ -202,64 +202,58 @@ function matchPhrases(message, phrases) {
     'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
   ];
 
-// Definir respuestas en diferentes idiomas
-const responses = {
-  es: {
-    greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
-    name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-    lostChild: `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
-Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+// Manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
 
-Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`
-  },
-  en: {
-    greeting: "Hello! I'm SilvIA+, your LGBTI+ assistant. How can I help you today?",
-    name: `My name is ${assistantName}. ${assistantDescription}`,
-    lostChild: `🚨 Attention! You are sharing valuable information, which will be forwarded to the authorities 🚨
-It's crucial that you share your current location and any additional details that could aid in the search.
+  if (!messageText) return;
 
-Please press the "Share Location" button below. Your collaboration is vital to ensure Loan's safety. 🙏`
-  }
-  // Puedes agregar más idiomas según sea necesario
-};
-
-// Función para enviar mensajes según el idioma del usuario
-async function sendMessageInUserLocale(chatId, messageText) {
   try {
     const userLocale = await getUserLocale(chatId);
-    let responseText = '';
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
 
-    if (userLocale && responses[userLocale]) {
-      // Determinar qué tipo de mensaje enviar según el contenido de messageText
-      if (matchPhrases(messageText, greetings)) {
-        responseText = responses[userLocale].greeting;
-      } else if (matchPhrases(messageText, askingNames)) {
-        responseText = responses[userLocale].name;
-      } else if (matchPhrases(messageText, relatedPhrases)) {
-        await handleLostChildCase(chatId);
-        return; // No enviar mensaje directamente aquí si se maneja un caso especial como 'lostChild'
-      } else {
-        // Si no se identifica el tipo de mensaje, obtener una respuesta del modelo GPT
-        const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-        const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
-        responseText = gptResponse;
-
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
-      }
+    if (matchPhrases(messageText, greetings)) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
     } else {
-      // Si el idioma del usuario no está definido o es desconocido, enviar en inglés como opción predeterminada
-      responseText = responses.en.greeting;
-    }
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-    await bot.sendMessage(chatId, responseText, { parse_mode: 'Markdown' });
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
+    }
   } catch (error) {
-    console.error('Error al enviar mensaje:', error);
-    // Manejar el error de manera apropiada (puede ser útil enviar un mensaje genérico de error al usuario)
-    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al enviar el mensaje.');
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
+}
+
+// Manejar el caso del niño perdido
+function handleLostChildCase(chatId) {
+  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
+
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
 }
 
 // Función para emparejar frases
@@ -321,25 +315,37 @@ bot.onText(/\/start/, async (msg) => {
   bot.sendMessage(chatId, welcomeMessage);
 });
 
-// Manejar todos los mensajes
 bot.on('message', handleMessage);
 bot.on('callback_query', handleCallbackQuery);
 
-// Manejar errores de polling
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
 
-// Manejar excepciones no capturadas
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
   process.exit(1);
 });
 
-// Manejar promesas rechazadas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
