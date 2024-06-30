@@ -202,32 +202,91 @@ async function handleMessage(msg) {
       const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      // Verificar menciones relacionadas con "Marsha"
-      if (messageText.toLowerCase().includes('marsha')) {
-        let responseMessage = '';
+     // Respuestas relacionadas con "Marsha"
+const marshaResponses = {
+  general: "Respuesta general sobre Marsha...",
+  marshaPlus: "Respuesta sobre Marsha+...",
+  marshaPlusFoundation: "Respuesta específica sobre Marsha+ Foundation...",
+  marshaWorldwide: "Respuesta sobre Marsha Worldwide...",
+  marshaFoundation: "Respuesta sobre Marsha Foundation...",
+  // Puedes añadir más respuestas según sea necesario
+};
 
-        if (messageText.toLowerCase().includes('marsha+ foundation')) {
-          responseMessage = responses.marshaPlusFoundation;
-        } else if (messageText.toLowerCase().includes('marsha+')) {
-          responseMessage = responses.marshaPlus;
-        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-          responseMessage = responses.marshaWorldwide;
-        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-          responseMessage = responses.marshaFoundation;
-        } else {
-          responseMessage = responses.marsha;
-        }
+// Función para manejar menciones relacionadas con "Marsha"
+async function handleMarshaMentions(chatId, messageText) {
+  // Expresiones regulares para detectar menciones de "Marsha"
+  const marshaRegex = [
+    /marsha\+\s*foundation/i,
+    /marsha\+\s*/i,
+    /marsha\s*worldwide/i,
+    /marsha\s*foundation/i,
+    /marsha/i
+  ];
 
-        await bot.sendMessage(chatId, responseMessage);
+  // Buscar coincidencia en el mensaje del usuario
+  let responseMessage = '';
+  for (const regex of marshaRegex) {
+    if (regex.test(messageText)) {
+      // Seleccionar la respuesta correspondiente
+      if (regex === /marsha\+\s*foundation/i) {
+        responseMessage = marshaResponses.marshaPlusFoundation;
+      } else if (regex === /marsha\+\s*/i) {
+        responseMessage = marshaResponses.marshaPlus;
+      } else if (regex === /marsha\s*worldwide/i) {
+        responseMessage = marshaResponses.marshaWorldwide;
+      } else if (regex === /marsha\s*foundation/i) {
+        responseMessage = marshaResponses.marshaFoundation;
       } else {
-        // Obtener respuesta del modelo GPT
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
-        await bot.sendMessage(chatId, gptResponse);
-
-        // Registrar la respuesta del asistente en el historial de mensajes
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
+        responseMessage = marshaResponses.general;
       }
+      break;
+    }
+  }
+
+  // Si encontramos una respuesta, enviarla al usuario
+  if (responseMessage) {
+    try {
+      await bot.sendMessage(chatId, responseMessage);
+    } catch (error) {
+      console.error('Error al enviar mensaje de Marsha:', error);
+    }
+  }
+}
+
+// Función principal para manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat?.id;
+  const messageText = msg.text;
+
+  if (!chatId || !messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    // Verificar menciones relacionadas con "Marsha"
+    await handleMarshaMentions(chatId, messageText);
+
+    // Respuestas según el contenido del mensaje
+    if (matchPhrases(messageText, greetings)) {
+      await bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      await bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
+    } else {
+      // Introducción del asistente
+      const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      // Obtener respuesta del modelo GPT
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      await bot.sendMessage(chatId, gptResponse);
+
+      // Registrar la respuesta del asistente en el historial de mensajes
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
