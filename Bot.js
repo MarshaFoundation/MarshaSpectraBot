@@ -106,53 +106,22 @@ async function handleMessage(msg) {
       response = await getSilviaResponse(msg);
     }
 
-    // Obtener historial de mensajes del chat
-    let chatHistory = chatMessageHistory.get(chatId) || [];
+    // Enviar respuesta al usuario
+    await enviarMensajeDirecto(chatId, response);
 
-    // Agregar mensaje actual al historial
-    chatHistory.push({ role: 'user', content: message });
-
-    // Limitar historial a los últimos 10 mensajes
-    if (chatHistory.length > 10) {
-      chatHistory = chatHistory.slice(chatHistory.length - 10);
-    }
-
-    // Guardar historial de mensajes actualizado
-    chatMessageHistory.set(chatId, chatHistory);
-
-    // Si ya hay una respuesta, no enviar ninguna otra
-    if (response) {
-      return response;
-    }
-
-    // Obtener respuesta de OpenAI si no hay respuesta específica
-    const openaiResponse = await getChatGPTResponse(chatHistory);
-
-    // Agregar respuesta de OpenAI al historial de mensajes
-    chatHistory.push({ role: 'assistant', content: openaiResponse });
-
-    // Guardar historial de mensajes actualizado
-    chatMessageHistory.set(chatId, chatHistory);
-
-    return openaiResponse;
   } catch (error) {
     console.error('Error al manejar el mensaje:', error);
-    return 'Lo siento, no puedo procesar tu solicitud en este momento.';
+    await enviarMensajeDirecto(chatId, 'Lo siento, no puedo procesar tu solicitud en este momento.');
   }
 }
 
 // Evento para manejar mensajes recibidos
 bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-
   try {
     // Verificar si es un mensaje de texto
     if (msg.text) {
       // Manejar mensaje y obtener respuesta
-      const response = await handleMessage(msg);
-
-      // Enviar respuesta al usuario
-      await enviarMensajeDirecto(chatId, response);
+      await handleMessage(msg);
     }
   } catch (error) {
     console.error('Error al manejar el mensaje:', error);
