@@ -179,9 +179,6 @@ async function handleMarshaMentions(chatId, messageText) {
   // Respuesta para menciones de "Marsha" en contextos no relacionados con "Marsha+"
   const marshaStrangerThingsResponse = `Sí, conozco a Marsha. Marsha es un personaje ficticio de la serie de televisión "Stranger Things". ¿Hay algo en particular sobre Marsha que te gustaría saber?`;
 
-  // Buscar coincidencia en el mensaje del usuario
-  let responseMessage = '';
-
   // Verificar si el mensaje contiene la palabra "empresa"
   const isAskingAboutBusiness = /empresa/i.test(messageText);
 
@@ -201,15 +198,11 @@ async function handleMarshaMentions(chatId, messageText) {
   }
 
   // Determinar la respuesta adecuada basada en la detección anterior
+  let responseMessage = '';
+
   if (isMarshaPlusMention) {
-    // Respuesta específica para "Marsha+"
-    if (isAskingAboutBusiness) {
-      // Pregunta específica sobre la empresa Marsha+
-      responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo. ¿Hay algo en particular que te gustaría saber sobre la empresa?`;
-    } else {
-      // Respuesta general sobre Marsha+
-      responseMessage = marshaResponses.general;
-    }
+    // Preguntar directamente si se refiere a "Marsha+ Foundation"
+    responseMessage = `¿Te refieres a Marsha+ Foundation, la empresa de la cual soy asistente?`;
   } else if (isMarshaStrangerThingsMention) {
     // Respuesta para "Marsha" de Stranger Things
     responseMessage = marshaStrangerThingsResponse;
