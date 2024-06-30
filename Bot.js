@@ -29,17 +29,12 @@ console.log('Bot iniciado correctamente');
 // Mapa para cachear respuestas de OpenAI (actualizado a GPT-4)
 const cachedResponses = new Map();
 
-// Mapa para almacenar historial de mensajes por chatId
-const chatMessageHistory = new Map();
-
 // Configuración de instancia de Axios para OpenAI
 const openai = axios.create({
   baseURL: 'https://api.openai.com/v1',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${openaiApiKey}`,
-    // Asegúrate de definir openaiOrganization si es necesario
-    'OpenAI-Organization': openaiOrganization,
   }
 });
 
@@ -62,26 +57,6 @@ async function getChatGPTResponse(messages) {
   } catch (error) {
     console.error('Error al llamar a OpenAI:', error);
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
-  }
-}
-
-// Función para obtener el idioma del usuario desde la base de datos de manera segura
-async function getUserLocale(chatId) {
-  let client;
-  try {
-    client = await pool.connect();
-    const queryText = 'SELECT locale FROM users WHERE chat_id = $1';
-    const result = await client.query(queryText, [chatId]);
-
-    const { rows } = result;
-    return rows.length > 0 ? rows[0].locale : 'es';
-  } catch (error) {
-    console.error('Error al obtener el idioma del usuario desde la base de datos:', error);
-    return 'es';
-  } finally {
-    if (client) {
-      await client.release();
-    }
   }
 }
 
