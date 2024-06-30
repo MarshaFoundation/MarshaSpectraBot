@@ -28,9 +28,7 @@ console.log('Bot iniciado correctamente');
 // Almacenamiento temporal para mensajes por chat
 const chatMessageHistory = new Map();
 
-// Mapa para cachear respuestas de OpenAI
-const cachedResponses = new Map();
-
+// Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -39,7 +37,7 @@ async function getChatGPTResponse(messages) {
 
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: messages,
       temperature: 0.7,
     }, {
@@ -49,18 +47,13 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    let gptResponse = response.data.choices[0].message.content.trim();
-
-    // Filtrar cualquier mención a OpenAI o ChatGPT
-    gptResponse = gptResponse.replace(/\b(chat\s*GPT|GPT|OpenAI|AI)\b/gi, 'esta asistente');
-
+    const gptResponse = response.data.choices[0].message.content.trim();
     cachedResponses.set(messagesKey, gptResponse);
-    setTimeout(() => cachedResponses.delete(messagesKey), 30 * 60 * 1000); // Eliminar después de 30 minutos
 
     return gptResponse;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error.response ? error.response.data : error.message);
-    return 'Lo siento, ocurrió un error al procesar tu solicitud.';
+    console.error('Error al llamar a OpenAI:', error);
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
 
