@@ -99,6 +99,18 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
+// Función para enviar mensaje directo a un usuario
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    const response = await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+  }
+}
+
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
