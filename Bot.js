@@ -116,7 +116,6 @@ bot.on('message', async (msg) => {
   }
 });
 
-
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
@@ -190,7 +189,7 @@ const greetings = [
 
 // Función para detectar preguntas por el nombre del asistente
 const askingNames = [
-   // Formas en español
+  // Formas en español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
   'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
   'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
@@ -282,6 +281,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promesa no capturada en', promise, 'motivo:', reason);
 });
+
 
 
 
