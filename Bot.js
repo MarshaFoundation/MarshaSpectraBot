@@ -32,62 +32,32 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de SilvIA+
-async function getChatGPTResponse(messages) {
-  const messagesKey = JSON.stringify(messages);
-  if (cachedResponses.has(messagesKey)) {
-    return cachedResponses.get(messagesKey);
-  }
-
+// Función para obtener respuesta de Silvia sobre ella misma y Marsha+ Foundation
+async function getSilviaResponse(message) {
   try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4', // Actualización a la versión más reciente
-      messages: messages,
-      temperature: 0.7,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      }
-    });
+    let response;
 
-    let gptResponse = response.data.choices[0].message.content.trim();
+    // Transformar mensaje a minúsculas para facilitar la comparación
+    const lowercaseMessage = message.text.toLowerCase();
 
-    // Lista de palabras o frases relacionadas con OpenAI o GPT que queremos filtrar
-    const bannedWords = [
-      'OpenAI',
-      'GPT',
-      'GPT-3',
-      'GPT-3.5',
-      'GPT-4',
-      'Soy un asistente virtual desarrollado por'
-    ];
-
-    // Filtrar respuestas que contengan palabras o frases prohibidas
-    bannedWords.forEach(word => {
-      gptResponse = gptResponse.replace(new RegExp(word, 'gi'), '');
-    });
-
-    // Agregar contexto sobre Marsha+ Foundation
-    const marshaFoundationContext = `Soy una IA avanzada desarrollada por el equipo técnico de Marsha+ Foundation (www.marshafoundation.org), la primera empresa blockchain LGBTI+ con el máximo nivel de seguridad en el mundo (10/10). Marsha+ Foundation se fundó con la misión de empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
-
-Este innovador token, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
-
-Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso continuo con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`;
-
-    // Si la respuesta queda vacía después de filtrar, agregar contexto predeterminado
-    if (gptResponse.trim() === '') {
-      gptResponse = marshaFoundationContext;
+    // Verificar si el mensaje contiene palabras relacionadas con OpenAI o ChatGPT
+    if (lowercaseMessage.includes('openai') || lowercaseMessage.includes('chatgpt')) {
+      response = `Lo siento, no puedo proporcionar información sobre OpenAI o ChatGPT. Estoy aquí para ayudarte con información sobre Marsha+ Foundation y otros temas. ¿Hay algo más en lo que pueda asistirte?`;
+    } else if (lowercaseMessage.includes('empresa') || lowercaseMessage.includes('marsha')) {
+      // Respuesta específica sobre Marsha+ Foundation
+      response = `Soy una inteligencia artificial desarrollada por Marsha+ Foundation (www.marshafoundation.org), la primera empresa blockchain LGBTQ+ con el máximo nivel de seguridad en el mundo (10/10). Marsha+ Foundation se dedica a empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain y la inteligencia artificial.`;
+    } else {
+      // Respuesta genérica si la pregunta no coincide con las anteriores
+      response = `Soy Silvia, una inteligencia artificial avanzada desarrollada por Marsha+ Foundation (www.marshafoundation.org). Mi propósito es proporcionar asistencia y responder preguntas en una variedad de temas. ¿En qué más puedo ayudarte hoy?`;
     }
 
-    cachedResponses.set(messagesKey, gptResponse);
-
-    return gptResponse;
+    return response;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    console.error('Error al procesar la solicitud:', error);
+    return 'Lo siento, hubo un problema al intentar responder tu solicitud.';
   }
 }
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
