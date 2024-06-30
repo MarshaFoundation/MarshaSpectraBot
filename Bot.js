@@ -204,7 +204,12 @@ async function handleMessage(msg) {
 // Función para detectar preguntas dirigidas a ChatGPT o relacionadas
 function isChatGPTQuestion(text) {
   const normalizedText = text.trim().toLowerCase();
-  return normalizedText.includes('chat gpt') || normalizedText.includes('silvia') || normalizedText.includes('assistant') || normalizedText.includes('ai');
+  return (
+    normalizedText.includes('chat gpt') ||
+    normalizedText.includes('silvia') ||
+    normalizedText.includes('assistant') ||
+    normalizedText.includes('ai')
+  );
 }
 
 // Función para obtener una respuesta de saludo aleatoria
@@ -227,15 +232,14 @@ const responses = {
 };
 
 // Escuchar mensajes del usuario
-bot.on('message', (msg) => {
-  handleMessage(msg).catch((error) => console.error('Error al manejar el mensaje:', error));
-});
+bot.on('message', handleMessage);
 
 // Manejar errores no capturados
 process.on('unhandledRejection', (error) => {
   console.error('Excepción no capturada:', error);
   enviarMensajeDirecto(ADMIN_CHAT_ID, `Excepción no capturada: ${error}`);
 });
+
 
 
 
