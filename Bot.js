@@ -160,6 +160,48 @@ function matchPhrases(message, phrases) {
     'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
   ];
 
+// Función para detectar menciones relacionadas con el niño perdido llamado Loan
+  const relatedPhrases = [
+    'loan perdido','loan','vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
+    'loan está perdido', 'buscando a loan', 'vimos a loan', 'he visto a loan', 'he encontrado a loan',
+    'loan desapareció', 'loan se perdió', 'loan necesita ayuda', 'loan encontrado', 'tengo información sobre loan',
+    'loan está solo', 'he encontrado a un niño llamado loan', 'un niño llamado loan', 'ví a un niño llamado loan',
+    'vi a loan en el parque', 'loan fue visto cerca de mi casa', 'creo haber visto a loan ayer', 'loan podría estar en el centro comercial',
+    'alguien vio a loan por aquí', 'loan desapareció hace una semana', 'me dijeron que loan fue visto en el parque',
+    'loan fue encontrado por la policía', 'buscamos a loan por todos lados', 'loan necesita ser encontrado lo antes posible',
+    'loan podría estar en problemas', 'me preocupa la seguridad de loan', 'no hemos encontrado a loan todavía',
+    'loan estaba jugando en el parque antes de desaparecer', 'creemos que loan se perdió en el centro',
+    'loan estaba usando una camiseta roja', 'alguien reportó haber visto a loan en la estación de tren',
+    'ayúdanos a encontrar a loan', 'loan está desaparecido desde ayer', 'loan se fue de casa',
+    'loan podría estar en peligro', 'si ves a loan, por favor contacta a las autoridades', 'loan se extravió en el supermercado',
+    'loan se perdió en el centro de la ciudad', 'loan fue visto por última vez cerca de la escuela',
+    'necesitamos encontrar a loan rápidamente', 'loan estaba con un adulto desconocido', 'alguien tiene información sobre loan',
+    'por favor, ayúdanos a encontrar a loan', 'se busca a un niño llamado loan', 'alguien ha visto a loan?',
+    'loan fue reportado como desaparecido', 'alguien ha visto a loan recientemente?', 'loan se fue de su casa',
+    'loan estaba jugando fuera antes de desaparecer', 'alguien ha visto a un niño pequeño llamado loan?',
+    'la familia de loan lo está buscando desesperadamente', 'loan fue visto en las cercanías del parque',
+    'loan está desaparecido desde hace horas', 'por favor, informa si tienes alguna noticia de loan',
+    'loan podría estar en el vecindario', 'alguien ha visto a loan hoy?', 'loan fue visto por última vez con una camiseta roja',
+    'alguien dijo haber visto a loan en la tienda', 'loan fue visto cerca de la estación de trenes',
+    'necesitamos ayuda para encontrar a loan', 'alguien ha encontrado a loan?', 'loan fue visto en el parque central',
+    'ayúdanos a localizar a loan', 'loan estaba solo cuando desapareció', 'necesitamos información sobre loan',
+    'loan fue visto en las inmediaciones', 'alguien ha visto a loan por aquí?', 'loan podría estar en el centro de la ciudad',
+    'se ha perdido un niño llamado loan', 'alguien ha visto a loan en el barrio?', 'loan podría estar en peligro',
+    'loan fue visto en la estación de autobuses', 'loan podría estar en el parque', 'loan estaba en el centro comercial antes de desaparecer',
+    'ayuda a buscar a loan', 'la familia de loan está muy preocupada', 'alguien tiene noticias de loan?', 'loan está desaparecido desde hace días',
+    'alguien ha visto a un niño perdido llamado loan?', 'necesitamos encontrar a loan urgentemente', 'loan podría estar herido',
+    'la policía está buscando a loan', 'loan podría estar con un adulto', 'alguien sabe algo sobre loan?',
+    'loan estaba jugando en el parque antes de desaparecer', 'loan podría estar cerca de aquí', 'necesitamos ayuda para localizar a loan',
+    'alguien tiene información sobre el paradero de loan?', 'loan fue visto por última vez en la plaza del pueblo', 'alguien ha visto a loan en el vecindario?',
+    'loan fue visto en el centro de la ciudad', 'alguien tiene noticias sobre loan?', 'loan se perdió cerca de la escuela',
+    'necesitamos saber dónde está loan', 'loan fue visto con un hombre desconocido', 'alguien ha visto a un niño pequeño llamado loan?',
+    'loan fue reportado como perdido', 'loan se perdió en el parque central', 'alguien ha encontrado a loan?', 'loan está a salvo?',
+    'alguien ha visto a loan?', 'necesitamos encontrar a loan', 'loan podría estar en el parque', 'loan podría estar cerca de la escuela',
+    'vi a loan en la tienda', 'loan necesita ayuda urgentemente', 'loan podría estar en la estación de autobuses',
+    'alguien ha visto a un niño llamado loan?', 'loan podría estar con alguien', 'necesitamos más información sobre loan',
+    'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
+  ];
+
 // Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -288,6 +330,11 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
+
+
+
+
 
 
 
