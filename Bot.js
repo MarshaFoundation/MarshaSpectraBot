@@ -172,26 +172,59 @@ async function handleMessage(msg) {
     messageHistory.push({ role: 'user', content: messageText });
 
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
+      // Respuesta de saludo variada
+      const randomGreetingResponse = getRandomResponse(responses.greetings);
+      bot.sendMessage(chatId, randomGreetingResponse);
     } else if (matchPhrases(messageText, askingNames)) {
+      // Respuesta sobre el nombre del asistente
       bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      // Manejo de casos específicos como casos de niños perdidos
+      handleLostChildCase(chatId);
+    } else if (isChatGPTQuestion(messageText)) {
+      // Respuesta específica sobre ChatGPT
+      bot.sendMessage(chatId, responses.aiDescription[userLocale]);
     } else {
-      const assistantIntro = { role: 'assistant', content: responses.name };
-      messageHistory.push(assistantIntro);
-      const openAiMessages = messageHistory.map((message) => ({
-        role: message.role,
-        content: message.content
-      }));
+      // Introducción del asistente seguida de una respuesta generada por GPT
+      const assistantIntro = `¡Hola! Soy ${assistantName}, el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información.`;
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      const gptResponse = await getChatGPTResponse(openAiMessages);
-      chatMessageHistory.set(chatId, [...messageHistory, { role: 'assistant', content: gptResponse }]);
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
       bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
-    console.error('Error al manejar el mensaje:', error);
-    enviarMensajeDirecto(ADMIN_CHAT_ID, `Error al manejar el mensaje: ${error.message}`);
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
+// Función para detectar preguntas dirigidas a ChatGPT o relacionadas
+function isChatGPTQuestion(text) {
+  const normalizedText = text.trim().toLowerCase();
+  return normalizedText.includes('chat gpt') || normalizedText.includes('silvia') || normalizedText.includes('assistant') || normalizedText.includes('ai');
+}
+
+// Función para obtener una respuesta de saludo aleatoria
+function getRandomResponse(array) {
+  const randomIndex = Math.floor(Math.random() * array.length);
+  return array[randomIndex];
+}
+
+// Respuestas específicas según idioma
+const responses = {
+  greetings: [
+    "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+    "¡Hola! ¿Cómo estás? Soy SilvIA+, aquí para ayudarte."
+  ],
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+  aiDescription: {
+    es: "¡No! Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información.",
+    en: "No! I'm the first LGTBI+ assistant in the world, developed by Marsha+ Foundation. I have access to resources from OpenAI and various sources, which makes me an advanced and powerful AI. Visit www.marshafoundation.org for more information."
+  }
+};
 
 // Escuchar mensajes del usuario
 bot.on('message', (msg) => {
@@ -203,6 +236,7 @@ process.on('unhandledRejection', (error) => {
   console.error('Excepción no capturada:', error);
   enviarMensajeDirecto(ADMIN_CHAT_ID, `Excepción no capturada: ${error}`);
 });
+
 
 
 
