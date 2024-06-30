@@ -157,7 +157,6 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -169,6 +168,56 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
+    // Función para manejar menciones específicas de "Marsha+"
+    async function handleMarshaMentions(chatId, messageText) {
+      // Expresiones regulares para detectar menciones de "Marsha+"
+      const marshaPlusRegex = [
+        /\bmarsha\+\s*foundation\b/i,
+        /\bmarsha\+\b/i,
+        /\bmarsha\s*worldwide\b/i,
+        /\bmarsha\s*foundation\b/i,
+        /\bmarsha\b/i
+      ];
+
+      // Verificar si el mensaje contiene alguna mención de "Marsha+"
+      let isMarshaPlusMention = false;
+      let specificQuestion = false; // Variable para verificar si hay una pregunta específica sobre la empresa
+
+      for (const regex of marshaPlusRegex) {
+        if (regex.test(messageText)) {
+          isMarshaPlusMention = true;
+          if (/\bempresa\b/i.test(messageText)) { // Verificar si se menciona la palabra "empresa"
+            specificQuestion = true;
+          }
+          break;
+        }
+      }
+
+      // Definir respuesta por defecto si no se menciona "Marsha+"
+      let responseMessage = '';
+
+      if (isMarshaPlusMention) {
+        if (specificQuestion) {
+          // Responder con información específica sobre la empresa "Marsha+"
+          responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo. ¿En qué más puedo ayudarte sobre la empresa?`;
+        } else {
+          // Responder con información general sobre "Marsha+"
+          responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. ¿Hay algo específico que te gustaría saber?`;
+        }
+      } else {
+        // Si no hay mención de "Marsha+", responder de manera estándar
+        responseMessage = `Como inteligencia artificial, estoy aquí para ayudarte. ¿Puedo hacer algo por ti?`;
+      }
+
+      // Enviar la respuesta al usuario
+      try {
+        await bot.sendMessage(chatId, responseMessage);
+      } catch (error) {
+        console.error('Error al enviar mensaje de Marsha:', error);
+      }
+    }
+
+    // Lógica principal para manejar mensajes
     if (matchPhrases(messageText, greetings)) {
       await bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
@@ -176,24 +225,15 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      // Verificar variantes de Marsha en el mensaje
+      // Verificar menciones específicas de "Marsha+"
       if (messageText.toLowerCase().includes('marsha')) {
-        if (messageText.toLowerCase().includes('marsha+ foundation')) {
-          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
-        } else if (messageText.toLowerCase().includes('marsha+')) {
-          await bot.sendMessage(chatId, responses.marshaPlus);
-        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
-          await bot.sendMessage(chatId, responses.marshaWorldwide);
-        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
-          await bot.sendMessage(chatId, responses.marshaFoundation);
-        } else {
-          await bot.sendMessage(chatId, responses.marsha);
-        }
+        await handleMarshaMentions(chatId, messageText);
       } else {
+        // Respuesta por defecto usando modelo GPT u otra lógica de respuesta
+        const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+        const messagesWithIntro = [assistantIntro, ...messageHistory];
         const gptResponse = await getChatGPTResponse(messagesWithIntro);
+
         await bot.sendMessage(chatId, gptResponse);
 
         messageHistory.push({ role: 'assistant', content: gptResponse });
@@ -205,18 +245,6 @@ async function handleMessage(msg) {
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
-// Otras respuestas o lógica de manejo de mensajes
-const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
-const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-// Obtener respuesta del modelo GPT
-const gptResponse = await getChatGPTResponse(messagesWithIntro);
-bot.sendMessage(chatId, gptResponse);
-
-// Registrar la respuesta del asistente en el historial de mensajes
-messageHistory.push({ role: 'assistant', content: gptResponse });
-chatMessageHistory.set(chatId, messageHistory);
 
 // Función para manejar consultas callback
 async function handleCallbackQuery(callbackQuery) {
