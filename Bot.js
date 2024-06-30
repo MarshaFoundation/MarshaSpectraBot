@@ -159,45 +159,6 @@ bot.on('message', async (msg) => {
   }
 });
 
-
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
-  try {
-    const client = await pool.connect();
-    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
-  } catch (error) {
-    console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
-  }
-}
-
-// Función para actualizar/guardar el idioma del usuario en la base de datos
-async function setUserLocale(chatId, locale) {
-  const queryText = `
-    INSERT INTO users (chat_id, locale) 
-    VALUES ($1, $2) 
-    ON CONFLICT (chat_id) 
-    DO UPDATE SET locale = $2
-  `;
-  
-  try {
-    const client = await pool.connect();
-    await client.query(queryText, [chatId, locale]);
-    client.release();
-    console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
-  } catch (error) {
-    console.error('Error al configurar el idioma del usuario:', error);
-  }
-}
-
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
-
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
@@ -215,6 +176,12 @@ function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
 }
+
+// Definición de respuestas para saludos y preguntas sobre el nombre
+const responses = {
+  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+};
 
 // Función para detectar saludos
 const greetings = [
@@ -257,17 +224,7 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Manejar errores no capturados
-process.on('uncaughtException', (err) => {
-  console.error('Excepción no capturada:', err);
-});
-
-// Manejar promesas no capturadas
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa no capturada en', promise, 'motivo:', reason);
-});
-
-// Iniciar el bot
+// Función para iniciar el bot
 async function startBot() {
   try {
     // Conectar con la base de datos
@@ -279,11 +236,14 @@ async function startBot() {
       const chatId = msg.chat.id;
 
       try {
-        // Manejar mensaje y obtener respuesta
-        const response = await handleMessage(msg);
+        // Verificar si es un mensaje de texto
+        if (msg.text) {
+          // Manejar mensaje y obtener respuesta
+          const response = await handleMessage(msg);
 
-        // Enviar respuesta al usuario
-        await enviarMensajeDirecto(chatId, response);
+          // Enviar respuesta al usuario
+          await enviarMensajeDirecto(chatId, response);
+        }
       } catch (error) {
         console.error('Error al manejar el mensaje:', error);
       }
@@ -291,14 +251,14 @@ async function startBot() {
 
     // Log de inicio
     console.log('Escuchando mensajes...');
-
   } catch (error) {
     console.error('Error al iniciar el bot:', error);
   }
 }
 
-// Función para iniciar el bot
+// Iniciar el bot
 startBot();
+
 
 
 
