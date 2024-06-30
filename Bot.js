@@ -176,6 +176,22 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
+    // Definir frases relacionadas
+    const relatedPhrases = [
+      'frase1',
+      'frase2',
+      'frase3',
+      // Agrega más frases según sea necesario
+    ];
+
+    // Función para manejar casos específicos de frases relacionadas
+    function handleLostChildCase(chatId) {
+      // Implementación básica de la función handleLostChildCase
+      const responseMessage = 'Aquí puedes poner la lógica para manejar el caso de frases relacionadas.';
+      bot.sendMessage(chatId, responseMessage)
+        .catch(error => console.error('Error al enviar mensaje:', error));
+    }
+
     // Función para manejar menciones específicas de "Marsha+"
     async function handleMarshaMentions(chatId, messageText) {
       // Expresiones regulares para detectar menciones de "Marsha+"
