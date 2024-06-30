@@ -93,77 +93,11 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greetings: [
-    "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
-    "¡Hola! ¿Cómo estás? Soy SilvIA+, aquí para ayudarte."
-  ],
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-  aiDescription: {
-    es: "¡No! Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información.",
-    en: "No! I'm the first LGTBI+ assistant in the world, developed by Marsha+ Foundation. I have access to resources from OpenAI and various sources, which makes me an advanced and powerful AI. Visit www.marshafoundation.org for more information."
-  }
-};
-
-// Función para enviar mensaje directo a un usuario
-async function enviarMensajeDirecto(chatId, mensaje) {
-  try {
-    const response = await bot.sendMessage(chatId, mensaje);
-    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
-    return response;
-  } catch (error) {
-    console.error(`Error al enviar mensaje a ${chatId}:`, error);
-    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
-  }
-}
-
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
 }
-
-// Función para detectar saludos
-const greetings = [
-  'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
-  '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
-  '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
-  '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
-  'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
-  'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
-  'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
-  'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
-  'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
-  'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
-  'how’s your day been?', 'yo', 'what’s popping?'
-];
-
-// Función para detectar preguntas por el nombre del asistente
-const askingNames = [
-   // Formas en español
-  '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
-  'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
-  'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
-  'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
-  'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
-  'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
-  'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
-  'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
-  'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
-  'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
-
-  // Formas en inglés
-  'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
-  'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
-  'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
-  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
-  'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
-  'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
-  'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
-  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
-  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
-];
 
 // Función para manejar mensajes
 async function handleMessage(msg) {
@@ -232,6 +166,80 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
   notChatGPTResponse: "No, no soy un modelo de chat GPT. Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información."
 };
+
+// Función para enviar mensaje directo a un usuario
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    const response = await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+  }
+}
+
+// Función genérica para obtener una respuesta aleatoria de un array
+function getRandomResponse(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+// Definición de respuestas para saludos y preguntas sobre el nombre
+const greetings = [
+  'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+  '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
+  '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
+  '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
+  'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
+  'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
+  'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
+  'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
+  'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
+  'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
+  'how’s your day been?', 'yo', 'what’s popping?'
+];
+
+// Función para detectar preguntas por el nombre del asistente
+const askingNames = [
+   // Formas en español
+  '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
+  'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
+  'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
+  'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
+  'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
+  'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
+  'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
+  'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
+  'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
+  'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
+
+  // Formas en inglés
+  'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
+  'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
+  'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
+  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
+  'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
+  'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
+  'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
+  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
+  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
+];
+
+// Función para detectar preguntas relacionadas con "chat gpt"
+const relatedPhrases = [
+  'chat gpt', 'silvia', 'assistant', 'ai'
+];
+
+// Iniciar el bot: escuchar y manejar mensajes
+bot.on('message', handleMessage);
+
+// Manejar errores no capturados
+process.on('unhandledRejection', error => {
+  console.error('Unhandled promise rejection:', error);
+});
+
+console.log('Bot listo para recibir mensajes.');
+
 
 
 
