@@ -184,19 +184,27 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, askingNames)) {
       // Respuesta sobre el nombre del asistente
       bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      // No se hará nada en este caso específico
     } else if (isChatGPTQuestion(messageText)) {
-      // Respuesta específica sobre ChatGPT
-      bot.sendMessage(chatId, responses.aiDescription[userLocale]);
+      // Respuesta específica para preguntas relacionadas con "chat gpt"
+      bot.sendMessage(chatId, responses.notChatGPTResponse);
     } else {
       // Introducción del asistente seguida de una respuesta generada por GPT
       const assistantIntro = `¡Hola! Soy ${assistantName}, el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información.`;
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
-
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+      
+      // Verificar si la respuesta de GPT es la misma que la anterior para evitar duplicados
+      const lastMessage = messageHistory[messageHistory.length - 1];
+      const lastAssistantResponse = lastMessage && lastMessage.role === 'assistant' ? lastMessage.content : null;
+      
+      if (gptResponse !== lastAssistantResponse) {
+        bot.sendMessage(chatId, gptResponse);
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     }
   } catch (error) {
     console.error('Error handling message:', error);
@@ -214,6 +222,17 @@ function isChatGPTQuestion(text) {
     normalizedText.includes('ai')
   );
 }
+
+// Respuestas específicas según idioma
+const responses = {
+  greetings: [
+    "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+    "¡Hola! ¿Cómo estás? Soy SilvIA+, aquí para ayudarte."
+  ],
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+  notChatGPTResponse: "No, no soy un modelo de chat GPT. Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información."
+};
+
 
 // Función para obtener una respuesta de saludo aleatoria
 function getRandomResponse(array) {
