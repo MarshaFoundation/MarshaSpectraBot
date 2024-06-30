@@ -69,7 +69,11 @@ async function getChatGPTResponse(messages) {
     });
 
     // Agregar contexto sobre Marsha+ Foundation
-    const marshaFoundationContext = 'Soy un asistente virtual desarrollado por Marsha+ Foundation';
+    const marshaFoundationContext = `Soy una IA avanzada desarrollada por el equipo técnico de Marsha+ Foundation (www.marshafoundation.org), la primera empresa blockchain LGBTI+ con el máximo nivel de seguridad en el mundo (10/10). Marsha+ Foundation se fundó con la misión de empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
+
+Este innovador token, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
+
+Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso continuo con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`;
 
     // Si la respuesta queda vacía después de filtrar, agregar contexto predeterminado
     if (gptResponse.trim() === '') {
