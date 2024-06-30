@@ -122,25 +122,28 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, askingNames)) {
       // Respuesta sobre el nombre del asistente
       bot.sendMessage(chatId, responses.name);
-    } else if (isChatGPTQuestion(messageText)) {
-      // Respuesta específica para preguntas relacionadas con "chat gpt"
-      bot.sendMessage(chatId, responses.notChatGPTResponse);
     } else {
       // Introducción del asistente seguida de una respuesta generada por GPT
       const assistantIntro = `¡Hola! Soy ${assistantName}, ${assistantDescription}`;
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      let gptResponse = await getChatGPTResponse(messagesWithIntro);
       
       // Verificar si la respuesta de GPT es la misma que la anterior para evitar duplicados
       const lastMessage = messageHistory[messageHistory.length - 1];
       const lastAssistantResponse = lastMessage && lastMessage.role === 'assistant' ? lastMessage.content : null;
       
-      if (gptResponse !== lastAssistantResponse) {
-        bot.sendMessage(chatId, gptResponse);
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
+      if (gptResponse === lastAssistantResponse) {
+        // Si la respuesta es la misma, intentamos obtener una respuesta diferente
+        gptResponse = await getChatGPTResponse([...messageHistory, `¿En qué más puedo ayudarte?`]);
       }
+
+      // Filtrar menciones no deseadas a ChatGPT y OpenAI
+      gptResponse = gptResponse.replace(/chat gpt|gpt-3|openai/gi, 'esta asistente');
+      
+      bot.sendMessage(chatId, gptResponse);
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
@@ -153,9 +156,10 @@ function isChatGPTQuestion(text) {
   const normalizedText = text.trim().toLowerCase();
   return (
     normalizedText.includes('chat gpt') ||
-    normalizedText.includes('silvia') ||
-    normalizedText.includes('assistant') ||
-    normalizedText.includes('ai')
+    normalizedText.includes('openai') ||
+    normalizedText.includes('gpt') ||
+    normalizedText.includes('ai') ||
+    normalizedText.includes('inteligencia artificial')
   );
 }
 
