@@ -157,22 +157,26 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Función para manejar menciones relacionadas con "Marsha+"
 async function handleMarshaMentions(chatId, messageText) {
-  // Expresiones regulares para detectar menciones de "Marsha+"
+  // Expresiones regulares mejoradas para detectar menciones de "Marsha+"
   const marshaPlusRegex = [
-    /marsha\+\s*foundation/i,
-    /marsha\+\s*/i,
-    /marsha\s*worldwide/i,
-    /marsha\s*foundation/i,
-    /marsha/i
+    /\bmarsha\+\s*foundation\b/i,
+    /\bmarsha\+\b/i,
+    /\bmarsha\s*worldwide\b/i,
+    /\bmarsha\s*foundation\b/i,
+    /\bmarsha\b/i
   ];
 
   // Verificar si el mensaje contiene alguna mención de "Marsha+"
   let isMarshaPlusMention = false;
+  let specificQuestion = false; // Variable para verificar si hay una pregunta específica sobre la empresa
+
   for (const regex of marshaPlusRegex) {
     if (regex.test(messageText)) {
       isMarshaPlusMention = true;
+      if (/\bempresa\b/i.test(messageText)) { // Verificar si se menciona la palabra "empresa"
+        specificQuestion = true;
+      }
       break;
     }
   }
@@ -182,8 +186,8 @@ async function handleMarshaMentions(chatId, messageText) {
 
   // Si hay una mención de "Marsha+"
   if (isMarshaPlusMention) {
-    // Verificar si el usuario está preguntando sobre la empresa
-    if (/empresa/i.test(messageText)) {
+    if (specificQuestion) {
+      // Responder con información específica sobre la empresa "Marsha+"
       responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo. ¿En qué más puedo ayudarte sobre la empresa?`;
     } else {
       // Responder con información general sobre "Marsha+"
