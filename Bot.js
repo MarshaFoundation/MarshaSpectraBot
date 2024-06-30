@@ -122,8 +122,6 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, askingNames)) {
       // Respuesta sobre el nombre del asistente
       bot.sendMessage(chatId, responses.name);
-    } else if (matchPhrases(messageText, relatedPhrases)) {
-      // No se hará nada en este caso específico
     } else if (isChatGPTQuestion(messageText)) {
       // Respuesta específica para preguntas relacionadas con "chat gpt"
       bot.sendMessage(chatId, responses.notChatGPTResponse);
