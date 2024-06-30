@@ -32,6 +32,35 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
+// Función para obtener respuesta de OpenAI
+async function getChatGPTResponse(messages) {
+  const messagesKey = JSON.stringify(messages);
+  if (cachedResponses.has(messagesKey)) {
+    return cachedResponses.get(messagesKey);
+  }
+
+  try {
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-3.5-turbo',
+      messages: messages,
+      temperature: 0.7,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      }
+    });
+
+    const gptResponse = response.data.choices[0].message.content.trim();
+    cachedResponses.set(messagesKey, gptResponse);
+
+    return gptResponse;
+  } catch (error) {
+    console.error('Error al llamar a OpenAI:', error);
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+  }
+}
+
 // Función para obtener respuesta de Silvia sobre ella misma y Marsha+ Foundation
 async function getSilviaResponse(message) {
   try {
@@ -57,6 +86,35 @@ async function getSilviaResponse(message) {
     return 'Lo siento, hubo un problema al intentar responder tu solicitud.';
   }
 }
+
+// Manejar mensajes entrantes
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+
+  try {
+    // Obtener respuesta de Silvia
+    const silviaResponse = await getSilviaResponse(msg);
+
+    // Enviar respuesta de Silvia al chat
+    await bot.sendMessage(chatId, silviaResponse);
+
+    // Si es una pregunta sobre OpenAI o ChatGPT, no procesar con OpenAI
+    if (
+      msg.text.toLowerCase().includes('openai') ||
+      msg.text.toLowerCase().includes('chatgpt')
+    ) {
+      return;
+    }
+
+    // Obtener respuesta de OpenAI si no se trata de una pregunta sobre OpenAI o ChatGPT
+    const openaiResponse = await getChatGPTResponse([{ role: 'user', content: msg.text }]);
+
+    // Enviar respuesta de OpenAI al chat
+    await bot.sendMessage(chatId, openaiResponse);
+  } catch (error) {
+    console.error('Error al procesar mensaje:', error);
+  }
+});
 
 
 // Función para obtener el idioma del usuario desde la base de datos
