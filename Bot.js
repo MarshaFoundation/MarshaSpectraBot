@@ -139,9 +139,14 @@ async function handleMessage(msg) {
         gptResponse = await getChatGPTResponse([...messageHistory, `¿En qué más puedo ayudarte?`]);
       }
 
-      bot.sendMessage(chatId, gptResponse);
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+      if (isChatGPTQuestion(messageText)) {
+        // Si la pregunta está relacionada con "ChatGPT" u otros términos, enviar respuesta específica
+        bot.sendMessage(chatId, responses.notChatGPTResponse);
+      } else {
+        bot.sendMessage(chatId, gptResponse);
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     }
   } catch (error) {
     console.error('Error handling message:', error);
@@ -152,13 +157,7 @@ async function handleMessage(msg) {
 // Función para detectar preguntas dirigidas a ChatGPT o relacionadas
 function isChatGPTQuestion(text) {
   const normalizedText = text.trim().toLowerCase();
-  return (
-    normalizedText.includes('chat gpt') ||
-    normalizedText.includes('openai') ||
-    normalizedText.includes('gpt') ||
-    normalizedText.includes('ai') ||
-    normalizedText.includes('inteligencia artificial')
-  );
+  return relatedPhrases.some(phrase => normalizedText.includes(phrase));
 }
 
 // Respuestas específicas según idioma
@@ -170,23 +169,6 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
   notChatGPTResponse: "No, no soy un modelo de chat GPT. Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información."
 };
-
-// Función para enviar mensaje directo a un usuario
-async function enviarMensajeDirecto(chatId, mensaje) {
-  try {
-    const response = await bot.sendMessage(chatId, mensaje);
-    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
-    return response;
-  } catch (error) {
-    console.error(`Error al enviar mensaje a ${chatId}:`, error);
-    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
-  }
-}
-
-// Función genérica para obtener una respuesta aleatoria de un array
-function getRandomResponse(array) {
-  return array[Math.floor(Math.random() * array.length)];
-}
 
 // Definición de respuestas para saludos y preguntas sobre el nombre
 const greetings = [
@@ -234,7 +216,24 @@ const relatedPhrases = [
   'chat gpt', 'silvia', 'assistant', 'ai'
 ];
 
-// Iniciar el bot: escuchar y manejar mensajes
+// Función para enviar mensaje directo a un usuario
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    const response = await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+  }
+}
+
+// Función genérica para obtener una respuesta aleatoria de un array
+function getRandomResponse(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+// Definir el evento para manejar mensajes
 bot.on('message', handleMessage);
 
 // Manejar errores no capturados
@@ -243,6 +242,7 @@ process.on('unhandledRejection', error => {
 });
 
 console.log('Bot listo para recibir mensajes.');
+
 
 
 
