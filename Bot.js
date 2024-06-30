@@ -157,60 +157,7 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
-  let client;
-  try {
-    client = await pool.connect();
-    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-
-    // Destructuración para obtener el idioma del usuario
-    const { rows } = result;
-    return rows.length > 0 ? rows[0].locale : 'es';
-  } catch (error) {
-    console.error('Error al obtener el idioma del usuario desde la base de datos:', error);
-    return 'es';
-  } finally {
-    // Asegurar que la conexión siempre se libere
-    if (client) {
-      await client.release();
-    }
-  }
-}
-
-// Función para manejar mensajes
-async function handleMessage(msg) {
-  const chatId = msg.chat?.id;
-  const messageText = msg.text;
-
-  if (!chatId || !messageText) return;
-
-  try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
-
-    // Respuestas según el contenido del mensaje
-    if (matchPhrases(messageText, greetings)) {
-      await bot.sendMessage(chatId, responses.greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      await bot.sendMessage(chatId, responses.name);
-    } else if (matchPhrases(messageText, relatedPhrases)) {
-      handleLostChildCase(chatId);
-    } else {
-      // Introducción del asistente
-      const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-     // Respuestas relacionadas con "Marsha"
-const marshaResponses = {
-  general: `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo.`,
-  details: `Marsha+ ofrece un token innovador construido en Ethereum y desplegado en Binance Smart Chain, facilitando transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad LGBTQ+. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.`,
-  legacy: `Marsha P. Johnson, nacida en 1945 en Nueva Jersey, fue una mujer transgénero afroamericana y una figura clave en el movimiento por los derechos LGBTI+. Ganó prominencia después de las protestas de Stonewall en 1969 y co-fundó la organización STAR (Street Transvestite Action Revolutionaries) junto con Sylvia Rivera.`,
-  purpose: `El token Marsha+ honra la memoria de Marsha y celebra la resiliencia de la comunidad LGBTI+, tanto de quienes han fallecido como de quienes continúan luchando por la igualdad.`
-};
-
-// Función para manejar menciones relacionadas con "Marsha"
+// Función para manejar mensajes relacionados con "Marsha"
 async function handleMarshaMentions(chatId, messageText) {
   // Expresiones regulares para detectar menciones de "Marsha"
   const marshaRegex = [
@@ -220,6 +167,14 @@ async function handleMarshaMentions(chatId, messageText) {
     /marsha\s*foundation/i,
     /marsha/i
   ];
+
+  // Respuestas relacionadas con "Marsha"
+  const marshaResponses = {
+    general: `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo.`,
+    details: `Marsha+ ofrece un token innovador construido en Ethereum y desplegado en Binance Smart Chain, facilitando transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad LGBTQ+. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.`,
+    legacy: `Marsha P. Johnson, nacida en 1945 en Nueva Jersey, fue una mujer transgénero afroamericana y una figura clave en el movimiento por los derechos LGBTI+. Ganó prominencia después de las protestas de Stonewall en 1969 y co-fundó la organización STAR (Street Transvestite Action Revolutionaries) junto con Sylvia Rivera.`,
+    purpose: `El token Marsha+ honra la memoria de Marsha y celebra la resiliencia de la comunidad LGBTI+, tanto de quienes han fallecido como de quienes continúan luchando por la igualdad.`
+  };
 
   // Buscar coincidencia en el mensaje del usuario
   let responseMessage = '';
@@ -267,8 +222,6 @@ async function handleMessage(msg) {
       await bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
       await bot.sendMessage(chatId, responses.name);
-    } else if (matchPhrases(messageText, relatedPhrases)) {
-      handleLostChildCase(chatId);
     } else {
       // Introducción del asistente
       const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
@@ -342,6 +295,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
