@@ -8,7 +8,7 @@ dotenv.config();
 // Variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID; 
+const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID;
 const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
@@ -27,27 +27,23 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log('Bot iniciado correctamente');
 
-// Almacenamiento temporal para mensajes por chat
-const chatMessageHistory = new Map();
-
 // Mapa para cachear respuestas de OpenAI (actualizado a GPT-4)
 const cachedResponses = new Map();
 
-// Configurar Axios con las cabeceras adecuadas para OpenAI
+// Configuración de instancia de Axios para OpenAI
 const openai = axios.create({
   baseURL: 'https://api.openai.com/v1',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${openaiApiKey}`,
-    // Si usas organización, descomenta la siguiente línea y asegúrate de tener OPENAI_ORGANIZATION_ID en .env
-    // 'OpenAI-Organization': openaiOrganization,
+    'OpenAI-Organization': openaiOrganization,
   }
 });
 
 // Función para obtener respuesta de OpenAI (actualizada a GPT-4)
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
-  
+
   try {
     const response = await openai.post('/engines/gpt-4/completions', {
       messages: messages,
@@ -109,12 +105,6 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: "¡Hola! Soy SilvIA+, el primer asistente LGTBI+ en el mundo. ¿En qué puedo ayudarte?",
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
-
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
@@ -129,10 +119,10 @@ bot.on('message', async (msg) => {
   if (messageText) {
     // Ejemplo: responder a un saludo
     if (matchPhrases(messageText, ['hola', 'buenos días', 'buenas tardes'])) {
-      bot.sendMessage(chatId, responses.greeting);
+      bot.sendMessage(chatId, `¡Hola! Soy ${assistantName}. ¿En qué puedo ayudarte?`);
     } else if (messageText.startsWith('/start')) {
       // Ejemplo: comando /start
-      bot.sendMessage(chatId, responses.greeting);
+      bot.sendMessage(chatId, `¡Hola! Soy ${assistantName}. ¿En qué puedo ayudarte?`);
     } else {
       // Ejemplo: respuesta utilizando OpenAI
       const locale = await getUserLocale(chatId);
