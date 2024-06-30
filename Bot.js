@@ -223,7 +223,64 @@ async function handleMarshaMentions(chatId, messageText) {
   } catch (error) {
     console.error('Error al enviar mensaje de Marsha:', error);
   }
+}// Función para manejar menciones relacionadas con "Marsha+"
+async function handleMarshaMentions(chatId, messageText) {
+  // Expresiones regulares para detectar menciones de "Marsha+"
+  const marshaPlusRegex = [
+    /marsha\+\s*foundation/i,
+    /marsha\+\s*/i,
+    /marsha\s*worldwide/i,
+    /marsha\s*foundation/i,
+    /marsha/i
+  ];
+
+  // Respuestas relacionadas con "Marsha+"
+  const marshaResponses = {
+    general: `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo.`,
+    details: `Marsha+ ofrece un token innovador construido en Ethereum y desplegado en Binance Smart Chain, facilitando transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad LGBTQ+. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.`,
+    legacy: `Marsha P. Johnson, nacida en 1945 en Nueva Jersey, fue una mujer transgénero afroamericana y una figura clave en el movimiento por los derechos LGBTI+. Ganó prominencia después de las protestas de Stonewall en 1969 y co-fundó la organización STAR (Street Transvestite Action Revolutionaries) junto con Sylvia Rivera.`,
+    purpose: `El token Marsha+ honra la memoria de Marsha y celebra la resiliencia de la comunidad LGBTI+, tanto de quienes han fallecido como de quienes continúan luchando por la igualdad.`
+  };
+
+  // Buscar coincidencia en el mensaje del usuario
+  let responseMessage = '';
+
+  // Verificar si el mensaje contiene la palabra "empresa"
+  const isAskingAboutBusiness = /empresa/i.test(messageText);
+
+  // Identificar si se menciona "Marsha+"
+  let isMarshaPlusMention = false;
+
+  // Verificar menciones específicas de "Marsha+"
+  for (const regex of marshaPlusRegex) {
+    if (regex.test(messageText)) {
+      isMarshaPlusMention = true;
+      break;
+    }
+  }
+
+  // Determinar la respuesta adecuada basada en la detección anterior
+  if (isMarshaPlusMention) {
+    // Pregunta específica sobre la empresa Marsha+
+    if (isAskingAboutBusiness) {
+      responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo. ¿Hay algo en particular que te gustaría saber sobre la empresa?`;
+    } else {
+      // Respuesta general sobre Marsha+
+      responseMessage = marshaResponses.general;
+    }
+  } else {
+    // Respuesta por defecto si no se menciona claramente "Marsha+"
+    responseMessage = `No estoy seguro a qué "Marsha" te refieres. ¿Puedes proporcionar más detalles o especificar sobre quién estás preguntando?`;
+  }
+
+  // Enviar la respuesta al usuario
+  try {
+    await bot.sendMessage(chatId, responseMessage);
+  } catch (error) {
+    console.error('Error al enviar mensaje de Marsha:', error);
+  }
 }
+
 
 // Función principal para manejar mensajes
 async function handleMessage(msg) {
