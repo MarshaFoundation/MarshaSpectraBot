@@ -31,7 +31,6 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de ChatGPT
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -60,10 +59,11 @@ async function getChatGPTResponse(messages) {
 
     return gptResponse;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    console.error('Error al llamar a OpenAI:', error.response ? error.response.data : error.message);
+    return 'Lo siento, ocurrió un error al procesar tu solicitud.';
   }
 }
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
