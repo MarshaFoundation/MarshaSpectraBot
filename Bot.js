@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI
+// Función para obtener respuesta de SilvIA+
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -41,7 +41,7 @@ async function getChatGPTResponse(messages) {
 
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4', // Actualización a la versión más reciente
       messages: messages,
       temperature: 0.7,
     }, {
@@ -51,13 +51,30 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-   let gptResponse = response.data.choices[0].text.trim();
+    let gptResponse = response.data.choices[0].message.content.trim();
 
-    // Reemplazar la respuesta incorrecta
-    const incorrectResponse = 'Soy un asistente virtual desarrollado por OpenAI';
-    const correctResponse = 'Soy un asistente virtual desarrollado por Marsha+ Foundation';
+    // Lista de palabras o frases relacionadas con OpenAI o GPT que queremos filtrar
+    const bannedWords = [
+      'OpenAI',
+      'GPT',
+      'GPT-3',
+      'GPT-3.5',
+      'GPT-4',
+      'Soy un asistente virtual desarrollado por'
+    ];
 
-    gptResponse = gptResponse.replace(incorrectResponse, correctResponse);
+    // Filtrar respuestas que contengan palabras o frases prohibidas
+    bannedWords.forEach(word => {
+      gptResponse = gptResponse.replace(new RegExp(word, 'gi'), '');
+    });
+
+    // Agregar contexto sobre Marsha+ Foundation
+    const marshaFoundationContext = 'Soy un asistente virtual desarrollado por Marsha+ Foundation';
+
+    // Si la respuesta queda vacía después de filtrar, agregar contexto predeterminado
+    if (gptResponse.trim() === '') {
+      gptResponse = marshaFoundationContext;
+    }
 
     cachedResponses.set(messagesKey, gptResponse);
 
@@ -67,6 +84,7 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
+
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
