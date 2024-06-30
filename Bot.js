@@ -61,28 +61,27 @@ async function getChatGPTResponse(messages) {
   }
 }
 
-// Función para obtener el idioma del usuario desde la base de datos
+// Función para obtener el idioma del usuario desde la base de datos de manera segura
 async function getUserLocale(chatId) {
   let client;
   try {
     client = await pool.connect();
-    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    const queryText = 'SELECT locale FROM users WHERE chat_id = $1';
+    const result = await client.query(queryText, [chatId]);
 
-    // Destructuración para obtener el idioma del usuario
     const { rows } = result;
     return rows.length > 0 ? rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario desde la base de datos:', error);
     return 'es';
   } finally {
-    // Asegurar que la conexión siempre se libere
     if (client) {
-      client.release();
+      await client.release();
     }
   }
 }
 
-// Función para actualizar/guardar el idioma del usuario en la base de datos
+// Función para actualizar/guardar el idioma del usuario en la base de datos de manera segura
 async function setUserLocale(chatId, locale) {
   const queryText = `
     INSERT INTO users (chat_id, locale) 
@@ -91,13 +90,17 @@ async function setUserLocale(chatId, locale) {
     DO UPDATE SET locale = $2
   `;
   
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     await client.query(queryText, [chatId, locale]);
-    client.release();
     console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
+  } finally {
+    if (client) {
+      await client.release();
+    }
   }
 }
 
@@ -154,12 +157,33 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
+// Función para obtener el idioma del usuario desde la base de datos
+async function getUserLocale(chatId) {
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+
+    // Destructuración para obtener el idioma del usuario
+    const { rows } = result;
+    return rows.length > 0 ? rows[0].locale : 'es';
+  } catch (error) {
+    console.error('Error al obtener el idioma del usuario desde la base de datos:', error);
+    return 'es';
+  } finally {
+    // Asegurar que la conexión siempre se libere
+    if (client) {
+      await client.release();
+    }
+  }
+}
+
 // Función para manejar mensajes
 async function handleMessage(msg) {
-  const chatId = msg.chat.id;
+  const chatId = msg.chat?.id;
   const messageText = msg.text;
 
-  if (!messageText) return;
+  if (!chatId || !messageText) return;
 
   try {
     const userLocale = await getUserLocale(chatId);
@@ -225,17 +249,21 @@ async function handleCallbackQuery(callbackQuery) {
 
 // Función para almacenar la ubicación en la base de datos
 async function storeLocation(chatId, latitude, longitude) {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     const queryText = `
       INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
       VALUES ($1, $2, $3, NOW())
     `;
     await client.query(queryText, [chatId, latitude, longitude]);
-    client.release();
     console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
   } catch (error) {
     console.error('Error al almacenar la ubicación:', error);
+  } finally {
+    if (client) {
+      await client.release();
+    }
   }
 }
 
@@ -261,9 +289,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
-
-
-
 
 
 
