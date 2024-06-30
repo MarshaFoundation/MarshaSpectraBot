@@ -61,43 +61,72 @@ async function getChatGPTResponse(messages) {
   }
 }
 
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
+// Función para obtener respuesta de Silvia sobre ella misma y Marsha+ Foundation
+async function getSilviaResponse(message) {
   try {
-    const client = await pool.connect();
-    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
+    let response;
+
+    // Transformar mensaje a minúsculas para facilitar la comparación
+    const lowercaseMessage = message.text.toLowerCase();
+
+    // Verificar si el mensaje contiene palabras relacionadas con OpenAI o ChatGPT
+    if (lowercaseMessage.includes('openai') || lowercaseMessage.includes('chatgpt')) {
+      response = `Lo siento, no puedo proporcionar información sobre OpenAI o ChatGPT. Estoy aquí para ayudarte con información sobre Marsha+ Foundation y otros temas. ¿Hay algo más en lo que pueda asistirte?`;
+    } else if (lowercaseMessage.includes('empresa') || lowercaseMessage.includes('marsha')) {
+      // Respuesta específica sobre Marsha+ Foundation
+      response = `Soy una inteligencia artificial desarrollada por Marsha+ Foundation (www.marshafoundation.org), la primera empresa blockchain LGBTQ+ con el máximo nivel de seguridad en el mundo (10/10). Marsha+ Foundation se dedica a empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain y la inteligencia artificial.`;
+    } else {
+      // Respuesta genérica si la pregunta no coincide con las anteriores
+      response = `Soy Silvia, una inteligencia artificial avanzada desarrollada por Marsha+ Foundation (www.marshafoundation.org). Mi propósito es proporcionar asistencia y responder preguntas en una variedad de temas. ¿En qué más puedo ayudarte hoy?`;
+    }
+
+    return response;
   } catch (error) {
-    console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
+    console.error('Error al procesar la solicitud:', error);
+    return 'Lo siento, hubo un problema al intentar responder tu solicitud.';
   }
 }
 
-// Función para actualizar/guardar el idioma del usuario en la base de datos
-async function setUserLocale(chatId, locale) {
-  const queryText = `
-    INSERT INTO users (chat_id, locale) 
-    VALUES ($1, $2) 
-    ON CONFLICT (chat_id) 
-    DO UPDATE SET locale = $2
-  `;
-  
+// Manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const message = msg.text.toLowerCase().trim();
+
   try {
-    const client = await pool.connect();
-    await client.query(queryText, [chatId, locale]);
-    client.release();
-    console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
+    let response;
+
+    // Verificar si el mensaje es un saludo
+    if (matchPhrases(message, greetings)) {
+      response = responses.greeting;
+    } else if (matchPhrases(message, askingNames)) {
+      // Verificar si el mensaje es una pregunta sobre el nombre del asistente
+      response = responses.name;
+    } else {
+      // Obtener respuesta específica de Silvia sobre Marsha+ Foundation
+      response = await getSilviaResponse(msg);
+    }
+
+    // Enviar respuesta al usuario
+    await enviarMensajeDirecto(chatId, response);
+
   } catch (error) {
-    console.error('Error al configurar el idioma del usuario:', error);
+    console.error('Error al manejar el mensaje:', error);
+    await enviarMensajeDirecto(chatId, 'Lo siento, no puedo procesar tu solicitud en este momento.');
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
+// Evento para manejar mensajes recibidos
+bot.on('message', async (msg) => {
+  try {
+    // Verificar si es un mensaje de texto
+    if (msg.text) {
+      // Manejar mensaje y obtener respuesta
+      await handleMessage(msg);
+    }
+  } catch (error) {
+    console.error('Error al manejar el mensaje:', error);
+  }
+});
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -117,7 +146,13 @@ function matchPhrases(message, phrases) {
   return phrases.includes(normalizedMessage);
 }
 
-// Funciones para detectar saludos y preguntas por el nombre del asistente
+// Definición de respuestas para saludos y preguntas sobre el nombre
+const responses = {
+  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+};
+
+// Función para detectar saludos
 const greetings = [
   'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
   '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
@@ -132,6 +167,7 @@ const greetings = [
   'how’s your day been?', 'yo', 'what’s popping?'
 ];
 
+// Función para detectar preguntas por el nombre del asistente
 const askingNames = [
   // Formas en español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
@@ -157,70 +193,101 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Manejar mensajes
-async function handleMessage(msg) {
-  const chatId = msg.chat.id;
-  const messageText = msg.text;
-
-  if (!messageText) return;
-
+// Función para iniciar el bot
+async function startBot() {
   try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
+    // Conectar con la base de datos
+    await pool.connect();
+    console.log('Conexión a PostgreSQL establecida');
 
-    if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
-    } else {
-      const gptMessages = messageHistory.map(({ content }) => ({ role: 'user', content }));
-      const gptResponse = await getChatGPTResponse(gptMessages);
-      chatMessageHistory.set(chatId, [...messageHistory, { role: 'assistant', content: gptResponse }]);
-      await bot.sendMessage(chatId, gptResponse);
-    }
+    // Iniciar escucha de mensajes
+    bot.on('message', async (msg) => {
+      const chatId = msg.chat.id;
+
+      try {
+        // Verificar si es un mensaje de texto
+        if (msg.text) {
+          // Manejar mensaje y obtener respuesta
+          const response = await handleMessage(msg);
+
+          // Enviar respuesta al usuario
+          await enviarMensajeDirecto(chatId, response);
+        }
+      } catch (error) {
+        console.error('Error al manejar el mensaje:', error);
+      }
+    });
+
+    // Log de inicio
+    console.log('Escuchando mensajes...');
   } catch (error) {
-    console.error('Error al manejar el mensaje:', error);
+    console.error('Error al iniciar el bot:', error);
   }
 }
 
-// Manejar comandos
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, responses.greeting);
-});
+// Iniciar el bot
+startBot();
 
-// Manejar respuestas directas
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const messageText = msg.text;
 
-  if (!messageText) return;
 
-  try {
-    await handleMessage(msg);
-  } catch (error) {
-    console.error('Error al manejar el mensaje directo:', error);
-  }
-});
 
-// Inicialización de la base de datos
-(async () => {
-  const client = await pool.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        chat_id BIGINT PRIMARY KEY,
-        locale TEXT NOT NULL DEFAULT 'es'
-      )
-    `);
-    console.log('Tabla de usuarios creada correctamente');
-  } catch (error) {
-    console.error('Error al crear la tabla de usuarios:', error);
-  } finally {
-    client.release();
-  }
-})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
