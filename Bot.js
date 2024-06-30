@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI
+// Función para obtener respuesta de ChatGPT
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -41,7 +41,7 @@ async function getChatGPTResponse(messages) {
 
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4',
       messages: messages,
       temperature: 0.7,
     }, {
@@ -60,6 +60,7 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
