@@ -63,14 +63,22 @@ async function getChatGPTResponse(messages) {
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
+  let client;
   try {
-    const client = await pool.connect();
-    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
+    client = await pool.connect();
+    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+
+    // Destructuración para obtener el idioma del usuario
+    const { rows } = result;
+    return rows.length > 0 ? rows[0].locale : 'es';
   } catch (error) {
-    console.error('Error al obtener el idioma del usuario:', error);
+    console.error('Error al obtener el idioma del usuario desde la base de datos:', error);
     return 'es';
+  } finally {
+    // Asegurar que la conexión siempre se libere
+    if (client) {
+      client.release();
+    }
   }
 }
 
@@ -103,18 +111,6 @@ const responses = {
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
-}
-
-// Función para enviar mensaje directo a un usuario
-async function enviarMensajeDirecto(chatId, mensaje) {
-  try {
-    const response = await bot.sendMessage(chatId, mensaje);
-    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
-    return response;
-  } catch (error) {
-    console.error(`Error al enviar mensaje a ${chatId}:`, error);
-    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
-  }
 }
 
 // Función para detectar saludos
