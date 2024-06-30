@@ -240,15 +240,6 @@ function getRandomResponse(array) {
   return array[randomIndex];
 }
 
-// Escuchar mensajes del usuario
-bot.on('message', handleMessage);
-
-// Manejar errores no capturados
-process.on('unhandledRejection', (error) => {
-  console.error('Excepción no capturada:', error);
-  enviarMensajeDirecto(ADMIN_CHAT_ID, `Excepción no capturada: ${error}`);
-});
-
 
 
 
