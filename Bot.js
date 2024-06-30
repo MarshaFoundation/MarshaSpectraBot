@@ -8,7 +8,7 @@ dotenv.config();
 // Variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID; // Asegúrate de definir esto en .env
+const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID; 
 const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
@@ -39,7 +39,8 @@ const openai = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${openaiApiKey}`,
-    'OpenAI-Organization': openaiOrganization,
+    // Si usas organización, descomenta la siguiente línea y asegúrate de tener OPENAI_ORGANIZATION_ID en .env
+    // 'OpenAI-Organization': openaiOrganization,
   }
 });
 
@@ -119,6 +120,27 @@ function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
 }
+
+// Manejar comandos o mensajes recibidos
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
+
+  if (messageText) {
+    // Ejemplo: responder a un saludo
+    if (matchPhrases(messageText, ['hola', 'buenos días', 'buenas tardes'])) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (messageText.startsWith('/start')) {
+      // Ejemplo: comando /start
+      bot.sendMessage(chatId, responses.greeting);
+    } else {
+      // Ejemplo: respuesta utilizando OpenAI
+      const locale = await getUserLocale(chatId);
+      const response = await getChatGPTResponse([{ role: 'user', content: messageText }]);
+      bot.sendMessage(chatId, response);
+    }
+  }
+});
 
 // Función para detectar saludos
 const greetings = [
