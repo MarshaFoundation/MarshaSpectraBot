@@ -234,12 +234,6 @@ const responses = {
 };
 
 
-// Función para obtener una respuesta de saludo aleatoria
-function getRandomResponse(array) {
-  const randomIndex = Math.floor(Math.random() * array.length);
-  return array[randomIndex];
-}
-
 
 
 
