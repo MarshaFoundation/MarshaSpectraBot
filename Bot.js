@@ -8,6 +8,7 @@ dotenv.config();
 // Variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
+const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID; // Asegúrate de definir esto en .env
 const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
@@ -32,24 +33,26 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI (actualizado a GPT-4)
 const cachedResponses = new Map();
 
+// Configurar Axios con las cabeceras adecuadas para OpenAI
+const openai = axios.create({
+  baseURL: 'https://api.openai.com/v1',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${openaiApiKey}`,
+    'OpenAI-Organization': openaiOrganization,
+  }
+});
+
 // Función para obtener respuesta de OpenAI (actualizada a GPT-4)
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
-  if (cachedResponses.has(messagesKey)) {
-    return cachedResponses.get(messagesKey);
-  }
-
+  
   try {
-    const response = await axios.post('https://api.openai.com/v1/engines/gpt-4/completions', {
+    const response = await openai.post('/engines/gpt-4/completions', {
       messages: messages,
       max_tokens: 150,
       temperature: 0.7,
       stop: '\n',
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      }
     });
 
     const gptResponse = response.data.choices[0].text.trim();
