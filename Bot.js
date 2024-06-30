@@ -87,32 +87,72 @@ async function getSilviaResponse(message) {
   }
 }
 
-// Manejar mensajes entrantes
+// Manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const message = msg.text.toLowerCase().trim();
+
+  try {
+    let response;
+
+    // Verificar si el mensaje es un saludo
+    if (matchPhrases(message, greetings)) {
+      response = responses.greeting;
+    } else if (matchPhrases(message, askingNames)) {
+      // Verificar si el mensaje es una pregunta sobre el nombre del asistente
+      response = responses.name;
+    } else {
+      // Obtener respuesta específica de Silvia sobre Marsha+ Foundation
+      response = await getSilviaResponse(msg);
+    }
+
+    // Obtener historial de mensajes del chat
+    let chatHistory = chatMessageHistory.get(chatId) || [];
+
+    // Agregar mensaje actual al historial
+    chatHistory.push({ role: 'user', content: message });
+
+    // Limitar historial a los últimos 10 mensajes
+    if (chatHistory.length > 10) {
+      chatHistory = chatHistory.slice(chatHistory.length - 10);
+    }
+
+    // Guardar historial de mensajes actualizado
+    chatMessageHistory.set(chatId, chatHistory);
+
+    // Si ya hay una respuesta, no enviar ninguna otra
+    if (response) {
+      return response;
+    }
+
+    // Obtener respuesta de OpenAI si no hay respuesta específica
+    const openaiResponse = await getChatGPTResponse(chatHistory);
+
+    // Agregar respuesta de OpenAI al historial de mensajes
+    chatHistory.push({ role: 'assistant', content: openaiResponse });
+
+    // Guardar historial de mensajes actualizado
+    chatMessageHistory.set(chatId, chatHistory);
+
+    return openaiResponse;
+  } catch (error) {
+    console.error('Error al manejar el mensaje:', error);
+    return 'Lo siento, no puedo procesar tu solicitud en este momento.';
+  }
+}
+
+// Evento para manejar mensajes recibidos
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
 
   try {
-    // Obtener respuesta de Silvia
-    const silviaResponse = await getSilviaResponse(msg);
+    // Manejar mensaje y obtener respuesta
+    const response = await handleMessage(msg);
 
-    // Enviar respuesta de Silvia al chat
-    await bot.sendMessage(chatId, silviaResponse);
-
-    // Si es una pregunta sobre OpenAI o ChatGPT, no procesar con OpenAI
-    if (
-      msg.text.toLowerCase().includes('openai') ||
-      msg.text.toLowerCase().includes('chatgpt')
-    ) {
-      return;
-    }
-
-    // Obtener respuesta de OpenAI si no se trata de una pregunta sobre OpenAI o ChatGPT
-    const openaiResponse = await getChatGPTResponse([{ role: 'user', content: msg.text }]);
-
-    // Enviar respuesta de OpenAI al chat
-    await bot.sendMessage(chatId, openaiResponse);
+    // Enviar respuesta al usuario
+    await enviarMensajeDirecto(chatId, response);
   } catch (error) {
-    console.error('Error al procesar mensaje:', error);
+    console.error('Error al manejar el mensaje:', error);
   }
 });
 
@@ -213,65 +253,6 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Manejar mensajes
-async function handleMessage(msg) {
-  const chatId = msg.chat.id;
-  const message = msg.text.toLowerCase().trim();
-
-  // Verificar si el mensaje es un saludo
-  if (matchPhrases(message, greetings)) {
-    return responses.greeting;
-  }
-
-  // Verificar si el mensaje es una pregunta sobre el nombre del asistente
-  if (matchPhrases(message, askingNames)) {
-    return responses.name;
-  }
-
-  // Llamar a OpenAI para obtener respuesta
-  try {
-    // Obtener historial de mensajes del chat
-    let chatHistory = chatMessageHistory.get(chatId) || [];
-
-    // Agregar mensaje actual al historial
-    chatHistory.push({ role: 'user', content: message });
-
-    // Limitar historial a los últimos 10 mensajes
-    if (chatHistory.length > 10) {
-      chatHistory = chatHistory.slice(chatHistory.length - 10);
-    }
-
-    // Guardar historial de mensajes actualizado
-    chatMessageHistory.set(chatId, chatHistory);
-
-    // Obtener respuesta de OpenAI basado en el historial de mensajes
-    const openaiResponse = await getChatGPTResponse(chatHistory);
-
-    // Agregar respuesta de OpenAI al historial de mensajes
-    chatHistory.push({ role: 'assistant', content: openaiResponse });
-
-    // Guardar historial de mensajes actualizado
-    chatMessageHistory.set(chatId, chatHistory);
-
-    // Enviar respuesta a usuario
-    return openaiResponse;
-  } catch (error) {
-    console.error('Error al manejar el mensaje:', error);
-    return 'Lo siento, no puedo procesar tu solicitud en este momento.';
-  }
-}
-
-// Evento para manejar mensajes recibidos
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-
-  // Manejar mensaje y obtener respuesta
-  const response = await handleMessage(msg);
-
-  // Enviar respuesta al usuario
-  await enviarMensajeDirecto(chatId, response);
-});
-
 // Manejar errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('Excepción no capturada:', err);
@@ -281,6 +262,40 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promesa no capturada en', promise, 'motivo:', reason);
 });
+
+// Iniciar el bot
+async function startBot() {
+  try {
+    // Conectar con la base de datos
+    await pool.connect();
+    console.log('Conexión a PostgreSQL establecida');
+
+    // Iniciar escucha de mensajes
+    bot.on('message', async (msg) => {
+      const chatId = msg.chat.id;
+
+      try {
+        // Manejar mensaje y obtener respuesta
+        const response = await handleMessage(msg);
+
+        // Enviar respuesta al usuario
+        await enviarMensajeDirecto(chatId, response);
+      } catch (error) {
+        console.error('Error al manejar el mensaje:', error);
+      }
+    });
+
+    // Log de inicio
+    console.log('Escuchando mensajes...');
+
+  } catch (error) {
+    console.error('Error al iniciar el bot:', error);
+  }
+}
+
+// Función para iniciar el bot
+startBot();
+
 
 
 
