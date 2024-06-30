@@ -51,7 +51,11 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+    let gptResponse = response.data.choices[0].message.content.trim();
+
+    // Filtrar cualquier mención a OpenAI o ChatGPT
+    gptResponse = gptResponse.replace(/openai|chatgpt/gi, '');
+
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
@@ -125,7 +129,7 @@ async function handleMessage(msg) {
       bot.sendMessage(chatId, responses.notChatGPTResponse);
     } else {
       // Introducción del asistente seguida de una respuesta generada por GPT
-      const assistantIntro = `¡Hola! Soy ${assistantName}, el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información.`;
+      const assistantIntro = `¡Hola! Soy ${assistantName}, ${assistantDescription}`;
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
