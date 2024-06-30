@@ -146,15 +146,19 @@ bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
 
   try {
-    // Manejar mensaje y obtener respuesta
-    const response = await handleMessage(msg);
+    // Verificar si es un mensaje de texto
+    if (msg.text) {
+      // Manejar mensaje y obtener respuesta
+      const response = await handleMessage(msg);
 
-    // Enviar respuesta al usuario
-    await enviarMensajeDirecto(chatId, response);
+      // Enviar respuesta al usuario
+      await enviarMensajeDirecto(chatId, response);
+    }
   } catch (error) {
     console.error('Error al manejar el mensaje:', error);
   }
 });
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
