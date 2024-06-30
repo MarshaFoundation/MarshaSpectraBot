@@ -29,7 +29,7 @@ console.log('Bot iniciado correctamente');
 // Almacenamiento temporal para mensajes por chat
 const chatMessageHistory = new Map();
 
-// Mapa para cachear respuestas de OpenAI
+// Mapa para cachear respuestas de OpenAI (actualizado a GPT-4)
 const cachedResponses = new Map();
 
 // Función para obtener respuesta de OpenAI (actualizada a GPT-4)
@@ -158,6 +158,13 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
+// Función para manejar casos específicos de "niño perdido"
+function handleLostChildCase(chatId) {
+  const responseMessage = `¡Espero que encuentres a tu hijo pronto! ¿Puedo ayudarte con algo más?`;
+  bot.sendMessage(chatId, responseMessage);
+}
+
+// Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -301,6 +308,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
