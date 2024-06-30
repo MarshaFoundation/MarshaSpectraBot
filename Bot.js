@@ -1,11 +1,13 @@
+// bot.js
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios').default;
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const getUserLocale = require('./getUserLocale'); // Ajusta la ruta según tu estructura
 
 dotenv.config();
 
-// Variables de entorno
+// Variables de entorno y configuración
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
@@ -179,9 +181,9 @@ async function handleMessage(msg) {
 
     // Lógica principal para manejar mensajes
     if (matchPhrases(messageText, greetings)) {
-      await bot.sendMessage(chatId, responses.greeting);
+      await bot.sendMessage(chatId, `¡Hola! Soy ${assistantName}, tu asistente virtual.`);
     } else if (matchPhrases(messageText, askingNames)) {
-      await bot.sendMessage(chatId, responses.name);
+      await bot.sendMessage(chatId, `Soy ${assistantName}, ${assistantDescription}`);
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
@@ -213,26 +215,6 @@ async function handleCallbackQuery(callbackQuery) {
   }
 }
 
-// Función para almacenar la ubicación en la base de datos
-async function storeLocation(chatId, latitude, longitude) {
-  let client;
-  try {
-    client = await pool.connect();
-    const queryText = `
-      INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
-      VALUES ($1, $2, $3, NOW())
-    `;
-    await client.query(queryText, [chatId, latitude, longitude]);
-    console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
-  } catch (error) {
-    console.error('Error al almacenar la ubicación:', error);
-  } finally {
-    if (client) {
-      await client.release();
-    }
-  }
-}
-
 // Manejar comandos
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
@@ -255,6 +237,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 
 
