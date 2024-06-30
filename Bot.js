@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI
+// Función para obtener respuesta de OpenAI (actualizada a GPT-4)
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -40,10 +40,11 @@ async function getChatGPTResponse(messages) {
   }
 
   try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+    const response = await axios.post('https://api.openai.com/v1/engines/gpt-4/completions', {
       messages: messages,
+      max_tokens: 150,
       temperature: 0.7,
+      stop: '\n',
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+    const gptResponse = response.data.choices[0].text.trim();
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
