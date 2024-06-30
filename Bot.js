@@ -32,46 +32,69 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
+const axios = require('axios'); // Asegúrate de tener axios instalado y requerido correctamente
+
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
+  
+  // Verificar si la respuesta está en la caché
   if (cachedResponses.has(messagesKey)) {
     return cachedResponses.get(messagesKey);
   }
 
   try {
-    const response = await axios.post('https://api.openai.com/v1/engines/text-davinci-003/completions', {
-      prompt: messages,
-      max_tokens: 150
+    // Llamar a la API de OpenAI para obtener una respuesta
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-3.5-turbo',
+      messages: messages,
+      temperature: 0.7,
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
+        'Authorization': `Bearer ${openaiApiKey}` // Asegúrate de tener openaiApiKey definido y válido
       }
     });
 
-    const gptResponse = response.data.choices[0].text.trim();
-    cachedResponses.set(messagesKey, gptResponse);
-
-    return gptResponse;
+    // Verificar si la respuesta tiene la estructura esperada
+    if (response.data.choices && response.data.choices.length > 0 && response.data.choices[0].message && response.data.choices[0].message.content) {
+      const gptResponse = response.data.choices[0].message.content.trim();
+      cachedResponses.set(messagesKey, gptResponse); // Almacenar la respuesta en la caché
+      return gptResponse; // Devolver la respuesta procesada
+    } else {
+      console.error('Respuesta inesperada de OpenAI:', response.data);
+      return 'Lo siento, ocurrió un problema al procesar tu solicitud.'; // Manejar caso de respuesta inesperada
+    }
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    console.error('Error al llamar a OpenAI:', error); // Manejar errores de la llamada a la API
+    return 'Lo siento, actualmente no puedo procesar tu solicitud.'; // Devolver mensaje de error
   }
 }
+
+// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
+module.exports = { getChatGPTResponse };
+
+
+const { pool } = require('./db'); // Asegúrate de tener pool definido correctamente
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
-    const client = await pool.connect();
+    const client = await pool.connect(); // Conectar al pool de clientes
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
+    client.release(); // Liberar cliente al finalizar la consulta
+
+    // Devolver el idioma del primer usuario encontrado o 'es' por defecto si no hay resultados
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
+    return 'es'; // Manejar error devolviendo 'es' como idioma por defecto
   }
 }
+
+// Exportar la función para que pueda ser utilizada en otros módulos si es necesario
+module.exports = { getUserLocale };
+
 
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
@@ -92,11 +115,22 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  greeting: "¡Hola! Soy SilvIA+, una IA avanzada y el primer asistente LGTBI+ en el mundo. ¿En qué puedo ayudarte?",
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+  foundationInfo: `**Marsha+: Empoderando a la Comunidad LGBTQ+ a través de la Educacion y la Tecnología Blockchain**
+
+  Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ mediante la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales, y Marsha+ se erige como un faro de cambio positivo.
+
+  Este token innovador, construido en Ethereum y desplegado en Binance Smart Chain, es más que un activo digital; es un catalizador para acciones significativas. Marsha+ facilitará transacciones seguras y transparentes, iniciativas de recaudación de fondos y diversas aplicaciones dentro de la comunidad. Nuestra misión es clara: fortalecer la comunidad LGBTQ+ proporcionando las herramientas necesarias para enfrentar los desafíos contemporáneos.
+
+  Con un suministro total de 8 mil millones de tokens y una tasa de quema anual del 3%, Marsha+ representa un símbolo de compromiso sostenido con la igualdad, la diversidad y un futuro más brillante. ¡Únete a Marsha+ y sé parte del cambio!`
 };
+
+// Respuestas adicionales según las variantes de consultas
+responses.marshaFoundation = responses.foundationInfo;
+responses.marshaToken = responses.foundationInfo;
+responses.msa = responses.foundationInfo;
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -116,6 +150,90 @@ function matchPhrases(message, phrases) {
   return phrases.includes(normalizedMessage);
 }
 
+
+// Función para detectar saludos
+  const greetings = [
+    'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+    '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
+    '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
+    '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
+    'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
+    'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
+    'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
+    'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
+    'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
+    'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
+    'how’s your day been?', 'yo', 'what’s popping?'
+  ];
+
+// Función para detectar preguntas por el nombre del asistente
+  const askingNames = [
+     // Formas en español
+    '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
+    'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
+    'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
+    'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
+    'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
+    'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
+    'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
+    'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
+    'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
+    'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
+
+    // Formas en inglés
+    'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
+    'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
+    'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
+    'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
+    'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
+    'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
+    'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
+    'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
+    'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
+  ];
+
+// Función para detectar menciones relacionadas con el niño perdido llamado Loan
+  const relatedPhrases = [
+    'loan perdido','loan','vi a loan', 'encontré a loan', 'busco a loan', 'dónde está loan', 'ayuda con loan',
+    'loan está perdido', 'buscando a loan', 'vimos a loan', 'he visto a loan', 'he encontrado a loan',
+    'loan desapareció', 'loan se perdió', 'loan necesita ayuda', 'loan encontrado', 'tengo información sobre loan',
+    'loan está solo', 'he encontrado a un niño llamado loan', 'un niño llamado loan', 'ví a un niño llamado loan',
+    'vi a loan en el parque', 'loan fue visto cerca de mi casa', 'creo haber visto a loan ayer', 'loan podría estar en el centro comercial',
+    'alguien vio a loan por aquí', 'loan desapareció hace una semana', 'me dijeron que loan fue visto en el parque',
+    'loan fue encontrado por la policía', 'buscamos a loan por todos lados', 'loan necesita ser encontrado lo antes posible',
+    'loan podría estar en problemas', 'me preocupa la seguridad de loan', 'no hemos encontrado a loan todavía',
+    'loan estaba jugando en el parque antes de desaparecer', 'creemos que loan se perdió en el centro',
+    'loan estaba usando una camiseta roja', 'alguien reportó haber visto a loan en la estación de tren',
+    'ayúdanos a encontrar a loan', 'loan está desaparecido desde ayer', 'loan se fue de casa',
+    'loan podría estar en peligro', 'si ves a loan, por favor contacta a las autoridades', 'loan se extravió en el supermercado',
+    'loan se perdió en el centro de la ciudad', 'loan fue visto por última vez cerca de la escuela',
+    'necesitamos encontrar a loan rápidamente', 'loan estaba con un adulto desconocido', 'alguien tiene información sobre loan',
+    'por favor, ayúdanos a encontrar a loan', 'se busca a un niño llamado loan', 'alguien ha visto a loan?',
+    'loan fue reportado como desaparecido', 'alguien ha visto a loan recientemente?', 'loan se fue de su casa',
+    'loan estaba jugando fuera antes de desaparecer', 'alguien ha visto a un niño pequeño llamado loan?',
+    'la familia de loan lo está buscando desesperadamente', 'loan fue visto en las cercanías del parque',
+    'loan está desaparecido desde hace horas', 'por favor, informa si tienes alguna noticia de loan',
+    'loan podría estar en el vecindario', 'alguien ha visto a loan hoy?', 'loan fue visto por última vez con una camiseta roja',
+    'alguien dijo haber visto a loan en la tienda', 'loan fue visto cerca de la estación de trenes',
+    'necesitamos ayuda para encontrar a loan', 'alguien ha encontrado a loan?', 'loan fue visto en el parque central',
+    'ayúdanos a localizar a loan', 'loan estaba solo cuando desapareció', 'necesitamos información sobre loan',
+    'loan fue visto en las inmediaciones', 'alguien ha visto a loan por aquí?', 'loan podría estar en el centro de la ciudad',
+    'se ha perdido un niño llamado loan', 'alguien ha visto a loan en el barrio?', 'loan podría estar en peligro',
+    'loan fue visto en la estación de autobuses', 'loan podría estar en el parque', 'loan estaba en el centro comercial antes de desaparecer',
+    'ayuda a buscar a loan', 'la familia de loan está muy preocupada', 'alguien tiene noticias de loan?', 'loan está desaparecido desde hace días',
+    'alguien ha visto a un niño perdido llamado loan?', 'necesitamos encontrar a loan urgentemente', 'loan podría estar herido',
+    'la policía está buscando a loan', 'loan podría estar con un adulto', 'alguien sabe algo sobre loan?',
+    'loan estaba jugando en el parque antes de desaparecer', 'loan podría estar cerca de aquí', 'necesitamos ayuda para localizar a loan',
+    'alguien tiene información sobre el paradero de loan?', 'loan fue visto por última vez en la plaza del pueblo', 'alguien ha visto a loan en el vecindario?',
+    'loan fue visto en el centro de la ciudad', 'alguien tiene noticias sobre loan?', 'loan se perdió cerca de la escuela',
+    'necesitamos saber dónde está loan', 'loan fue visto con un hombre desconocido', 'alguien ha visto a un niño pequeño llamado loan?',
+    'loan fue reportado como perdido', 'loan se perdió en el parque central', 'alguien ha encontrado a loan?', 'loan está a salvo?',
+    'alguien ha visto a loan?', 'necesitamos encontrar a loan', 'loan podría estar en el parque', 'loan podría estar cerca de la escuela',
+    'vi a loan en la tienda', 'loan necesita ayuda urgentemente', 'loan podría estar en la estación de autobuses',
+    'alguien ha visto a un niño llamado loan?', 'loan podría estar con alguien', 'necesitamos más información sobre loan',
+    'loan fue visto por última vez en la plaza', 'alguien sabe dónde está loan?', 'loan está desaparecido', 'loan fue encontrado'
+  ];
+
 // Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -129,23 +247,79 @@ async function handleMessage(msg) {
     messageHistory.push({ role: 'user', content: messageText });
 
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
+      await bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
+      await bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
     } else {
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
+      // Verificar variantes de Marsha en el mensaje
+      if (messageText.toLowerCase().includes('marsha')) {
+        if (messageText.toLowerCase().includes('marsha+ foundation')) {
+          await bot.sendMessage(chatId, responses.marshaPlusFoundation);
+        } else if (messageText.toLowerCase().includes('marsha+')) {
+          await bot.sendMessage(chatId, responses.marshaPlus);
+        } else if (messageText.toLowerCase().includes('marsha worldwide')) {
+          await bot.sendMessage(chatId, responses.marshaWorldwide);
+        } else if (messageText.toUpperCase().includes('MARSHA FOUNDATION')) {
+          await bot.sendMessage(chatId, responses.marshaFoundation);
+        } else {
+          await bot.sendMessage(chatId, responses.marsha);
+        }
+      } else {
+        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+        await bot.sendMessage(chatId, gptResponse);
 
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+        messageHistory.push({ role: 'assistant', content: gptResponse });
+        chatMessageHistory.set(chatId, messageHistory);
+      }
     }
   } catch (error) {
     console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
+}
+
+// Otras respuestas o lógica de manejo de mensajes
+const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+// Obtener respuesta del modelo GPT
+const gptResponse = await getChatGPTResponse(messagesWithIntro);
+bot.sendMessage(chatId, gptResponse);
+
+// Registrar la respuesta del asistente en el historial de mensajes
+messageHistory.push({ role: 'assistant', content: gptResponse });
+chatMessageHistory.set(chatId, messageHistory);
+
+
+// Manejar el caso del niño perdido
+function handleLostChildCase(chatId) {
+  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
+
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+}
+
+// Función para emparejar frases
+function matchPhrases(text, phrases) {
+  const normalizedText = text.trim().toLowerCase();
+  return phrases.some(phrase => normalizedText.includes(phrase));
 }
 
 // Manejar consultas callback
@@ -157,6 +331,40 @@ async function handleCallbackQuery(callbackQuery) {
     const locale = data.split('_')[1];
     await setUserLocale(chatId, locale);
     bot.sendMessage(chatId, `Idioma configurado a ${locale}`);
+  }
+}
+
+// Manejar ubicación
+bot.on('location', (msg) => {
+  const chatId = msg.chat.id;
+  const location = msg.location;
+
+  console.log(`Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 1. Notificar a las autoridades (simulado con console.log)
+  console.log(`Notificar a las autoridades: Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 2. Almacenar la ubicación en la base de datos
+  storeLocation(chatId, location.latitude, location.longitude);
+
+  // 3. Respuesta personalizada
+  const confirmationMessage = "Gracias por compartir tu ubicación. Estamos procesando tu información.";
+  bot.sendMessage(chatId, confirmationMessage);
+});
+
+// Función para almacenar la ubicación en la base de datos
+async function storeLocation(chatId, latitude, longitude) {
+  try {
+    const client = await pool.connect();
+    const queryText = `
+      INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
+      VALUES ($1, $2, $3, NOW())
+    `;
+    await client.query(queryText, [chatId, latitude, longitude]);
+    client.release();
+    console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
+  } catch (error) {
+    console.error('Error al almacenar la ubicación:', error);
   }
 }
 
@@ -182,6 +390,8 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
+
 
 
 
