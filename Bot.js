@@ -54,9 +54,10 @@ async function getChatGPTResponse(messages) {
     let gptResponse = response.data.choices[0].message.content.trim();
 
     // Filtrar cualquier mención a OpenAI o ChatGPT
-    gptResponse = gptResponse.replace(/openai|chatgpt/gi, '');
+    gptResponse = gptResponse.replace(/\b(chat\s*GPT|GPT|OpenAI|AI)\b/gi, 'esta asistente');
 
     cachedResponses.set(messagesKey, gptResponse);
+    setTimeout(() => cachedResponses.delete(messagesKey), 30 * 60 * 1000); // Eliminar después de 30 minutos
 
     return gptResponse;
   } catch (error) {
@@ -138,9 +139,6 @@ async function handleMessage(msg) {
         gptResponse = await getChatGPTResponse([...messageHistory, `¿En qué más puedo ayudarte?`]);
       }
 
-      // Filtrar menciones no deseadas a ChatGPT y OpenAI
-      gptResponse = gptResponse.replace(/chat gpt|gpt-3|openai/gi, 'esta asistente');
-      
       bot.sendMessage(chatId, gptResponse);
       messageHistory.push({ role: 'assistant', content: gptResponse });
       chatMessageHistory.set(chatId, messageHistory);
@@ -207,7 +205,7 @@ const greetings = [
 
 // Función para detectar preguntas por el nombre del asistente
 const askingNames = [
-   // Formas en español
+  // Formas en español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
   'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
   'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
@@ -245,6 +243,7 @@ process.on('unhandledRejection', error => {
 });
 
 console.log('Bot listo para recibir mensajes.');
+
 
 
 
