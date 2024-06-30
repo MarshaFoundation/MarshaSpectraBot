@@ -8,7 +8,6 @@ dotenv.config();
 // Variables de entorno
 const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const openaiOrganization = process.env.OPENAI_ORGANIZATION_ID;
 const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
@@ -30,12 +29,16 @@ console.log('Bot iniciado correctamente');
 // Mapa para cachear respuestas de OpenAI (actualizado a GPT-4)
 const cachedResponses = new Map();
 
+// Mapa para almacenar historial de mensajes por chatId
+const chatMessageHistory = new Map();
+
 // Configuración de instancia de Axios para OpenAI
 const openai = axios.create({
   baseURL: 'https://api.openai.com/v1',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${openaiApiKey}`,
+    // Asegúrate de definir openaiOrganization si es necesario
     'OpenAI-Organization': openaiOrganization,
   }
 });
@@ -199,63 +202,6 @@ async function handleMessage(msg) {
       // Agrega más frases según sea necesario
     ];
 
-    // Función para manejar casos específicos de frases relacionadas
-    function handleLostChildCase(chatId) {
-      // Implementación básica de la función handleLostChildCase
-      const responseMessage = 'Aquí puedes poner la lógica para manejar el caso de frases relacionadas.';
-      bot.sendMessage(chatId, responseMessage)
-        .catch(error => console.error('Error al enviar mensaje:', error));
-    }
-
-    // Función para manejar menciones específicas de "Marsha+"
-    async function handleMarshaMentions(chatId, messageText) {
-      // Expresiones regulares para detectar menciones de "Marsha+"
-      const marshaPlusRegex = [
-        /\bmarsha\+\s*foundation\b/i,
-        /\bmarsha\+\b/i,
-        /\bmarsha\s*worldwide\b/i,
-        /\bmarsha\s*foundation\b/i,
-        /\bmarsha\b/i
-      ];
-
-      // Verificar si el mensaje contiene alguna mención de "Marsha+"
-      let isMarshaPlusMention = false;
-      let specificQuestion = false; // Variable para verificar si hay una pregunta específica sobre la empresa
-
-      for (const regex of marshaPlusRegex) {
-        if (regex.test(messageText)) {
-          isMarshaPlusMention = true;
-          if (/\bempresa\b/i.test(messageText)) { // Verificar si se menciona la palabra "empresa"
-            specificQuestion = true;
-          }
-          break;
-        }
-      }
-
-      // Definir respuesta por defecto si no se menciona "Marsha+"
-      let responseMessage = '';
-
-      if (isMarshaPlusMention) {
-        if (specificQuestion) {
-          // Responder con información específica sobre la empresa "Marsha+"
-          responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. Nuestro compromiso se fundamenta en la creencia de que la igualdad y los derechos humanos son fundamentales. Marsha+ se erige como un faro de cambio positivo. ¿En qué más puedo ayudarte sobre la empresa?`;
-        } else {
-          // Responder con información general sobre "Marsha+"
-          responseMessage = `Marsha+ es una iniciativa revolucionaria diseñada para empoderar y apoyar a la comunidad LGBTQ+ a través de la tecnología blockchain. ¿Hay algo específico que te gustaría saber?`;
-        }
-      } else {
-        // Si no hay mención de "Marsha+", responder de manera estándar
-        responseMessage = `Como inteligencia artificial, estoy aquí para ayudarte. ¿Puedo hacer algo por ti?`;
-      }
-
-      // Enviar la respuesta al usuario
-      try {
-        await bot.sendMessage(chatId, responseMessage);
-      } catch (error) {
-        console.error('Error al enviar mensaje de Marsha:', error);
-      }
-    }
-
     // Lógica principal para manejar mensajes
     if (matchPhrases(messageText, greetings)) {
       await bot.sendMessage(chatId, responses.greeting);
@@ -264,20 +210,15 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, relatedPhrases)) {
       handleLostChildCase(chatId);
     } else {
-      // Verificar menciones específicas de "Marsha+"
-      if (messageText.toLowerCase().includes('marsha')) {
-        await handleMarshaMentions(chatId, messageText);
-      } else {
-        // Respuesta por defecto usando modelo GPT u otra lógica de respuesta
-        const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
-        const messagesWithIntro = [assistantIntro, ...messageHistory];
-        const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      // Respuesta por defecto usando modelo GPT u otra lógica de respuesta
+      const assistantIntro = { role: 'system', content: `¡Hola! Soy ${assistantName}, tu asistente virtual.` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
 
-        await bot.sendMessage(chatId, gptResponse);
+      await bot.sendMessage(chatId, gptResponse);
 
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
-      }
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
