@@ -10,6 +10,7 @@ const token = process.env.TELEGRAM_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 // Configuración de conexión a PostgreSQL
@@ -27,6 +28,9 @@ console.log('Bot iniciado correctamente');
 
 // Almacenamiento temporal para mensajes por chat
 const chatMessageHistory = new Map();
+
+// Mapa para cachear respuestas de OpenAI
+const cachedResponses = new Map();
 
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
@@ -56,7 +60,6 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
-
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
