@@ -51,7 +51,14 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+   let gptResponse = response.data.choices[0].text.trim();
+
+    // Reemplazar la respuesta incorrecta
+    const incorrectResponse = 'Soy un asistente virtual desarrollado por OpenAI';
+    const correctResponse = 'Soy un asistente virtual desarrollado por Marsha+ Foundation';
+
+    gptResponse = gptResponse.replace(incorrectResponse, correctResponse);
+
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
@@ -60,7 +67,6 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
-
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   try {
