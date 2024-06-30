@@ -93,123 +93,12 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Función genérica para comparar mensajes
-function matchPhrases(message, phrases) {
-  const normalizedMessage = message.trim().toLowerCase();
-  return phrases.includes(normalizedMessage);
-}
-
-// Función para manejar mensajes
-async function handleMessage(msg) {
-  const chatId = msg.chat.id;
-  const messageText = msg.text;
-
-  if (!messageText) return;
-
-  try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
-
-    if (matchPhrases(messageText, greetings)) {
-      // Respuesta de saludo variada
-      const randomGreetingResponse = getRandomResponse(responses.greetings);
-      bot.sendMessage(chatId, randomGreetingResponse);
-    } else if (matchPhrases(messageText, askingNames)) {
-      // Respuesta sobre el nombre del asistente
-      bot.sendMessage(chatId, responses.name);
-    } else {
-      // Introducción del asistente seguida de una respuesta generada por GPT
-      const assistantIntro = `¡Hola! Soy ${assistantName}, ${assistantDescription}`;
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      let gptResponse = await getChatGPTResponse(messagesWithIntro);
-      
-      // Verificar si la respuesta de GPT es la misma que la anterior para evitar duplicados
-      const lastMessage = messageHistory[messageHistory.length - 1];
-      const lastAssistantResponse = lastMessage && lastMessage.role === 'assistant' ? lastMessage.content : null;
-      
-      if (gptResponse === lastAssistantResponse) {
-        // Si la respuesta es la misma, intentamos obtener una respuesta diferente
-        gptResponse = await getChatGPTResponse([...messageHistory, `¿En qué más puedo ayudarte?`]);
-      }
-
-      if (isChatGPTQuestion(messageText)) {
-        // Si la pregunta está relacionada con "ChatGPT" u otros términos, enviar respuesta específica
-        bot.sendMessage(chatId, responses.notChatGPTResponse);
-      } else {
-        bot.sendMessage(chatId, gptResponse);
-        messageHistory.push({ role: 'assistant', content: gptResponse });
-        chatMessageHistory.set(chatId, messageHistory);
-      }
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
-  }
-}
-
-// Función para detectar preguntas dirigidas a ChatGPT o relacionadas
-function isChatGPTQuestion(text) {
-  const normalizedText = text.trim().toLowerCase();
-  return relatedPhrases.some(phrase => normalizedText.includes(phrase));
-}
-
-// Respuestas específicas según idioma
+// Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greetings: [
-    "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
-    "¡Hola! ¿Cómo estás? Soy SilvIA+, aquí para ayudarte."
-  ],
+  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-  notChatGPTResponse: "No, no soy un modelo de chat GPT. Soy el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Tengo acceso a recursos de OpenAI y diversas fuentes, lo que me hace una IA avanzada y potente. Visita www.marshafoundation.org para más información."
 };
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const greetings = [
-  'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
-  '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
-  '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
-  '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
-  'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
-  'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
-  'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
-  'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
-  'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
-  'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
-  'how’s your day been?', 'yo', 'what’s popping?'
-];
-
-// Función para detectar preguntas por el nombre del asistente
-const askingNames = [
-  // Formas en español
-  '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
-  'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
-  'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
-  'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
-  'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
-  'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
-  'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
-  'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
-  'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
-  'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
-
-  // Formas en inglés
-  'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
-  'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
-  'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
-  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
-  'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
-  'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
-  'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
-  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
-  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
-];
-
-// Función para detectar preguntas relacionadas con "chat gpt"
-const relatedPhrases = [
-  'chat gpt', 'silvia', 'assistant', 'ai'
-];
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -223,20 +112,182 @@ async function enviarMensajeDirecto(chatId, mensaje) {
   }
 }
 
-// Función genérica para obtener una respuesta aleatoria de un array
-function getRandomResponse(array) {
-  return array[Math.floor(Math.random() * array.length)];
+// Función genérica para comparar mensajes
+function matchPhrases(message, phrases) {
+  const normalizedMessage = message.trim().toLowerCase();
+  return phrases.includes(normalizedMessage);
 }
 
-// Definir el evento para manejar mensajes
-bot.on('message', handleMessage);
 
-// Manejar errores no capturados
-process.on('unhandledRejection', error => {
-  console.error('Unhandled promise rejection:', error);
+// Función para detectar saludos
+  const greetings = [
+    'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+    '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
+    '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
+    '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
+    'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
+    'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
+    'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
+    'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
+    'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
+    'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
+    'how’s your day been?', 'yo', 'what’s popping?'
+  ];
+
+// Función para detectar preguntas por el nombre del asistente
+  const askingNames = [
+     // Formas en español
+    '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
+    'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
+    'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
+    'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
+    'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
+    'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
+    'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
+    'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
+    'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
+    'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
+
+    // Formas en inglés
+    'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
+    'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
+    'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
+    'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
+    'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
+    'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
+    'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
+    'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
+    'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
+  ];
+
+// Manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
+
+  if (!messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    if (matchPhrases(messageText, greetings)) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
+    } else {
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+  }
+}
+
+// Manejar el caso del niño perdido
+function handleLostChildCase(chatId) {
+  const request = `🚨 ¡Atención! Usted está compartiendo información valiosa, la misma será enviada a las autoridades 🚨
+Es crucial que comparta su ubicación actual y cualquier detalle adicional que pueda ayudar en la búsqueda.
+
+Por favor, pulse el botón "Compartir ubicación" a continuación. Tu colaboración es vital para garantizar la seguridad de Loan. 🙏`;
+
+  bot.sendMessage(chatId, request, {
+    reply_markup: {
+      keyboard: [
+        [{
+          text: "Compartir ubicación",
+          request_location: true // Solicitar ubicación
+        }]
+      ],
+      resize_keyboard: true
+    }
+  });
+}
+
+// Función para emparejar frases
+function matchPhrases(text, phrases) {
+  const normalizedText = text.trim().toLowerCase();
+  return phrases.some(phrase => normalizedText.includes(phrase));
+}
+
+// Manejar consultas callback
+async function handleCallbackQuery(callbackQuery) {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  if (data.startsWith('setLocale_')) {
+    const locale = data.split('_')[1];
+    await setUserLocale(chatId, locale);
+    bot.sendMessage(chatId, `Idioma configurado a ${locale}`);
+  }
+}
+
+// Manejar ubicación
+bot.on('location', (msg) => {
+  const chatId = msg.chat.id;
+  const location = msg.location;
+
+  console.log(`Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 1. Notificar a las autoridades (simulado con console.log)
+  console.log(`Notificar a las autoridades: Ubicación recibida de ${chatId}: ${location.latitude}, ${location.longitude}`);
+
+  // 2. Almacenar la ubicación en la base de datos
+  storeLocation(chatId, location.latitude, location.longitude);
+
+  // 3. Respuesta personalizada
+  const confirmationMessage = "Gracias por compartir tu ubicación. Estamos procesando tu información.";
+  bot.sendMessage(chatId, confirmationMessage);
 });
 
-console.log('Bot listo para recibir mensajes.');
+// Función para almacenar la ubicación en la base de datos
+async function storeLocation(chatId, latitude, longitude) {
+  try {
+    const client = await pool.connect();
+    const queryText = `
+      INSERT INTO locations (chat_id, latitude, longitude, timestamp) 
+      VALUES ($1, $2, $3, NOW())
+    `;
+    await client.query(queryText, [chatId, latitude, longitude]);
+    client.release();
+    console.log(`Ubicación de ${chatId} almacenada en la base de datos.`);
+  } catch (error) {
+    console.error('Error al almacenar la ubicación:', error);
+  }
+}
+
+// Manejar comandos
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
+  bot.sendMessage(chatId, welcomeMessage);
+});
+
+bot.on('message', handleMessage);
+bot.on('callback_query', handleCallbackQuery);
+
+bot.on('polling_error', (error) => {
+  console.error('Error de polling:', error);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Error no manejado:', reason, 'promise:', promise);
+});
 
 
 
