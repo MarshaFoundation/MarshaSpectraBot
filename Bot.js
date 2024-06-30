@@ -95,7 +95,7 @@ async function setUserLocale(chatId, locale) {
 
 // Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greeting: "¡Hola! Soy SilvIA+, tu asistente LGTBI+. ¿En qué puedo ayudarte?",
+  greeting: "¡Hola! Soy SilvIA+, el primer  asistente LGTBI+ en el mundo. ¿En qué puedo ayudarte?",
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
@@ -173,6 +173,38 @@ async function handleMessage(msg) {
       bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
       bot.sendMessage(chatId, responses.name);
+    } else if (matchPhrases(messageText, relatedPhrases)) {
+      handleLostChildCase(chatId);
+    } else {
+      const assistantIntro = { role: 'system', content: Eres un asistente llamado ${assistantName}. ${assistantDescription} };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+  }
+} y esto :// Manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
+
+  if (!messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    if (matchPhrases(messageText, greetings)) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      bot.sendMessage(chatId, responses.name);
     } else {
       const gptMessages = messageHistory.map(({ content }) => ({ role: 'user', content }));
       const gptResponse = await getChatGPTResponse(gptMessages);
@@ -185,10 +217,28 @@ async function handleMessage(msg) {
 }
 
 // Manejar comandos
-bot.onText(/\/start/, (msg) => {
+bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, responses.greeting);
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
+  bot.sendMessage(chatId, welcomeMessage);
 });
+
+bot.on('message', handleMessage);
+bot.on('callback_query', handleCallbackQuery);
+
+bot.on('polling_error', (error) => {
+  console.error('Error de polling:', error);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Error no capturado:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Error no manejado:', reason, 'promise:', promise);
+});
+
 
 // Manejar respuestas directas
 bot.on('message', async (msg) => {
