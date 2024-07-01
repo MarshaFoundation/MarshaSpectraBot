@@ -196,7 +196,6 @@ const responses = {
 };
 
 // Funciones para detectar saludos y preguntas por el nombre del asistente
-
 const greetings = [
   // Español
   'hola', 'hi', 'qué tal', 'buenas', 'hey', 'buen día',
@@ -283,41 +282,14 @@ const askingNames = [
   'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
   'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
   'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
-  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
-  'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
-  'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
-  'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
-  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
-  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself',
-
-  // Expresiones adicionales
-  'hey, what\'s your name?', 'yo, tell me your name', 'tell me what you\'re called', 'hello, what do they call you?',
-  'what can I call you?', 'hey, could you share your name with me?', 'tell me your handle', 'do you have a name I can use?',
-  'what name should I use?', 'I’m curious, what’s your name?', 'hey, who are you exactly?', 'what’s your personal name?',
-  'what title do you go by?', 'I want to address you properly, what’s your name?', 'hello, may I know your name?',
-  'hey, what’s your handle?', 'yo, what’s your name?', 'what should I call you?',
-  'tell me what they call you?', 'hello, can I call you something?', 'what’s your title?',
-  'can I ask what you’re called?', 'what name do you use?', 'hey, how are you known?',
-  'tell me how you are referred to?', 'may I have your name, please?', 'could you tell me your name, please?',
-  'do you have a name I should know?', 'can you give me your name, please?', 'what’s your name, exactly?',
-  'hello, I would like to know your name.', 'what name would you like me to use?',
-  'what is your name, tell me please?', 'tell me your name, if you would.', 'what name do you answer to?',
-  'can you tell me your name, for me?', 'may I ask your name, tell me please?', 'what’s your full name?',
-  'could you tell me your name, tell me please?', 'how do you refer to yourself?',
-  'can I ask how you’re known?', 'may I ask your name, can you tell me?',
-  'tell me your name, what do you call yourself?', 'can I call you something, how are you?',
-  'what’s your title, can you tell me please?', 'what name are you known by?',
-  'hey, how are you known, tell me please?', 'can I ask what you go by?',
-  'what’s your title, do you have a name?', 'I want to ask your name, how do you refer to yourself?',
-  'hello, I want to know your name, can I ask your name?', 'what’s your name, do you have a name?',
-  'how do you refer to yourself, do you have a name?', 'what’s your full name, may I ask?',
-  'how do you refer to yourself, what’s your name?', 'can you tell me your name, do you have a name?',
-  'can I ask what you’re known by, how do you refer to yourself?', 'hello, I want to know your name, do you have a name?',
-  'what’s your name, how do you refer to yourself?', 'can you tell me your name, how do you refer to yourself?',
-  'what’s your name, tell me please?', 'hello, can I call you something?',
-  'what’s your title, may I ask your name?', 'how do you refer to yourself, do you have a name?',
-  'can I ask what you’re called, how do you refer to yourself?', 'hello, I want to know your name, can you tell me your name?',
-  'what’s your name, how do you refer to yourself?', 'can you tell me your name, do you have a name?'
+  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name',
+  'what would you like me to call you', 'what should I know you as', 'may I know the name you use',
+  'can I know your name', 'how are you known', 'what are you called', 'how do you name yourself',
+  'what should I call you', 'how do you refer to yourself', 'what\'s your current name', 'what\'s your name',
+  'could you give me your name', 'what\'s your identification', 'tell me the name people use for you',
+  'what name do you go by', 'do you know what they call you', 'may I know your current name',
+  'what is your name right now', 'may I ask your name', 'tell me your ID', 'tell me your current name',
+  'what should I refer to you as', 'how do you identify', 'how do you identify yourself'
 ];
 
 module.exports = {
