@@ -129,12 +129,6 @@ const responses = {
   }
 };
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
-
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
@@ -206,22 +200,24 @@ async function handleMessage(msg) {
     messageHistory.push({ role: 'user', content: messageText });
 
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
+      const greeting = responses.greeting[userLocale][Math.floor(Math.random() * responses.greeting[userLocale].length)];
+      await bot.sendMessage(chatId, greeting);
     } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
+      const nameResponse = responses.name[userLocale][Math.floor(Math.random() * responses.name[userLocale].length)];
+      await bot.sendMessage(chatId, nameResponse);
     } else {
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
+      await bot.sendMessage(chatId, gptResponse);
 
       messageHistory.push({ role: 'assistant', content: gptResponse });
       chatMessageHistory.set(chatId, messageHistory);
     }
   } catch (error) {
     console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
 
@@ -229,7 +225,7 @@ async function handleMessage(msg) {
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
-  bot.sendMessage(chatId, welcomeMessage);
+  await bot.sendMessage(chatId, welcomeMessage);
 });
 
 bot.on('message', handleMessage);
@@ -251,12 +247,12 @@ process.on('unhandledRejection', (reason, promise) => {
 (async () => {
   const client = await pool.connect();
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
+    await client.query(
+      `CREATE TABLE IF NOT EXISTS users (
         chat_id BIGINT PRIMARY KEY,
         locale TEXT NOT NULL DEFAULT 'es'
-      )
-    `);
+      )`
+    );
     console.log('Tabla de usuarios creada correctamente');
   } catch (error) {
     console.error('Error al crear la tabla de usuarios:', error);
@@ -264,6 +260,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
