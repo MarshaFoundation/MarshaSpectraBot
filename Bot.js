@@ -52,6 +52,68 @@ async function getUserLocale(chatId) {
   }
 }
 
+// Función para ajustar los parámetros basados en el texto del usuario
+function adjustParameters(userText) {
+  let temperature = 0.7, maxTokens = 150, topP = 0.8;
+
+  if (userText.includes('ayuda')) {
+    temperature = 0.5;
+    maxTokens = 150;
+    topP = 0.8;
+  } else if (userText.includes('gracias') || userText.includes('agradecido')) {
+    temperature = 0.3;
+    maxTokens = 100;
+    topP = 0.7;
+  } else if (userText.includes('información')) {
+    temperature = 0.6;
+    maxTokens = 180;
+    topP = 0.85;
+  } else if (userText.includes('adiós') || userText.includes('hasta luego')) {
+    temperature = 0.4;
+    maxTokens = 120;
+    topP = 0.75;
+  } else if (userText.includes('broma') || userText.includes('chiste')) {
+    temperature = 0.7;
+    maxTokens = 200;
+    topP = 0.9;
+  } else if (userText.includes('cuéntame más') || userText.includes('explícame')) {
+    temperature = 0.6;
+    maxTokens = 180;
+    topP = 0.85;
+  } else if (userText.includes('tienes tiempo')) {
+    temperature = 0.4;
+    maxTokens = 150;
+    topP = 0.8;
+  } else if (userText.includes('necesito ayuda urgente')) {
+    temperature = 0.8;
+    maxTokens = 250;
+    topP = 0.95;
+  } else if (userText.includes('eres un robot') || userText.includes('eres humano')) {
+    temperature = 0.5;
+    maxTokens = 160;
+    topP = 0.85;
+  } else if (userText.includes('qué opinas de')) {
+    temperature = 0.6;
+    maxTokens = 180;
+    topP = 0.85;
+  } else if (userText.includes('cuál es tu nombre')) {
+    temperature = 0.3;
+    maxTokens = 100;
+    topP = 0.7;
+  } else if (userText.includes('recursos de apoyo lgtbi') || userText.includes('derechos lgtbi') ||
+             userText.includes('definiciones lgtbi') || userText.includes('eventos lgtbi') ||
+             userText.includes('pronombres y género') || userText.includes('discriminación lgtbi') ||
+             userText.includes('apoyo familiar lgtbi') || userText.includes('historia lgtbi') ||
+             userText.includes('salud mental lgtbi') || userText.includes('temas lgtbi') ||
+             userText.includes('opinión lgtbi')) {
+    temperature = 0.6;
+    maxTokens = 180;
+    topP = 0.85;
+  }
+
+  return { temperature, maxTokens, topP };
+}
+
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
@@ -59,69 +121,10 @@ async function getChatGPTResponse(messages) {
     return cachedResponses.get(messagesKey);
   }
 
-  let { temperature, maxTokens, topP } = { temperature: 0.7, maxTokens: 150, topP: 0.8 };
-
   const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
-  let userText = ''; // Variable para almacenar el texto del usuario
+  const userText = lastUserMessage ? lastUserMessage.content.toLowerCase() : '';
 
-  if (lastUserMessage) {
-    userText = lastUserMessage.content.toLowerCase(); // Asignar el contenido del último mensaje del usuario
-    // Ajustar los parámetros basados en el texto del usuario
-    if (userText.includes('ayuda')) {
-      temperature = 0.5;
-      maxTokens = 150;
-      topP = 0.8;
-    } else if (userText.includes('gracias') || userText.includes('agradecido')) {
-      temperature = 0.3;
-      maxTokens = 100;
-      topP = 0.7;
-    } else if (userText.includes('información')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('adiós') || userText.includes('hasta luego')) {
-      temperature = 0.4;
-      maxTokens = 120;
-      topP = 0.75;
-    } else if (userText.includes('broma') || userText.includes('chiste')) {
-      temperature = 0.7;
-      maxTokens = 200;
-      topP = 0.9;
-    } else if (userText.includes('cuéntame más') || userText.includes('explícame')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('tienes tiempo')) {
-      temperature = 0.4;
-      maxTokens = 150;
-      topP = 0.8;
-    } else if (userText.includes('necesito ayuda urgente')) {
-      temperature = 0.8;
-      maxTokens = 250;
-      topP = 0.95;
-    } else if (userText.includes('eres un robot') || userText.includes('eres humano')) {
-      temperature = 0.5;
-      maxTokens = 160;
-      topP = 0.85;
-    } else if (userText.includes('qué opinas de')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('cuál es tu nombre')) {
-      temperature = 0.3;
-      maxTokens = 100;
-      topP = 0.7;
-    } else if (userText.includes('recursos de apoyo lgtbi') || userText.includes('derechos lgtbi') ||
-               userText.includes('definiciones lgtbi') || userText.includes('eventos lgtbi') ||
-               userText.includes('pronombres y género') || userText.includes('discriminación lgtbi') ||
-               userText.includes('apoyo familiar lgtbi') || userText.includes('historia lgtbi') ||
-               userText.includes('salud mental lgtbi') || userText.includes('temas lgtbi') ||
-               userText.includes('opinión lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    }
-  }
+  const { temperature, maxTokens, topP } = adjustParameters(userText);
 
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
@@ -198,32 +201,29 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
+
 // Funciones para detectar saludos y preguntas por el nombre del asistente
+
+// Lista de saludos en español e inglés
 const greetings = [
   // Español
   'hola', 'hi', 'qué tal', 'buenas', 'hey', 'buen día',
   '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
   '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
-  '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
-  'buen día', 'buenas noches', 'buenas tardes', '¿cómo estás hoy?',
-  'hola, ¿cómo estás?', '¿qué tal?', 'hola, ¿qué hay?', 'hey, ¿cómo estás?',
-  'saludos, ¿qué tal?', 'buenos días, ¿cómo va?', 'buenas noches, ¿qué hay?',
-  'buenas tardes, ¿cómo estás?', '¿estás ahí?', 'hey, ¿qué onda?',
-  'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?',
-  'buenos días, ¿cómo te va?', 'buenas noches, ¿cómo onda?',
-  'buenas tardes, ¿estás ahí?', '¿cómo estás hoy?', 'hola, ¿qué tal?',
-  'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?',
-  'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?',
-  'hey, ¿qué tal?', 'hola, ¿cómo va?', '¿qué hay?', 'buenos días',
-  'buenas noches', 'buenas tardes', '¿cómo estás hoy?',
-  'hola, ¿cómo estás?', '¿qué tal?', 'hola, ¿qué hay?', 'hey, ¿cómo estás?',
-  'saludos, ¿qué tal?', 'buenos días, ¿cómo va?', 'buenas noches, ¿qué hay?',
-  'buenas tardes, ¿cómo estás?', '¿estás ahí?', 'hey, ¿qué onda?',
-  'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?',
-  'buenos días, ¿cómo te va?', 'buenas noches, ¿cómo onda?',
-  'buenas tardes, ¿estás ahí?', '¿cómo estás hoy?', 'hola, ¿qué tal?',
-  'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?',
-  'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?',
+  '¿cómo te va?', '¿qué onda?', '¿estás ahí?', 'buen día', 'buenas noches',
+  'buenas tardes', '¿cómo estás hoy?', 'hola, ¿cómo estás?', '¿qué tal?',
+  'hola, ¿qué hay?', 'hey, ¿cómo estás?', 'saludos, ¿qué tal?', 'buenos días, ¿cómo va?',
+  'buenas noches, ¿qué hay?', 'buenas tardes, ¿cómo estás?', '¿estás ahí?',
+  'hey, ¿qué onda?', 'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?',
+  'buenos días, ¿cómo te va?', 'buenas noches, ¿cómo onda?', 'buenas tardes, ¿estás ahí?',
+  '¿cómo estás hoy?', 'hola, ¿qué tal?', 'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?',
+  'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?', 'hey, ¿qué tal?', 'hola, ¿cómo va?',
+  '¿qué hay?', 'buenos días', 'buenas noches', 'buenas tardes', '¿cómo estás hoy?',
+  'hola, ¿cómo estás?', '¿qué tal?', 'hola, ¿qué hay?', 'hey, ¿cómo estás?', 'saludos, ¿qué tal?',
+  'buenos días, ¿cómo va?', 'buenas noches, ¿qué hay?', 'buenas tardes, ¿cómo estás?', '¿estás ahí?',
+  'hey, ¿qué onda?', 'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?', 'buenos días, ¿cómo te va?',
+  'buenas noches, ¿cómo onda?', 'buenas tardes, ¿estás ahí?', '¿cómo estás hoy?', 'hola, ¿qué tal?',
+  'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?', 'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?',
   'hey, ¿qué tal?', 'hola, ¿cómo va?', '¿qué hay?',
 
   // Inglés
@@ -240,34 +240,27 @@ const greetings = [
   'good evening, how are you?', 'how’s your day today?', 'what’s new, how are you?',
   'hello there, what’s up?', 'what’s cracking, how are you?', 'hey dude, how’s your day?',
   'hiya, how’s it going?', 'sup, how are things?', 'good day, how are you doing?',
-  'what’s the good word, how are you?', 'howdy-do, how are you today?',
-  'nice to see you, how have you been?', 'yo, how’s everything going?',
-  'what’s popping, how are things?', 'hey friend, how’s your day been?',
-  'how’s your day been so far?', 'good morning, how’s your day?',
-  'hello, how’s it going today?', 'hey, how’s your day been?', 'what’s new, how are you?',
-  'how’s everything going today?', 'hey buddy, how’s your day?',
-  'long time no see, how’s everything going?', 'how’s life been treating you?',
-  'hi there, how’s your day been?', 'hey there, how are you doing?',
-  'howdy, how’s everything been?', 'good evening, how’s it going?',
-  'how’s your day going so far?', 'what’s happening, how are you?',
-  'hey dude, how’s everything?', 'how’s your day treating you?',
-  'hiya, how’s it going so far?', 'sup, how’s your day been?',
-  'what’s going on, how are you?', 'how’s your day treating you today?',
-  'hey friend, how have you been?', 'how’s everything going so far?',
-  'how’s your day treating you so far?', 'hiya, how’s your day going?',
-  'yo, how’s your day treating you?', 'what’s up, how have you been?',
-  'what’s new, how’s everything been?', 'what’s happening, how are things?',
-  'hey there, how’s everything been?', 'what’s cracking, how’s your day?',
-  'how’s everything been so far?', 'what’s up, how’s everything going?',
-  'hey dude, how have you been?', 'what’s the good word, how’s everything?',
-  'howdy-do, how’s everything going?', 'what’s going on, how have you been?',
-  'how’s your day been going?', 'hey friend, how’s everything?',
-  'how’s your day been treating you so far?', 'how’s everything going today?',
-  'hi there, how’s your day going?', 'hey there, how’s everything going?',
-  'how’s everything been treating you?', 'how’s your day been today?',
+  'what’s the good word, how are you?', 'howdy-do, how are you today?', 'nice to see you, how have you been?',
+  'yo, how’s everything going?', 'what’s popping, how are things?', 'hey friend, how’s your day been?',
+  'how’s your day been so far?', 'good morning, how’s your day?', 'hello, how’s it going today?',
+  'hey, how’s your day been?', 'what’s new, how are you?', 'how’s everything going today?',
+  'hey buddy, how’s your day?', 'long time no see, how’s everything going?', 'how’s life been treating you?',
+  'hi there, how’s your day been?', 'hey there, how are you doing?', 'howdy, how’s everything been?',
+  'good evening, how’s it going?', 'how’s your day going so far?', 'what’s happening, how are you?',
+  'hey dude, how’s everything?', 'how’s your day treating you?', 'hiya, how’s it going so far?',
+  'sup, how’s your day been?', 'what’s going on, how are you?', 'how’s your day treating you today?',
+  'hey friend, how have you been?', 'how’s everything going so far?', 'how’s your day treating you so far?',
+  'hiya, how’s your day going?', 'yo, how’s your day treating you?', 'what’s up, how have you been?',
+  'what’s new, how’s everything been?', 'what’s happening, how are things?', 'hey there, how’s everything been?',
+  'what’s cracking, how’s your day?', 'how’s everything been so far?', 'what’s up, how’s everything going?',
+  'hey dude, how have you been?', 'what’s the good word, how’s everything?', 'howdy-do, how’s everything going?',
+  'what’s going on, how have you been?', 'how’s your day been going?', 'hey friend, how’s everything?',
+  'how’s your day been treating you so far?', 'how’s everything going today?', 'hi there, how’s your day going?',
+  'hey there, how’s everything going?', 'how’s everything been treating you?', 'how’s your day been today?',
   'how’s your day been going so far?'
 ];
 
+// Lista de preguntas sobre el nombre del asistente en español e inglés
 const askingNames = [
   // Español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
@@ -295,12 +288,13 @@ const askingNames = [
   'what should I refer to you as', 'how do you identify', 'how do you identify yourself'
 ];
 
+// Exportar listas de saludos y preguntas sobre el nombre
 module.exports = {
   greetings,
   askingNames
 };
 
-// Respuestas para SilvIA+ y Marsha+
+// Respuestas predefinidas para SilvIA+ y Marsha+
 const silviaResponse = `
 SilvIA+ es una avanzada inteligencia artificial diseñada para proporcionar respuestas y asistencia basadas en lenguaje natural. 
 Está construida sobre la arquitectura de OpenAI GPT y puede responder una amplia gama de preguntas sobre diversos temas.
@@ -315,6 +309,7 @@ With a total supply of 8 billion tokens and an annual burn rate of 3%, Marsha+ r
 
 For more information, visit [marshaplus.org](http://marshaplus.org).
 `;
+
 
 // Datos de entrenamiento para SilvIA+ y Marsha+
 const silviaTrainingData = [
@@ -370,9 +365,8 @@ const silviaTrainingData = [
   { input: 'Who created the AI SilvIA+?', output: 'SilvIA+' },
 ];
 
-
 const marshaTrainingData = [
-   { input: '¿Qué es Marsha+?', output: 'Marsha+' },
+  { input: '¿Qué es Marsha+?', output: 'Marsha+' },
   { input: 'Who is behind Marsha+?', output: 'Marsha+' },
   { input: 'Cuál es la misión de Marsha+?', output: 'Marsha+' },
   { input: 'What does Marsha+ do?', output: 'Marsha+' },
@@ -433,12 +427,14 @@ const marshaClassifier = new SVM();
 
 // Entrenamiento de los clasificadores
 combinedTrainingData.forEach(({ input, output }) => {
+  const lowerCaseInput = input.toLowerCase();
   if (output === 'SilvIA+') {
-    silviaClassifier.train(input.toLowerCase(), output);
+    silviaClassifier.train(lowerCaseInput, output);
   } else if (output === 'Marsha+') {
-    marshaClassifier.train(input.toLowerCase(), output);
+    marshaClassifier.train(lowerCaseInput, output);
   }
 });
+
 
 // Inicialización del bot de Telegram
 const bot = new Telegraf('YOUR_TELEGRAM_BOT_TOKEN');
@@ -458,12 +454,12 @@ async function handleSilviaQuestions(msg) {
   const messageText = msg.text.toLowerCase();
 
   const silviaQuestions = [
-    'qué es SilvIA+', 'quién es SilvIA+', 'cuál es la misión de SilvIA+',
+    'qué es silvia+', 'quién es silvia+', 'cuál es la misión de silvia+',
     // Añade más preguntas sobre SilvIA+ según sea necesario
   ];
 
   if (silviaQuestions.some(question => messageText.includes(question))) {
-    await bot.sendMessage(chatId, silviaResponse);
+    await bot.telegram.sendMessage(chatId, 'SilvIA+ es un proyecto diseñado para...');
   }
 }
 
@@ -473,12 +469,12 @@ async function handleMarshaQuestions(msg) {
   const messageText = msg.text.toLowerCase();
 
   const marshaQuestions = [
-    'qué es Marsha+', 'quién es Marsha+', 'cuál es la misión de Marsha+',
+    'qué es marsha+', 'quién es marsha+', 'cuál es la misión de marsha+',
     // Añade más preguntas sobre Marsha+ según sea necesario
   ];
 
   if (marshaQuestions.some(question => messageText.includes(question))) {
-    await bot.sendMessage(chatId, marshaResponse);
+    await bot.telegram.sendMessage(chatId, 'Marsha+ es una iniciativa enfocada en...');
   }
 }
 
@@ -493,28 +489,20 @@ async function handleMessage(msg) {
     // Predicción de la categoría y manejo de preguntas específicas
     const category = predictCategory(messageText);
     if (category === 'SilvIA+') {
-      await bot.sendMessage(chatId, silviaResponse);
+      await bot.telegram.sendMessage(chatId, 'Preguntas sobre SilvIA+');
       await handleSilviaQuestions(msg);
     } else if (category === 'Marsha+') {
-      await bot.sendMessage(chatId, marshaResponse);
+      await bot.telegram.sendMessage(chatId, 'Preguntas sobre Marsha+');
       await handleMarshaQuestions(msg);
     }
-
   } catch (error) {
     console.error('Error handling message:', error);
-    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    await bot.telegram.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
 
 // Conectar manejo de mensajes al bot
 bot.on('message', handleMessage);
-
-// Manejar comandos
-bot.command('start', async (ctx) => {
-  const chatId = ctx.chat.id;
-  const welcomeMessage = `¡Hola! Soy un asistente creado para responder preguntas sobre SilvIA+ y Marsha+. ¿Cómo puedo ayudarte hoy?`;
-  await ctx.reply(welcomeMessage);
-});
 
 // Iniciar el bot de Telegram
 bot.launch()
@@ -534,6 +522,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promesa no manejada:', reason, 'Promise:', promise);
 });
+
 
 
 
