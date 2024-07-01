@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI
+// Función para obtener respuesta de OpenAI con ajustes
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -43,7 +43,9 @@ async function getChatGPTResponse(messages) {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
-      temperature: 0.7,
+      temperature: 0.5, // Menos creativo
+      max_tokens: 150, // Limitar la longitud de la respuesta
+      top_p: 0.9 // Respuestas más directas
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +53,13 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+    let gptResponse = response.data.choices[0].message.content.trim();
+
+    // Procesar respuesta para acortar si es necesario
+    if (gptResponse.length > 200) {
+      gptResponse = gptResponse.split('. ').slice(0, 3).join('. ') + '.';
+    }
+
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
@@ -157,7 +165,7 @@ const askingNames = [
   'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Manejar mensajes
+// Función para manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -174,7 +182,7 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, askingNames)) {
       bot.sendMessage(chatId, responses.name);
     } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}. Por favor, responde de manera breve y directa.` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
