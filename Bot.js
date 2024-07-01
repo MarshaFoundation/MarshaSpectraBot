@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI con ajustes
+// Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -44,8 +44,6 @@ async function getChatGPTResponse(messages) {
       model: 'gpt-3.5-turbo',
       messages: messages,
       temperature: 0.7,
-      max_tokens: 200,
-      top_p: 0.9
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -53,12 +51,7 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    let gptResponse = response.data.choices[0].message.content.trim();
-
-    if (gptResponse.length > 200) {
-      gptResponse = gptResponse.split('. ').slice(0, 3).join('. ') + '.';
-    }
-
+    const gptResponse = response.data.choices[0].message.content.trim();
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
@@ -70,16 +63,14 @@ async function getChatGPTResponse(messages) {
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
-  let client;
   try {
-    client = await pool.connect();
+    const client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
     return 'es';
-  } finally {
-    if (client) client.release();
   }
 }
 
@@ -92,42 +83,20 @@ async function setUserLocale(chatId, locale) {
     DO UPDATE SET locale = $2
   `;
   
-  let client;
   try {
-    client = await pool.connect();
+    const client = await pool.connect();
     await client.query(queryText, [chatId, locale]);
+    client.release();
     console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
-  } finally {
-    if (client) client.release();
   }
 }
 
-/ Respuestas en español e inglés
+// Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
-  greeting: {
-    es: [
-      `¡Hola! Soy ${assistantName}, ¿cómo estás hoy?`,
-      `¡Hey! Soy ${assistantName}. ¿Qué tal tu día?`,
-      `¡Hola! Aquí ${assistantName}, ¿en qué puedo ayudarte hoy?`
-    ],
-    en: [
-      `Hi! I'm ${assistantName}, how are you today?`,
-      `Hey! I'm ${assistantName}. How's your day going?`,
-      `Hello! This is ${assistantName}, how can I assist you today?`
-    ]
-  },
-  name: {
-    es: [
-      `Mi nombre es ${assistantName}. ${assistantDescription}`,
-      `¡Soy ${assistantName}! Un placer ayudarte. ${assistantDescription}`
-    ],
-    en: [
-      `My name is ${assistantName}. ${assistantDescription}`,
-      `I'm ${assistantName}! Happy to help you. ${assistantDescription}`
-    ]
-  }
+  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
 // Función para enviar mensaje directo a un usuario
@@ -259,6 +228,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
