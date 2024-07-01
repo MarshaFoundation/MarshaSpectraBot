@@ -199,6 +199,81 @@ const responses = {
   name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
 };
 
+
+// Función para manejar preguntas sobre SilvIA+
+async function handleSilviaQuestions(chatId, messageText) {
+  const lowerCaseMessage = messageText.toLowerCase();
+
+  // Verificar si el mensaje contiene alguna pregunta sobre SilvIA+
+  if (lowerCaseMessage.includes('silvia+')) {
+    await bot.sendMessage(chatId, silviaResponse);
+    return true; // Indicar que se manejó una pregunta sobre SilvIA+
+  }
+
+  return false; // Indicar que no se manejó una pregunta sobre SilvIA+
+}
+
+// Función para manejar preguntas sobre Marsha+
+async function handleMarshaQuestions(chatId, messageText) {
+  const lowerCaseMessage = messageText.toLowerCase();
+
+  // Verificar si el mensaje contiene alguna pregunta sobre Marsha+
+  if (lowerCaseMessage.includes('marsha+')) {
+    await bot.sendMessage(chatId, marshaResponse);
+    return true; // Indicar que se manejó una pregunta sobre Marsha+
+  }
+
+  return false; // Indicar que no se manejó una pregunta sobre Marsha+
+}
+
+// Actualización de la función handleMessage para incluir la lógica para SilvIA+ y Marsha+
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
+
+  if (!messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    // Añadir lógica de personalización basada en historial aquí
+
+    // Manejar preguntas sobre SilvIA+
+    const handledSilviaQuestion = await handleSilviaQuestions(chatId, messageText);
+    if (handledSilviaQuestion) {
+      messageHistory.push({ role: 'system', content: 'Respondió pregunta sobre SilvIA+' });
+      chatMessageHistory.set(chatId, messageHistory);
+      return;
+    }
+
+    // Manejar preguntas sobre Marsha+
+    const handledMarshaQuestion = await handleMarshaQuestions(chatId, messageText);
+    if (handledMarshaQuestion) {
+      messageHistory.push({ role: 'system', content: 'Respondió pregunta sobre Marsha+' });
+      chatMessageHistory.set(chatId, messageHistory);
+      return;
+    }
+
+    // Añadir más lógica de manejo de mensajes aquí según sea necesario
+
+    // Si no se reconoce la pregunta específica, responder utilizando GPT-3
+    const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
+    const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+    const gptResponse = await getChatGPTResponse(messagesWithIntro);
+    bot.sendMessage(chatId, gptResponse);
+
+    messageHistory.push({ role: 'assistant', content: gptResponse });
+    chatMessageHistory.set(chatId, messageHistory);
+
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+  }
+}
+
 // Funciones para detectar saludos y preguntas por el nombre del asistente
 const greetings = [
   // Español
