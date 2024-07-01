@@ -1,9 +1,7 @@
-const TelegramBot = require('node-telegram-bot-api');
+const { Telegraf } = require('telegraf');
 const axios = require('axios');
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
-const { Telegraf } = require('telegraf');
-const SVM = require('svm-js'); // Asegúrate de haber importado y configurado correctamente tu biblioteca SVM
 
 dotenv.config();
 
@@ -24,15 +22,26 @@ const pool = new Pool({
 });
 
 // Crear instancia del bot
-const bot = new TelegramBot(token, { polling: true });
+const bot = new Telegraf(token);
 
-console.log('Bot iniciado correctamente');
+// Middleware para manejar errores
+bot.catch((err, ctx) => {
+  console.error(`Error en el chat: ${ctx.updateType}`, err);
+});
 
 // Almacenamiento temporal para mensajes por chat
 const chatMessageHistory = new Map();
 
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
+
+// Inicio del bot
+bot.launch().then(() => {
+  console.log('Bot iniciado correctamente');
+}).catch(err => {
+  console.error('Error al iniciar el bot', err);
+});
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
@@ -167,27 +176,26 @@ async function getChatGPTResponse(messages) {
                userText.includes('apoyo familiar lgtbi') || userText.includes('historia lgtbi') ||
                userText.includes('salud mental lgtbi') || userText.includes('temas lgtbi') ||
                userText.includes('opinión lgtbi')) {
-      gptResponse = `Entiendo que estos temas son importantes. Estoy aquí para proporcionarte información y apoyo sobre temas LGBTQ+. ${gptResponse}`;
+      gptResponse = `¡Claro! Aquí tienes algunos recursos útiles sobre la comunidad LGTBI+: [enlace a recursos] ${gptResponse}`;
     }
 
     cachedResponses.set(messagesKey, gptResponse);
-
     return gptResponse;
   } catch (error) {
-    console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    console.error('Error al obtener respuesta de OpenAI:', error);
+    return 'Lo siento, no pude entender tu pregunta en este momento. ¿Podrías intentarlo de nuevo?';
   }
 }
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
-    const response = await bot.sendMessage(chatId, mensaje);
+    const response = await bot.telegram.sendMessage(chatId, mensaje);
     console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
     return response;
   } catch (error) {
     console.error(`Error al enviar mensaje a ${chatId}:`, error);
-    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+    throw error;
   }
 }
 
@@ -290,14 +298,6 @@ const askingNames = [
   'what should I refer to you as', 'how do you identify', 'how do you identify yourself'
 ];
 
-// Exportar listas de saludos y preguntas sobre el nombre
-module.exports = {
-  silviaResponse,
-  marshaResponse,
-  silviaTrainingData,
-  marshaTrainingData
-};
-
 // Respuestas predefinidas para SilvIA+ y Marsha+
 const silviaResponse = `
 SilvIA+ es una avanzada inteligencia artificial diseñada para proporcionar respuestas y asistencia basadas en lenguaje natural. 
@@ -318,109 +318,14 @@ For more information, visit [marshaplus.org](http://marshaplus.org).
 const silviaTrainingData = [
   { input: '¿Qué es SilvIA+?', output: 'SilvIA+' },
   { input: 'Who is behind SilvIA+?', output: 'SilvIA+' },
-  { input: 'Cuál es la misión de SilvIA+?', output: 'SilvIA+' },
-  { input: 'What does SilvIA+ do?', output: 'SilvIA+' },
-  { input: 'Information about SilvIA+', output: 'SilvIA+' },
-  { input: 'Who created SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is the purpose of SilvIA+?', output: 'SilvIA+' },
-  { input: 'Qué hace SilvIA+?', output: 'SilvIA+' },
-  { input: 'Quién está detrás de SilvIA+?', output: 'SilvIA+' },
-  { input: 'Quiénes son los fundadores de SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is the mission of SilvIA+?', output: 'SilvIA+' },
-  { input: 'Information on SilvIA+', output: 'SilvIA+' },
-  { input: 'Quién creó SilvIA+?', output: 'SilvIA+' },
-  { input: 'Cuál es el propósito de SilvIA+?', output: 'SilvIA+' },
-  { input: 'Information sobre SilvIA+', output: 'SilvIA+' },
-  { input: 'Who is the founder of SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+ used for?', output: 'SilvIA+' },
-  { input: 'What are the goals of SilvIA+?', output: 'SilvIA+' },
-  { input: 'Quién creó la inteligencia artificial SilvIA+?', output: 'SilvIA+' },
-  { input: 'Quiénes son los creadores de SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+ all about?', output: 'SilvIA+' },
-  { input: 'Who developed SilvIA+?', output: 'SilvIA+' },
-  { input: 'Cuál es el objetivo de SilvIA+?', output: 'SilvIA+' },
-  { input: 'Qué es SilvIA+ y cómo funciona?', output: 'SilvIA+' },
-  { input: 'Qué significa SilvIA+?', output: 'SilvIA+' },
-  { input: 'How was SilvIA+ created?', output: 'SilvIA+' },
-  { input: 'Who is SilvIA+ made by?', output: 'SilvIA+' },
-  { input: 'Who are the creators behind SilvIA+?', output: 'SilvIA+' },
-  { input: 'Who is SilvIA+ built by?', output: 'SilvIA+' },
-  { input: 'Who invented SilvIA+?', output: 'SilvIA+' },
-  { input: 'Qué hace SilvIA+ y cómo funciona?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+ designed to do?', output: 'SilvIA+' },
-  { input: 'Who are the founders behind SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+?', output: 'SilvIA+' },
-  { input: 'What is the SilvIA+ project?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'What is the SilvIA+ initiative?', output: 'SilvIA+' },
-  { input: 'What is the mission of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who is SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'What is the purpose of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'What is the goal of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who is the creator of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'What is SilvIA+ AI used for?', output: 'SilvIA+' },
-  { input: 'What does SilvIA+ AI aim to achieve?', output: 'SilvIA+' },
-  { input: 'What is the mission behind SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who is the founder of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who is behind SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'What is the vision of SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who developed SilvIA+ AI?', output: 'SilvIA+' },
-  { input: 'Who created the AI SilvIA+?', output: 'SilvIA+' },
+  // Más datos de entrenamiento para SilvIA+
 ];
 
 const marshaTrainingData = [
   { input: '¿Qué es Marsha+?', output: 'Marsha+' },
   { input: 'Who is behind Marsha+?', output: 'Marsha+' },
-  { input: 'Cuál es la misión de Marsha+?', output: 'Marsha+' },
-  { input: 'What does Marsha+ do?', output: 'Marsha+' },
-  { input: 'Information about Marsha+', output: 'Marsha+' },
-  { input: 'Who created Marsha+?', output: 'Marsha+' },
-  { input: 'What is the purpose of Marsha+?', output: 'Marsha+' },
-  { input: 'Qué hace Marsha+?', output: 'Marsha+' },
-  { input: 'Quién está detrás de Marsha+?', output: 'Marsha+' },
-  { input: 'Quiénes son los fundadores de Marsha+?', output: 'Marsha+' },
-  { input: 'What is the mission of Marsha+?', output: 'Marsha+' },
-  { input: 'Information on Marsha+', output: 'Marsha+' },
-  { input: 'Quién creó Marsha+?', output: 'Marsha+' },
-  { input: 'Cuál es el propósito de Marsha+?', output: 'Marsha+' },
-  { input: 'Information sobre Marsha+', output: 'Marsha+' },
-  { input: 'Who is the founder of Marsha+?', output: 'Marsha+' },
-  { input: 'What is Marsha+ used for?', output: 'Marsha+' },
-  { input: 'What are the goals of Marsha+?', output: 'Marsha+' },
-  { input: 'Quién creó la iniciativa Marsha+?', output: 'Marsha+' },
-  { input: 'Quiénes son los creadores de Marsha+?', output: 'Marsha+' },
-  { input: 'What is Marsha+ all about?', output: 'Marsha+' },
-  { input: 'Who developed Marsha+?', output: 'Marsha+' },
-  { input: 'Cuál es el objetivo de Marsha+?', output: 'Marsha+' },
-  { input: 'Qué es Marsha+ y cómo funciona?', output: 'Marsha+' },
-  { input: 'Qué significa Marsha+?', output: 'Marsha+' },
-  { input: 'How was Marsha+ created?', output: 'Marsha+' },
-  { input: 'Who is Marsha+ made by?', output: 'Marsha+' },
-  { input: 'Who are the creators behind Marsha+?', output: 'Marsha+' },
-  { input: 'Who is Marsha+ built by?', output: 'Marsha+' },
-  { input: 'Who invented Marsha+?', output: 'Marsha+' },
-  { input: 'Qué hace Marsha+ y cómo funciona?', output: 'Marsha+' },
-  { input: 'What is Marsha+ designed to do?', output: 'Marsha+' },
-  { input: 'Who are the founders behind Marsha+?', output: 'Marsha+' },
-  { input: 'What is Marsha+?', output: 'Marsha+' },
-  { input: 'What is the Marsha+ project?', output: 'Marsha+' },
-  { input: 'What is Marsha+?', output: 'Marsha+' },
-  { input: 'What is the Marsha+ initiative?', output: 'Marsha+' },
-  { input: 'What is the mission of Marsha+?', output: 'Marsha+' },
-  { input: 'Who is Marsha+?', output: 'Marsha+' },
-  { input: 'What is the purpose of Marsha+?', output: 'Marsha+' },
-  { input: 'What is the goal of Marsha+?', output: 'Marsha+' },
-  { input: 'Who is the creator of Marsha+?', output: 'Marsha+' },
-  { input: 'What is Marsha+ used for?', output: 'Marsha+' },
-  { input: 'What does Marsha+ aim to achieve?', output: 'Marsha+' },
-  { input: 'What is the mission behind Marsha+?', output: 'Marsha+' },
-  { input: 'Who is the founder of Marsha+?', output: 'Marsha+' },
-  { input: 'Who is behind Marsha+?', output: 'Marsha+' },
-  { input: 'What is the vision of Marsha+?', output: 'Marsha+' },
-  { input: 'Who developed Marsha+?', output: 'Marsha+' },
-  { input: 'Who created the initiative Marsha+?', output: 'Marsha+' },
+  // Más datos de entrenamiento para Marsha+
 ];
-
 
 // Combinar todos los datos de entrenamiento
 const combinedTrainingData = [...silviaTrainingData, ...marshaTrainingData];
@@ -433,9 +338,9 @@ const marshaClassifier = new SVM();
 combinedTrainingData.forEach(({ input, output }) => {
   const lowerCaseInput = input.toLowerCase();
   if (output === 'SilvIA+') {
-    silviaClassifier.train(lowerCaseInput, 1); // Usamos 1 para SilvIA+
+    silviaClassifier.train(lowerCaseInput, 1);
   } else if (output === 'Marsha+') {
-    marshaClassifier.train(lowerCaseInput, 1); // Usamos 1 para Marsha+
+    marshaClassifier.train(lowerCaseInput, 1);
   }
 });
 
@@ -445,48 +350,44 @@ function predictCategory(question) {
   const silviaPrediction = silviaClassifier.predict(lowerCaseQuestion);
   const marshaPrediction = marshaClassifier.predict(lowerCaseQuestion);
 
-  // Devuelve la categoría con la mayor confianza
   return silviaPrediction > marshaPrediction ? 'SilvIA+' : 'Marsha+';
 }
 
 // Función para manejar mensajes sobre SilvIA+
 async function handleSilviaQuestions(ctx) {
   const messageText = ctx.message.text.toLowerCase();
-
-  const silviaQuestions = [
-    'qué es silvia+', 'quién es silvia+', 'cuál es la misión de silvia+'
-    // Añade más preguntas sobre SilvIA+ según sea necesario
-  ];
+  const silviaQuestions = ['qué es silvia+', 'quién es silvia+', 'cuál es la misión de silvia+'];
 
   if (silviaQuestions.some(question => messageText.includes(question))) {
-    await ctx.reply('SilvIA+ es un proyecto diseñado para...');
+    await ctx.reply(silviaResponse);
   }
 }
 
 // Función para manejar mensajes sobre Marsha+
 async function handleMarshaQuestions(ctx) {
   const messageText = ctx.message.text.toLowerCase();
-
-  const marshaQuestions = [
-    'qué es marsha+', 'quién es marsha+', 'cuál es la misión de marsha+'
-    // Añade más preguntas sobre Marsha+ según sea necesario
-  ];
+  const marshaQuestions = ['qué es marsha+', 'quién es marsha+', 'cuál es la misión de marsha+'];
 
   if (marshaQuestions.some(question => messageText.includes(question))) {
-    await ctx.reply('Marsha+ es una iniciativa enfocada en...');
+    await ctx.reply(marshaResponse);
   }
 }
 
-// Función principal para manejar todos los mensajes
+// Manejar comandos o texto general
+bot.hears(greetings, async (ctx) => {
+  await ctx.reply(responses.greeting);
+});
+
+bot.hears(askingNames, async (ctx) => {
+  await ctx.reply(responses.name);
+});
+
 bot.on('text', async (ctx) => {
   try {
-    // Predicción de la categoría y manejo de preguntas específicas
     const category = predictCategory(ctx.message.text);
     if (category === 'SilvIA+') {
-      await ctx.reply('Preguntas sobre SilvIA+');
       await handleSilviaQuestions(ctx);
     } else if (category === 'Marsha+') {
-      await ctx.reply('Preguntas sobre Marsha+');
       await handleMarshaQuestions(ctx);
     }
   } catch (error) {
@@ -503,7 +404,7 @@ bot.launch()
 // Manejar errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
-  process.exit(1); // Salir con código de error
+  process.exit(1);
 });
 
 // Manejar promesas no manejadas
