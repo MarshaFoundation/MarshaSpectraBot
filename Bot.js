@@ -2,7 +2,6 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
-const franc = require('franc-min');
 
 dotenv.config();
 
@@ -71,15 +70,16 @@ async function getChatGPTResponse(messages) {
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
     return 'es';
   } finally {
-    client.release();
+    if (client) client.release();
   }
 }
 
@@ -92,18 +92,19 @@ async function setUserLocale(chatId, locale) {
     DO UPDATE SET locale = $2
   `;
   
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     await client.query(queryText, [chatId, locale]);
     console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
   } finally {
-    client.release();
+    if (client) client.release();
   }
 }
 
-// Respuestas en español e inglés
+/ Respuestas en español e inglés
 const responses = {
   greeting: {
     es: [
@@ -129,13 +130,25 @@ const responses = {
   }
 };
 
+// Función para enviar mensaje directo a un usuario
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    const response = await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+  }
+}
+
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
 }
 
-// Funciones para detectar saludos y preguntas por el nombre en varios idiomas
+// Funciones para detectar saludos y preguntas por el nombre del asistente
 const greetings = [
   'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
   '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
@@ -151,6 +164,7 @@ const greetings = [
 ];
 
 const askingNames = [
+  // Formas en español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
   'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
   'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
@@ -161,6 +175,8 @@ const askingNames = [
   'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
   'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
   'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
+
+  // Formas en inglés
   'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
   'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
   'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
@@ -168,41 +184,28 @@ const askingNames = [
   'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
   'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
   'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
-  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your designation',
-  'what is your formal name', 'your full identity', 'tell me your real name', 'do you have a name', 'may I know your title',
-  'what should I refer to you as', 'what\'s your formal name', 'how do you refer to yourself', 'can you provide your name',
-  'your name is', 'how do people know you'
+  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
+  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
 ];
 
-// Función para seleccionar una respuesta aleatoria
-function getRandomResponse(responseArray) {
-  return responseArray[Math.floor(Math.random() * responseArray.length)];
-}
-
-// Función para manejar mensajes
+// Manejar mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
 
   if (!messageText) return;
 
-  // Detectar el idioma del mensaje
-  const detectedLang = franc(messageText);
-  const userLocale = detectedLang === 'eng' ? 'en' : 'es';
-  await setUserLocale(chatId, userLocale);
-
   try {
+    const userLocale = await getUserLocale(chatId);
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
-    const localeResponses = responses[userLocale];
-
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, getRandomResponse(localeResponses.greeting));
+      bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, getRandomResponse(localeResponses.name));
+      bot.sendMessage(chatId, responses.name);
     } else {
-      const assistantIntro = { role: 'system', content: `You are an assistant called ${assistantName}. ${assistantDescription}. Please respond briefly and directly, and try to be friendly and personal.` };
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
@@ -220,14 +223,11 @@ async function handleMessage(msg) {
 // Manejar comandos
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const userLocale = await getUserLocale(chatId);
-  const welcomeMessage = getRandomResponse(responses.greeting[userLocale]);
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
   bot.sendMessage(chatId, welcomeMessage);
 });
 
-bot.on('message', async (msg) => {
-  handleMessage(msg);
-});
+bot.on('message', handleMessage);
 
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
@@ -259,6 +259,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
