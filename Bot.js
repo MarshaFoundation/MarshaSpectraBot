@@ -1,7 +1,8 @@
-const TelegramBot = require('node-telegram-bot-api');
+const { Telegraf } = require('telegraf');
 const axios = require('axios');
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const { SVM } = require('svm');
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const assistantName = 'SilvIA+';
 const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrollado por Marsha+ Foundation. www.marshafoundation.org, info@marshafoundation.org.';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
+
 
 // Configuración de conexión a PostgreSQL
 const pool = new Pool({
