@@ -2,6 +2,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const { SVM } = require('node-svm');
+
 
 dotenv.config();
 
@@ -391,104 +393,6 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
-
-// Datos de entrenamiento para SilvIA+ y Marsha+
-const silviaTrainingData = [
-  { input: '¿Qué es SilvIA+?', output: 'SilvIA+' },
-  { input: 'Who is behind SilvIA+?', output: 'SilvIA+' },
-  // Más datos de entrenamiento para SilvIA+
-];
-
-const marshaTrainingData = [
-  { input: '¿Qué es Marsha+?', output: 'Marsha+' },
-  { input: 'Who is behind Marsha+?', output: 'Marsha+' },
-  // Más datos de entrenamiento para Marsha+
-];
-
-// Combinar todos los datos de entrenamiento
-const combinedTrainingData = [...silviaTrainingData, ...marshaTrainingData];
-
-// Inicialización de clasificadores SVM para SilvIA+ y Marsha+
-const silviaClassifier = new SVM();
-const marshaClassifier = new SVM();
-
-// Entrenamiento de los clasificadores
-combinedTrainingData.forEach(({ input, output }) => {
-  const lowerCaseInput = input.toLowerCase();
-  if (output === 'SilvIA+') {
-    silviaClassifier.train(lowerCaseInput, 1);
-  } else if (output === 'Marsha+') {
-    marshaClassifier.train(lowerCaseInput, 1);
-  }
-});
-
-// Función para predecir la categoría (SilvIA+ o Marsha+) de una pregunta
-function predictCategory(question) {
-  const lowerCaseQuestion = question.toLowerCase();
-  const silviaPrediction = silviaClassifier.predict(lowerCaseQuestion);
-  const marshaPrediction = marshaClassifier.predict(lowerCaseQuestion);
-
-  return silviaPrediction > marshaPrediction ? 'SilvIA+' : 'Marsha+';
-}
-
-// Función para manejar mensajes sobre SilvIA+
-async function handleSilviaQuestions(ctx) {
-  const messageText = ctx.message.text.toLowerCase();
-  const silviaQuestions = ['qué es silvia+', 'quién es silvia+', 'cuál es la misión de silvia+'];
-
-  if (silviaQuestions.some(question => messageText.includes(question))) {
-    await ctx.reply(silviaResponse);
-  }
-}
-
-// Función para manejar mensajes sobre Marsha+
-async function handleMarshaQuestions(ctx) {
-  const messageText = ctx.message.text.toLowerCase();
-  const marshaQuestions = ['qué es marsha+', 'quién es marsha+', 'cuál es la misión de marsha+'];
-
-  if (marshaQuestions.some(question => messageText.includes(question))) {
-    await ctx.reply(marshaResponse);
-  }
-}
-
-// Manejar comandos o texto general
-bot.hears(greetings, async (ctx) => {
-  await ctx.reply(responses.greeting);
-});
-
-bot.hears(askingNames, async (ctx) => {
-  await ctx.reply(responses.name);
-});
-
-bot.on('text', async (ctx) => {
-  try {
-    const category = predictCategory(ctx.message.text);
-    if (category === 'SilvIA+') {
-      await handleSilviaQuestions(ctx);
-    } else if (category === 'Marsha+') {
-      await handleMarshaQuestions(ctx);
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    await ctx.reply('Lo siento, ocurrió un error al procesar tu mensaje.');
-  }
-});
-
-// Iniciar el bot de Telegram
-bot.launch()
-  .then(() => console.log('El bot de Telegram está listo para responder preguntas sobre SilvIA+ y Marsha+.'))
-  .catch(err => console.error('Error al iniciar el bot:', err));
-
-// Manejar errores no capturados
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-  process.exit(1);
-});
-
-// Manejar promesas no manejadas
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa no manejada:', reason, 'Promise:', promise);
-});
 
 
 
