@@ -93,11 +93,20 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
+// Definición de respuestas para saludos
+const greetingsResponses = [
+  `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
+  `Hola, ¿en qué puedo asistirte hoy?`,
+  `Hey, ¿cómo estás? Soy ${assistantName}, aquí para ayudarte.`,
+  `¡Hola! ¿Qué tal? Soy ${assistantName}.`,
+  `Buen día! Soy ${assistantName}. ¿En qué puedo ayudarte?`,
+  `Hey, soy ${assistantName}. ¿Cómo puedo ayudarte?`,
+];
+
+// Función para seleccionar una respuesta aleatoria
+function getRandomResponse(responses) {
+  return responses[Math.floor(Math.random() * responses.length)];
+}
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
