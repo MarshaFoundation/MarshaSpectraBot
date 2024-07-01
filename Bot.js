@@ -32,7 +32,7 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI
+// Función para obtener respuesta de OpenAI con ajustes
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
@@ -44,6 +44,8 @@ async function getChatGPTResponse(messages) {
       model: 'gpt-3.5-turbo',
       messages: messages,
       temperature: 0.7,
+      max_tokens: 200,
+      top_p: 0.9
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +53,12 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+    let gptResponse = response.data.choices[0].message.content.trim();
+
+    if (gptResponse.length > 200) {
+      gptResponse = gptResponse.split('. ').slice(0, 3).join('. ') + '.';
+    }
+
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
