@@ -32,6 +32,26 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
+// Función para obtener el idioma del usuario desde la base de datos
+async function getUserLocale(chatId) {
+  try {
+    const client = await pool.connect();
+    const query = 'SELECT locale FROM users WHERE chat_id = $1';
+    const result = await client.query(query, [chatId]);
+    client.release();
+
+    if (result.rows.length > 0) {
+      return result.rows[0].locale;
+    } else {
+      console.log(`No se encontró el usuario con chat_id ${chatId} en la base de datos.`);
+      return 'es'; // Idioma predeterminado si no se encuentra el usuario
+    }
+  } catch (error) {
+    console.error('Error al obtener el idioma del usuario:', error);
+    return 'es'; // Valor por defecto en caso de error
+  }
+}
+
 // Función para obtener respuesta de OpenAI
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
