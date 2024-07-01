@@ -134,7 +134,34 @@ async function getChatGPTResponse(messages) {
       }
     });
 
-    const gptResponse = response.data.choices[0].message.content.trim();
+    let gptResponse = response.data.choices[0].message.content.trim();
+    
+    // Añadir respuestas empáticas y variedad de estilos aquí
+    if (userText.includes('ayuda')) {
+      gptResponse = `Estoy aquí para ayudarte en lo que necesites. ${gptResponse}`;
+    } else if (userText.includes('gracias') || userText.includes('agradecido')) {
+      gptResponse = `De nada, es un placer ayudarte. ${gptResponse}`;
+    } else if (userText.includes('adiós') || userText.includes('hasta luego')) {
+      gptResponse = `¡Hasta luego! Siempre estaré aquí cuando me necesites. ${gptResponse}`;
+    } else if (userText.includes('broma') || userText.includes('chiste')) {
+      gptResponse = `¡Claro! Aquí va uno: ¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter. 😄 ${gptResponse}`;
+    } else if (userText.includes('cuéntame más') || userText.includes('explícame')) {
+      gptResponse = `¡Por supuesto! Estoy aquí para explicarte con detalle. ${gptResponse}`;
+    } else if (userText.includes('eres un robot') || userText.includes('eres humano')) {
+      gptResponse = `Soy un asistente virtual creado para ayudarte, pero estoy aquí para conversar contigo como lo haría un amigo. ${gptResponse}`;
+    } else if (userText.includes('qué opinas de')) {
+      gptResponse = `Mi opinión es que cada persona tiene su propia perspectiva. Me encantaría escuchar tu opinión sobre este tema. ${gptResponse}`;
+    } else if (userText.includes('cuál es tu nombre')) {
+      gptResponse = `Mi nombre es ${assistantName}. ¿Cómo puedo asistirte hoy? ${gptResponse}`;
+    } else if (userText.includes('recursos de apoyo lgtbi') || userText.includes('derechos lgtbi') ||
+               userText.includes('definiciones lgtbi') || userText.includes('eventos lgtbi') ||
+               userText.includes('pronombres y género') || userText.includes('discriminación lgtbi') ||
+               userText.includes('apoyo familiar lgtbi') || userText.includes('historia lgtbi') ||
+               userText.includes('salud mental lgtbi') || userText.includes('temas lgtbi') ||
+               userText.includes('opinión lgtbi')) {
+      gptResponse = `Entiendo que estos temas son importantes. Estoy aquí para proporcionarte información y apoyo sobre temas LGBTQ+. ${gptResponse}`;
+    }
+
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
@@ -143,45 +170,6 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
-
-
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
-  try {
-    const client = await pool.connect();
-    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
-  } catch (error) {
-    console.error('Error al obtener el idioma del usuario:', error);
-    return 'es';
-  }
-}
-
-// Función para actualizar/guardar el idioma del usuario en la base de datos
-async function setUserLocale(chatId, locale) {
-  const queryText = `
-    INSERT INTO users (chat_id, locale) 
-    VALUES ($1, $2) 
-    ON CONFLICT (chat_id) 
-    DO UPDATE SET locale = $2
-  `;
-  
-  try {
-    const client = await pool.connect();
-    await client.query(queryText, [chatId, locale]);
-    client.release();
-    console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
-  } catch (error) {
-    console.error('Error al configurar el idioma del usuario:', error);
-  }
-}
-
-// Definición de respuestas para saludos y preguntas sobre el nombre
-const responses = {
-  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
-  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
-};
 
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
@@ -201,23 +189,85 @@ function matchPhrases(message, phrases) {
   return phrases.includes(normalizedMessage);
 }
 
+// Definiciones de respuestas para saludos y preguntas sobre el nombre
+const responses = {
+  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+};
+
 // Funciones para detectar saludos y preguntas por el nombre del asistente
+
 const greetings = [
-  'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
+  // Español
+  'hola', 'hi', 'qué tal', 'buenas', 'hey', 'buen día',
   '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
   '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
   '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
+  'buen día', 'buenas noches', 'buenas tardes', '¿cómo estás hoy?',
+  'hola, ¿cómo estás?', '¿qué tal?', 'hola, ¿qué hay?', 'hey, ¿cómo estás?',
+  'saludos, ¿qué tal?', 'buenos días, ¿cómo va?', 'buenas noches, ¿qué hay?',
+  'buenas tardes, ¿cómo estás?', '¿estás ahí?', 'hey, ¿qué onda?',
+  'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?',
+  'buenos días, ¿cómo te va?', 'buenas noches, ¿cómo onda?',
+  'buenas tardes, ¿estás ahí?', '¿cómo estás hoy?', 'hola, ¿qué tal?',
+  'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?',
+  'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?',
+  'hey, ¿qué tal?', 'hola, ¿cómo va?', '¿qué hay?', 'buenos días',
+  'buenas noches', 'buenas tardes', '¿cómo estás hoy?',
+  'hola, ¿cómo estás?', '¿qué tal?', 'hola, ¿qué hay?', 'hey, ¿cómo estás?',
+  'saludos, ¿qué tal?', 'buenos días, ¿cómo va?', 'buenas noches, ¿qué hay?',
+  'buenas tardes, ¿cómo estás?', '¿estás ahí?', 'hey, ¿qué onda?',
+  'hola, ¿estás ahí?', 'saludos, ¿qué pasa?', 'buenas, ¿qué hubo?',
+  'buenos días, ¿cómo te va?', 'buenas noches, ¿cómo onda?',
+  'buenas tardes, ¿estás ahí?', '¿cómo estás hoy?', 'hola, ¿qué tal?',
+  'buen día, ¿cómo estás?', 'buenas noches, ¿qué tal?',
+  'buenas tardes, ¿cómo te va?', 'saludos, ¿cómo onda?',
+  'hey, ¿qué tal?', 'hola, ¿cómo va?', '¿qué hay?',
+
+  // Inglés
   'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
   'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
   'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
   'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
   'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
   'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
-  'how’s your day been?', 'yo', 'what’s popping?'
+  'how’s your day been?', 'yo', 'what’s popping?', 'how’s your day going?',
+  'good morning, how are you?', 'hey, how’s it going?', 'what’s up, buddy?',
+  'long time no see, how are things?', 'hello, how’s everything?', 'good afternoon, what’s new?',
+  'hey there, how’s life?', 'howdy, what’s happening?', 'hi there, how goes it?',
+  'good evening, how are you?', 'how’s your day today?', 'what’s new, how are you?',
+  'hello there, what’s up?', 'what’s cracking, how are you?', 'hey dude, how’s your day?',
+  'hiya, how’s it going?', 'sup, how are things?', 'good day, how are you doing?',
+  'what’s the good word, how are you?', 'howdy-do, how are you today?',
+  'nice to see you, how have you been?', 'yo, how’s everything going?',
+  'what’s popping, how are things?', 'hey friend, how’s your day been?',
+  'how’s your day been so far?', 'good morning, how’s your day?',
+  'hello, how’s it going today?', 'hey, how’s your day been?', 'what’s new, how are you?',
+  'how’s everything going today?', 'hey buddy, how’s your day?',
+  'long time no see, how’s everything going?', 'how’s life been treating you?',
+  'hi there, how’s your day been?', 'hey there, how are you doing?',
+  'howdy, how’s everything been?', 'good evening, how’s it going?',
+  'how’s your day going so far?', 'what’s happening, how are you?',
+  'hey dude, how’s everything?', 'how’s your day treating you?',
+  'hiya, how’s it going so far?', 'sup, how’s your day been?',
+  'what’s going on, how are you?', 'how’s your day treating you today?',
+  'hey friend, how have you been?', 'how’s everything going so far?',
+  'how’s your day treating you so far?', 'hiya, how’s your day going?',
+  'yo, how’s your day treating you?', 'what’s up, how have you been?',
+  'what’s new, how’s everything been?', 'what’s happening, how are things?',
+  'hey there, how’s everything been?', 'what’s cracking, how’s your day?',
+  'how’s everything been so far?', 'what’s up, how’s everything going?',
+  'hey dude, how have you been?', 'what’s the good word, how’s everything?',
+  'howdy-do, how’s everything going?', 'what’s going on, how have you been?',
+  'how’s your day been going?', 'hey friend, how’s everything?',
+  'how’s your day been treating you so far?', 'how’s everything going today?',
+  'hi there, how’s your day going?', 'hey there, how’s everything going?',
+  'how’s everything been treating you?', 'how’s your day been today?',
+  'how’s your day been going so far?'
 ];
 
 const askingNames = [
-  // Formas en español
+  // Español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
   'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
   'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
@@ -229,7 +279,7 @@ const askingNames = [
   'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
   'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
 
-  // Formas en inglés
+  // Inglés
   'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
   'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
   'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
@@ -238,8 +288,42 @@ const askingNames = [
   'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
   'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
   'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
-  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
+  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself',
+
+  // Expresiones adicionales
+  'hey, what\'s your name?', 'yo, tell me your name', 'tell me what you\'re called', 'hello, what do they call you?',
+  'what can I call you?', 'hey, could you share your name with me?', 'tell me your handle', 'do you have a name I can use?',
+  'what name should I use?', 'I’m curious, what’s your name?', 'hey, who are you exactly?', 'what’s your personal name?',
+  'what title do you go by?', 'I want to address you properly, what’s your name?', 'hello, may I know your name?',
+  'hey, what’s your handle?', 'yo, what’s your name?', 'what should I call you?',
+  'tell me what they call you?', 'hello, can I call you something?', 'what’s your title?',
+  'can I ask what you’re called?', 'what name do you use?', 'hey, how are you known?',
+  'tell me how you are referred to?', 'may I have your name, please?', 'could you tell me your name, please?',
+  'do you have a name I should know?', 'can you give me your name, please?', 'what’s your name, exactly?',
+  'hello, I would like to know your name.', 'what name would you like me to use?',
+  'what is your name, tell me please?', 'tell me your name, if you would.', 'what name do you answer to?',
+  'can you tell me your name, for me?', 'may I ask your name, tell me please?', 'what’s your full name?',
+  'could you tell me your name, tell me please?', 'how do you refer to yourself?',
+  'can I ask how you’re known?', 'may I ask your name, can you tell me?',
+  'tell me your name, what do you call yourself?', 'can I call you something, how are you?',
+  'what’s your title, can you tell me please?', 'what name are you known by?',
+  'hey, how are you known, tell me please?', 'can I ask what you go by?',
+  'what’s your title, do you have a name?', 'I want to ask your name, how do you refer to yourself?',
+  'hello, I want to know your name, can I ask your name?', 'what’s your name, do you have a name?',
+  'how do you refer to yourself, do you have a name?', 'what’s your full name, may I ask?',
+  'how do you refer to yourself, what’s your name?', 'can you tell me your name, do you have a name?',
+  'can I ask what you’re known by, how do you refer to yourself?', 'hello, I want to know your name, do you have a name?',
+  'what’s your name, how do you refer to yourself?', 'can you tell me your name, how do you refer to yourself?',
+  'what’s your name, tell me please?', 'hello, can I call you something?',
+  'what’s your title, may I ask your name?', 'how do you refer to yourself, do you have a name?',
+  'can I ask what you’re called, how do you refer to yourself?', 'hello, I want to know your name, can you tell me your name?',
+  'what’s your name, how do you refer to yourself?', 'can you tell me your name, do you have a name?'
 ];
+
+module.exports = {
+  greetings,
+  askingNames
+};
 
 // Manejar mensajes
 async function handleMessage(msg) {
@@ -252,6 +336,8 @@ async function handleMessage(msg) {
     const userLocale = await getUserLocale(chatId);
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
+
+    // Añadir lógica de personalización basada en historial aquí
 
     if (matchPhrases(messageText, greetings)) {
       bot.sendMessage(chatId, responses.greeting);
