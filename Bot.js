@@ -300,7 +300,88 @@ module.exports = {
   askingNames
 };
 
-// Manejar mensajes
+// Funciones para detectar preguntas sobre SilvIA+
+const silviaQuestions = [
+  // Español
+  'qué es SilvIA+', 'quién es SilvIA+', 'cuál es la misión de SilvIA+',
+  'cuál es el propósito de SilvIA+', 'qué hace SilvIA+', 'información sobre SilvIA+',
+  'quién creó SilvIA+', 'quiénes son los fundadores de SilvIA+', 'quién está detrás de SilvIA+',
+
+  // Inglés
+  'what is SilvIA+', 'who is SilvIA+', 'what is the mission of SilvIA+',
+  'what is the purpose of SilvIA+', 'what does SilvIA+ do', 'information about SilvIA+',
+  'who created SilvIA+', 'who are the founders of SilvIA+', 'who is behind SilvIA+'
+];
+
+// Respuesta sobre SilvIA+
+const silviaResponse = `
+SilvIA+ es una avanzada inteligencia artificial diseñada para proporcionar respuestas y asistencia basadas en lenguaje natural. 
+Está construida sobre la arquitectura de OpenAI GPT y puede responder una amplia gama de preguntas sobre diversos temas.
+`;
+
+// Funciones para detectar preguntas sobre Marsha+
+const marshaQuestions = [
+  // Español
+  'qué es Marsha+', 'quién es Marsha+', 'cuál es la misión de Marsha+',
+  'cuál es el propósito de Marsha+', 'qué hace Marsha+', 'información sobre Marsha+',
+  'quién creó Marsha+', 'quiénes son los fundadores de Marsha+', 'quién está detrás de Marsha+',
+  'qué es el token Marsha+', 'cómo funciona Marsha+', 'información sobre el token Marsha+',
+  'dónde puedo obtener información sobre Marsha+', 'cómo puedo participar en Marsha+',
+  'cómo puedo unirme a Marsha+', 'cómo puedo apoyar a Marsha+', 'dónde puedo comprar el token Marsha+',
+  'cómo obtengo Marsha+', 'dónde puedo invertir en Marsha+', 'cómo puedo contribuir a Marsha+',
+  'cómo puedo ser parte de Marsha+', 'dónde puedo aprender más sobre Marsha+',
+  'qué es MSA', 'qué significa MSA', 'cuál es la relación entre Marsha+ y MSA',
+  'dónde puedo encontrar información sobre MSA', 'qué es la fundación Marsha+', 'quién fundó Marsha+',
+  'quién es el creador de Marsha+', 'quién desarrolló Marsha+', 'quiénes están detrás de Marsha+',
+  'información sobre la fundación Marsha+', 'quiénes son los creadores de Marsha+',
+
+  // Inglés
+  'what is Marsha+', 'who is Marsha+', 'what is the mission of Marsha+',
+  'what is the purpose of Marsha+', 'what does Marsha+ do', 'information about Marsha+',
+  'who created Marsha+', 'who are the founders of Marsha+', 'who is behind Marsha+',
+  'what is the Marsha+ token', 'how does Marsha+ work', 'information about the Marsha+ token',
+  'where can I find information about Marsha+', 'how can I get involved in Marsha+',
+  'how can I join Marsha+', 'how can I support Marsha+', 'where can I buy the Marsha+ token',
+  'how do I get Marsha+', 'where can I invest in Marsha+', 'how can I contribute to Marsha+',
+  'how can I be part of Marsha+', 'where can I learn more about Marsha+',
+  'what is MSA', 'what does MSA mean', 'what is the relationship between Marsha+ and MSA',
+  'where can I find information about MSA', 'what is the Marsha+ foundation', 'who founded Marsha+',
+  'who is the creator of Marsha+', 'who developed Marsha+', 'who is behind Marsha+',
+  'information about the Marsha+ foundation', 'who are the creators of Marsha+'
+];
+
+// Respuesta sobre Marsha+
+const marshaResponse = `
+Introducing Marsha+: A revolutionary initiative designed to empower and support the LGBTQ+ community through blockchain technology. Our commitment is grounded in the belief that equality and human rights are fundamental, and Marsha+ stands as a beacon of positive change.
+
+This innovative token, built on Ethereum and deployed on the Binance Smart Chain, is more than just a digital asset; it's a catalyst for meaningful action. Marsha+ will facilitate secure and transparent transactions, fundraising initiatives, and various applications within the community. Our mission is clear: to strengthen the LGBTQ+ community by providing the necessary tools to face contemporary challenges.
+
+With a total supply of 8 billion tokens and an annual burn rate of 3%, Marsha+ represents a symbol of sustained commitment to equality, diversity, and a brighter future. Join Marsha+ and be part of the change!
+
+For more information, visit [marshaplus.org](http://marshaplus.org).
+`;
+
+// Función para manejar mensajes sobre SilvIA+
+async function handleSilviaQuestions(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text.toLowerCase();
+
+  if (silviaQuestions.some(question => messageText.includes(question))) {
+    await bot.sendMessage(chatId, silviaResponse);
+  }
+}
+
+// Función para manejar mensajes sobre Marsha+
+async function handleMarshaQuestions(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text.toLowerCase();
+
+  if (marshaQuestions.some(question => messageText.includes(question))) {
+    await bot.sendMessage(chatId, marshaResponse);
+  }
+}
+
+// Función principal para manejar todos los mensajes
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
@@ -312,7 +393,7 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
-    // Añadir lógica de personalización basada en historial aquí
+    // Lógica de personalización basada en historial aquí
 
     if (matchPhrases(messageText, greetings)) {
       bot.sendMessage(chatId, responses.greeting);
@@ -328,11 +409,19 @@ async function handleMessage(msg) {
       messageHistory.push({ role: 'assistant', content: gptResponse });
       chatMessageHistory.set(chatId, messageHistory);
     }
+
+    // Manejar preguntas específicas sobre SilvIA+ y Marsha+
+    await handleSilviaQuestions(msg);
+    await handleMarshaQuestions(msg);
+
   } catch (error) {
     console.error('Error handling message:', error);
     bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
+
+// Conectar manejo de mensajes al bot
+bot.on('message', handleMessage);
 
 // Manejar comandos
 bot.onText(/\/start/, async (msg) => {
@@ -340,8 +429,6 @@ bot.onText(/\/start/, async (msg) => {
   const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
   bot.sendMessage(chatId, welcomeMessage);
 });
-
-bot.on('message', handleMessage);
 
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
@@ -373,6 +460,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
