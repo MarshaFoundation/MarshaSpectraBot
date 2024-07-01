@@ -269,6 +269,7 @@ const greetings = [
   'how’s your day been going so far?'
 ];
 
+// Lista de preguntas sobre el nombre del asistente en español e inglés
 const askingNames = [
   // Español
   '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
@@ -295,6 +296,22 @@ const askingNames = [
   'what is your name right now', 'may I ask your name', 'tell me your ID', 'tell me your current name',
   'what should I refer to you as', 'how do you identify', 'how do you identify yourself'
 ];
+
+// Respuestas predefinidas para SilvIA+ y Marsha+
+const silviaResponse = `
+SilvIA+ es una avanzada inteligencia artificial diseñada para proporcionar respuestas y asistencia basadas en lenguaje natural. 
+Está construida sobre la arquitectura de OpenAI GPT y puede responder una amplia gama de preguntas sobre diversos temas.
+`;
+
+const marshaResponse = `
+Introducing Marsha+: A revolutionary initiative designed to empower and support the LGBTQ+ community through blockchain technology. Our commitment is grounded in the belief that equality and human rights are fundamental, and Marsha+ stands as a beacon of positive change.
+
+This innovative token, built on Ethereum and deployed on the Binance Smart Chain, is more than just a digital asset; it's a catalyst for meaningful action. Marsha+ will facilitate secure and transparent transactions, fundraising initiatives, and various applications within the community. Our mission is clear: to strengthen the LGBTQ+ community by providing the necessary tools to face contemporary challenges.
+
+With a total supply of 8 billion tokens and an annual burn rate of 3%, Marsha+ represents a symbol of sustained commitment to equality, diversity, and a brighter future. Join Marsha+ and be part of the change!
+
+For more information, visit [www.marshafoundation.org].
+`;
 
 module.exports = {
   greetings,
