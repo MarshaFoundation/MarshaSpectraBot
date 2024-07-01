@@ -39,11 +39,112 @@ async function getChatGPTResponse(messages) {
     return cachedResponses.get(messagesKey);
   }
 
+  let temperature = 0.7;
+  let maxTokens = 150;
+  let topP = 0.8;
+
+  // Lógica para ajuste dinámico de parámetros según el último mensaje
+  const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
+  if (lastUserMessage) {
+    const userText = lastUserMessage.content.toLowerCase();
+    if (userText.includes('ayuda')) {
+      temperature = 0.5;
+      maxTokens = 150;
+      topP = 0.8;
+    } else if (userText.includes('gracias') || userText.includes('agradecido')) {
+      temperature = 0.3;
+      maxTokens = 100;
+      topP = 0.7;
+    } else if (userText.includes('información')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('adiós') || userText.includes('hasta luego')) {
+      temperature = 0.4;
+      maxTokens = 120;
+      topP = 0.75;
+    } else if (userText.includes('broma') || userText.includes('chiste')) {
+      temperature = 0.7;
+      maxTokens = 200;
+      topP = 0.9;
+    } else if (userText.includes('cuéntame más') || userText.includes('explícame')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('tienes tiempo')) {
+      temperature = 0.4;
+      maxTokens = 150;
+      topP = 0.8;
+    } else if (userText.includes('necesito ayuda urgente')) {
+      temperature = 0.8;
+      maxTokens = 250;
+      topP = 0.95;
+    } else if (userText.includes('eres un robot') || userText.includes('eres humano')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.85;
+    } else if (userText.includes('qué opinas de')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('cuál es tu nombre')) {
+      temperature = 0.3;
+      maxTokens = 100;
+      topP = 0.7;
+    } else if (userText.includes('recursos de apoyo lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('derechos lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('definiciones lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('eventos lgtbi')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    } else if (userText.includes('pronombres y género')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    } else if (userText.includes('discriminación lgtbi')) {
+      temperature = 0.7;
+      maxTokens = 200;
+      topP = 0.9;
+    } else if (userText.includes('apoyo familiar lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('historia lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('salud mental lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('temas lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('opinión lgtbi')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    }
+  }
+
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
-      temperature: 0.7,
+      temperature: temperature,
+      max_tokens: maxTokens,
+      top_p: topP
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -93,19 +194,22 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Definición de respuestas para saludos
-const greetingsResponses = [
-  `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
-  `Hola, ¿en qué puedo asistirte hoy?`,
-  `Hey, ¿cómo estás? Soy ${assistantName}, aquí para ayudarte.`,
-  `¡Hola! ¿Qué tal? Soy ${assistantName}.`,
-  `Buen día! Soy ${assistantName}. ¿En qué puedo ayudarte?`,
-  `Hey, soy ${assistantName}. ¿Cómo puedo ayudarte?`,
-];
+// Definición de respuestas para saludos y preguntas sobre el nombre
+const responses = {
+  greeting: `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`,
+  name: `Mi nombre es ${assistantName}. ${assistantDescription}`,
+};
 
-// Función para seleccionar una respuesta aleatoria
-function getRandomResponse(responses) {
-  return responses[Math.floor(Math.random() * responses.length)];
+// Función para enviar mensaje directo a un usuario
+async function enviarMensajeDirecto(chatId, mensaje) {
+  try {
+    const response = await bot.sendMessage(chatId, mensaje);
+    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al enviar mensaje a ${chatId}:`, error);
+    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
+  }
 }
 
 // Función genérica para comparar mensajes
@@ -166,13 +270,11 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
-    // Detección de intenciones
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, getRandomResponse(greetingsResponses));
+      bot.sendMessage(chatId, responses.greeting);
     } else if (matchPhrases(messageText, askingNames)) {
       bot.sendMessage(chatId, responses.name);
     } else {
-      // Respuesta de OpenAI con contexto
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
@@ -227,6 +329,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
