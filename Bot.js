@@ -228,17 +228,47 @@ function matchPhrases(message, phrases) {
   return phrases.includes(normalizedMessage);
 }
 
-/ Manejador de comandos /start
+// Manejador de comandos /start
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
+  const firstName = msg.from.first_name;
 
-  const welcomeMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription} 😊🌈\n\n¿En qué puedo ayudarte hoy?`;
+  const welcomeMessage = `Hola ${firstName}! ${assistantDescription}`;
+  await bot.sendMessage(chatId, welcomeMessage);
 
-  try {
-    await enviarMensajeDirecto(chatId, welcomeMessage);
-  } catch (error) {
-    console.error(`Error al enviar mensaje de bienvenida a ${chatId}:`, error);
-  }
+  const userMessage = {
+    role: 'user',
+    content: '/start'
+  };
+  chatMessageHistory.set(chatId, [userMessage]);
+});
+
+// Manejador de comandos /help
+bot.onText(/\/help/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  const helpMessage = 'Puedo ayudarte con información LGTBI+ y responder preguntas sobre diversos temas. ¡Pregúntame lo que quieras!';
+  await bot.sendMessage(chatId, helpMessage);
+
+  const userMessage = {
+    role: 'user',
+    content: '/help'
+  };
+  chatMessageHistory.set(chatId, [userMessage]);
+});
+
+// Manejador de comandos /about
+bot.onText(/\/about/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  const aboutMessage = assistantDescription;
+  await bot.sendMessage(chatId, aboutMessage);
+
+  const userMessage = {
+    role: 'user',
+    content: '/about'
+  };
+  chatMessageHistory.set(chatId, [userMessage]);
 });
 
 // Manejador de mensajes de texto
@@ -247,270 +277,94 @@ bot.on('message', async (msg) => {
   const messageId = msg.message_id;
   const messageText = msg.text;
 
-  // Obtener el idioma del usuario
-  const userLocale = await getUserLocale(chatId);
+  if (!messageText) return;
 
-  // Agregar mensaje al historial de mensajes por chat
-  if (!chatMessageHistory.has(chatId)) {
-    chatMessageHistory.set(chatId, []);
-  }
+  // Obtener historial de mensajes del chat
+  let messages = chatMessageHistory.get(chatId) || [];
 
-  const chatMessages = chatMessageHistory.get(chatId);
-  chatMessages.push({ role: 'user', content: messageText });
+  // Añadir mensaje del usuario al historial
+  messages.push({
+    role: 'user',
+    content: messageText
+  });
 
-  // Limitar el historial de mensajes a los últimos 10 mensajes
-  if (chatMessages.length > 10) {
-    chatMessages.shift();
-  }
+  // Actualizar el historial de mensajes del chat
+  chatMessageHistory.set(chatId, messages);
 
-  // Actualizar el historial de mensajes por chat
-  chatMessageHistory.set(chatId, chatMessages);
-
-  // Obtener respuesta de OpenAI
   try {
-    const gptResponse = await getChatGPTResponse(chatMessages);
+    // Obtener respuesta de OpenAI
+    const responseText = await getChatGPTResponse(messages);
 
     // Enviar respuesta al usuario
-    await enviarMensajeDirecto(chatId, gptResponse);
+    await bot.sendMessage(chatId, responseText);
+
+    // Añadir mensaje de respuesta de OpenAI al historial
+    messages.push({
+      role: 'assistant',
+      content: responseText
+    });
+
+    // Actualizar el historial de mensajes del chat
+    chatMessageHistory.set(chatId, messages);
+
+    // Guardar mensaje de respuesta en la base de datos
+    const client = await pool.connect();
+    try {
+      await client.query('INSERT INTO messages (chat_id, message_id, content) VALUES ($1, $2, $3)', [chatId, messageId, responseText]);
+    } catch (error) {
+      console.error('Error al guardar mensaje en la base de datos:', error);
+    } finally {
+      client.release();
+    }
   } catch (error) {
-    console.error(`Error al procesar mensaje de ${chatId}:`, error);
+    console.error('Error al procesar el mensaje:', error);
   }
+});
+
+// Manejador de eventos de fotos
+bot.on('photo', async (msg) => {
+  const chatId = msg.chat.id;
+
+  const responseText = 'Gracias por la foto! No puedo procesar imágenes, pero puedes preguntarme cualquier otra cosa.';
+  await bot.sendMessage(chatId, responseText);
+
+  const userMessage = {
+    role: 'user',
+    content: 'Photo message'
+  };
+  chatMessageHistory.set(chatId, [userMessage]);
+});
+
+// Manejador de eventos de ubicación
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+
+  const responseText = 'Gracias por compartir tu ubicación! No puedo procesar ubicaciones, pero puedes preguntarme cualquier otra cosa.';
+  await bot.sendMessage(chatId, responseText);
+
+  const userMessage = {
+    role: 'user',
+    content: 'Location message'
+  };
+  chatMessageHistory.set(chatId, [userMessage]);
 });
 
 // Manejador de errores no capturados
-process.on('uncaughtException', (err) => {
-  console.error('Excepción no capturada:', err);
+process.on('uncaughtException', (error) => {
+  console.error('Excepción no capturada:', error);
   if (ADMIN_CHAT_ID) {
-    bot.sendMessage(ADMIN_CHAT_ID, `Excepción no capturada: ${err.message}`);
+    enviarMensajeDirecto(ADMIN_CHAT_ID, `Excepción no capturada: ${error.message}`);
   }
 });
 
-// Manejador de errores no manejados de promesas rechazadas
+// Manejador para promesas rechazadas
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa rechazada no manejada:', reason);
+  console.error('Promesa rechazada:', reason);
   if (ADMIN_CHAT_ID) {
-    bot.sendMessage(ADMIN_CHAT_ID, `Promesa rechazada no manejada: ${reason}`);
+    enviarMensajeDirecto(ADMIN_CHAT_ID, `Promesa rechazada: ${reason}`);
   }
 });
 
-// Funciones para detectar saludos y preguntas por el nombre del asistente
-const greetings = [
-  'hola', 'hi', 'hello', 'qué tal', 'buenas', 'hey', 'buen día',
-  '¿cómo estás?', 'saludos', '¿qué hay?', 'buenas tardes', 'buenas noches',
-  '¿cómo va?', '¿qué pasa?', '¿qué hubo?', '¡buenos días!',
-  '¿cómo te va?', '¿qué onda?', '¿estás ahí?',
-  'good morning', 'good afternoon', 'good evening', 'hey there', 'howdy',
-  'what’s up?', 'how are you?', 'greetings', 'how’s it going?', 'what’s new?',
-  'how’s everything?', 'long time no see', 'how’s life?', 'hey man', 'hi there',
-  'howdy-do', 'what’s happening?', 'how goes it?', 'hey buddy', 'hello there',
-  'good day', 'what’s cracking?', 'hey dude', 'what’s the good word?', 'how’s your day?',
-  'nice to see you', 'hiya', 'what’s happening?', 'hey friend', 'sup?',
-  'how’s your day been?', 'yo', 'what’s popping?'
-];
-
-const askingNames = [
-  // Formas en español
-  '¿cuál es tu nombre?', 'como te llamas?', 'cómo te llamas?', 'nombre?', 'dime tu nombre',
-  'cuál es tu nombre', 'me puedes decir tu nombre', 'quiero saber tu nombre', 'cómo te llaman', 
-  'cual es tu nombre completo', 'cómo te nombras', 'tu nombre', 'sabes tu nombre', 'cual es su nombre',
-  'podrías decirme tu nombre', 'dime el nombre que usas', 'cómo debería llamarte', 'tu nombre por favor',
-  'puedo saber tu nombre', 'cómo te conocen', 'quién eres', 'cómo te identificas', 'sabes cómo te llaman',
-  'cómo te referirías a ti mismo', 'dame tu nombre', 'qué nombre tienes', 'cómo te identifican', 'tu nombre actual',
-  'cómo te apodan', 'sabes tu propio nombre', 'quiero tu nombre', 'dime cómo te llaman', 'sabes tu nombre actual',
-  'tu nombre es', 'dime cómo te nombran', 'me gustaría saber tu nombre', 'puedes darme tu nombre', 'dime tu identificación',
-  'dime el nombre con el que te conocen', 'dime el nombre que usas', 'sabes cómo te dicen', 'cómo debería llamarte',
-  'dime el nombre que tienes', 'cómo debería referirme a ti', 'cómo te identificas tú mismo',
-
-  // Formas en inglés
-  'what is your name?', 'what\'s your name?', 'your name?', 'tell me your name', 'could you tell me your name',
-  'can you tell me your name', 'may I know your name', 'what do they call you', 'how should I address you',
-  'what should I call you', 'could you share your name', 'tell me the name you use', 'what name do you use',
-  'may I have your name', 'your full name', 'how do you identify yourself', 'do you know your name', 'your current name',
-  'could I know your name', 'your identity', 'who are you', 'how do you call yourself', 'can you reveal your name',
-  'may I get your name', 'what are you called', 'may I know your identity', 'what name do you have', 'may I know the name you use',
-  'what do people call you', 'tell me your current name', 'your given name', 'your name please', 'what is the name you go by',
-  'what is your nickname', 'could you let me know your name', 'what is the name that you use', 'tell me your identification',
-  'what should I refer to you as', 'how should I refer to you', 'what do you call yourself'
-];
-
-// Manejar mensajes
-async function handleMessage(msg) {
-  const chatId = msg.chat.id;
-  const messageText = msg.text;
-
-  if (!messageText) return;
-
-  try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
-
-    if (matchPhrases(messageText, greetings)) {
-      const greeting = responses.greeting[userLocale][Math.floor(Math.random() * responses.greeting[userLocale].length)];
-      await bot.sendMessage(chatId, greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      const nameResponse = responses.name[userLocale][Math.floor(Math.random() * responses.name[userLocale].length)];
-      await bot.sendMessage(chatId, nameResponse);
-    } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      await bot.sendMessage(chatId, gptResponse);
-
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
-  }
-}
-
-// Manejar el comando /start
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
-  await bot.sendMessage(chatId, welcomeMessage);
-});
-
-// Manejar el comando /help
-bot.onText(/\/help/, async (msg) => {
-  const chatId = msg.chat.id;
-  const helpMessage = `¡Hola! Soy ${assistantName}, tu asistente. Estoy aquí para ayudarte en temas relacionados con LGTBI+. Puedes hacerme preguntas sobre derechos LGTBI, recursos de apoyo, eventos y más. ¿En qué puedo asistirte hoy?`;
-  await bot.sendMessage(chatId, helpMessage);
-});
-
-// Manejar el comando /about
-bot.onText(/\/about/, async (msg) => {
-  const chatId = msg.chat.id;
-  const aboutMessage = `Soy ${assistantName}, el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Estoy aquí para ayudarte con información y apoyo sobre temas relacionados con la comunidad LGTBI+. Puedes visitar www.marshafoundation.org o escribir a info@marshafoundation.org para más detalles.`;
-  await bot.sendMessage(chatId, aboutMessage);
-});
-
-// Manejar el comando /events
-bot.onText(/\/events/, async (msg) => {
-  const chatId = msg.chat.id;
-  const eventsMessage = `Aquí puedes encontrar información sobre eventos LGTBI+. Mantente actualizado con actividades locales e internacionales que promueven la inclusión y diversidad.`;
-  await bot.sendMessage(chatId, eventsMessage);
-});
-
-// Manejar el comando /rights
-bot.onText(/\/rights/, async (msg) => {
-  const chatId = msg.chat.id;
-  const rightsMessage = `Los derechos LGTBI+ varían según el país y la región. Puedo proporcionarte información general sobre derechos legales, pero te recomiendo consultar con organizaciones locales para detalles específicos.`;
-  await bot.sendMessage(chatId, rightsMessage);
-});
-
-// Manejar el comando /support
-bot.onText(/\/support/, async (msg) => {
-  const chatId = msg.chat.id;
-  const supportMessage = `Hay muchos recursos de apoyo disponibles para personas LGTBI+. Puedo ayudarte a encontrar organizaciones locales que ofrecen servicios de apoyo, desde salud mental hasta grupos comunitarios.`;
-  await bot.sendMessage(chatId, supportMessage);
-});
-
-// Manejar el comando /pronouns
-bot.onText(/\/pronouns/, async (msg) => {
-  const chatId = msg.chat.id;
-  const pronounsMessage = `Los pronombres son una parte importante del respeto hacia las personas LGTBI+. Puedo proporcionarte información sobre pronombres y género, así como su importancia en la identidad de cada persona.`;
-  await bot.sendMessage(chatId, pronounsMessage);
-});
-
-// Manejar el comando /discrimination
-bot.onText(/\/discrimination/, async (msg) => {
-  const chatId = msg.chat.id;
-  const discriminationMessage = `La discriminación contra personas LGTBI+ es lamentablemente común. Puedo ofrecerte información sobre formas de enfrentar la discriminación y recursos para recibir apoyo legal y emocional.`;
-  await bot.sendMessage(chatId, discriminationMessage);
-});
-
-// Manejar el comando /mentalhealth
-bot.onText(/\/mentalhealth/, async (msg) => {
-  const chatId = msg.chat.id;
-  const mentalHealthMessage = `La salud mental es crucial para todas las personas, incluidas las LGTBI+. Puedo proporcionarte recursos y consejos para mantener una buena salud mental en un ambiente inclusivo.`;
-  await bot.sendMessage(chatId, mentalHealthMessage);
-});
-
-// Manejar el comando /history
-bot.onText(/\/history/, async (msg) => {
-  const chatId = msg.chat.id;
-  const historyMessage = `La historia LGTBI+ tiene raíces profundas y una rica herencia cultural. Puedo compartir contigo eventos históricos y figuras clave que han influenciado el movimiento.`;
-  await bot.sendMessage(chatId, historyMessage);
-});
-
-// Manejar el comando /community
-bot.onText(/\/community/, async (msg) => {
-  const chatId = msg.chat.id;
-  const communityMessage = `La comunidad LGTBI+ es diversa y vibrante. Puedo ayudarte a conectarte con grupos comunitarios locales o plataformas en línea donde puedes encontrar apoyo y camaradería.`;
-  await bot.sendMessage(chatId, communityMessage);
-});
-
-// Manejar el comando /faq
-bot.onText(/\/faq/, async (msg) => {
-  const chatId = msg.chat.id;
-  const faqMessage = `Aquí puedes encontrar respuestas a preguntas frecuentes sobre temas LGTBI+. Si tienes alguna pregunta específica, ¡no dudes en preguntar!`;
-  await bot.sendMessage(chatId, faqMessage);
-});
-
-// Manejar cualquier otro mensaje
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const defaultMessage = `Lo siento, no entendí ese comando. Puedes usar /help para ver la lista de comandos disponibles.`;
-  await bot.sendMessage(chatId, defaultMessage);
-});
-
-// Manejar errores de polling
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
-
-// Manejar errores no capturados
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-  process.exit(1);
-});
-
-// Manejar rechazos no manejados
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Error no manejado:', reason, 'promise:', promise);
-});
-
-// Manejar fotos enviadas por el usuario
-bot.on('photo', async (msg) => {
-  const chatId = msg.chat.id;
-  const fileId = msg.photo[0].file_id;
-
-  // Aquí puedes procesar la imagen, por ejemplo, guardarla o enviar una respuesta adecuada
-  await bot.sendPhoto(chatId, fileId, { caption: '¡Gracias por compartir esta imagen!' });
-});
-
-// Manejar ubicaciones enviadas por el usuario
-bot.on('location', async (msg) => {
-  const chatId = msg.chat.id;
-  const latitude = msg.location.latitude;
-  const longitude = msg.location.longitude;
-
-  // Aquí puedes procesar la ubicación, por ejemplo, buscar lugares cercanos o proporcionar información útil
-  const locationMessage = `Tu ubicación recibida: Latitud ${latitude}, Longitud ${longitude}. ¿En qué más puedo ayudarte?`;
-  await bot.sendMessage(chatId, locationMessage);
-});
-
-// Inicialización de la base de datos
-(async () => {
-  const client = await pool.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        chat_id BIGINT PRIMARY KEY,
-        locale TEXT NOT NULL DEFAULT 'es'
-      )
-    `);
-    console.log('Tabla de usuarios creada correctamente');
-  } catch (error) {
-    console.error('Error al crear la tabla de usuarios:', error);
-  } finally {
-    client.release();
-  }
-})();
 
 
 
