@@ -108,18 +108,6 @@ function getRandomResponse(responses) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-// Función para enviar mensaje directo a un usuario
-async function enviarMensajeDirecto(chatId, mensaje) {
-  try {
-    const response = await bot.sendMessage(chatId, mensaje);
-    console.log(`Mensaje enviado a ${chatId}: ${mensaje}`);
-    return response;
-  } catch (error) {
-    console.error(`Error al enviar mensaje a ${chatId}:`, error);
-    throw error; // Propagar el error para manejarlo en el lugar donde se llama a esta función
-  }
-}
-
 // Función genérica para comparar mensajes
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
@@ -178,11 +166,13 @@ async function handleMessage(msg) {
     const messageHistory = chatMessageHistory.get(chatId) || [];
     messageHistory.push({ role: 'user', content: messageText });
 
+    // Detección de intenciones
     if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
+      bot.sendMessage(chatId, getRandomResponse(greetingsResponses));
     } else if (matchPhrases(messageText, askingNames)) {
       bot.sendMessage(chatId, responses.name);
     } else {
+      // Respuesta de OpenAI con contexto
       const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
