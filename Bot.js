@@ -14,20 +14,6 @@ const assistantDescription = 'el primer asistente LGTBI+ en el mundo =) Desarrol
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
 
-// Importar la SVM y definir parámetros
-const { SVM } = require('svm');
-
-// Opciones para el clasificador SVM
-const svmOptions = {
-  kernel: 'linear', // Puedes ajustar el tipo de kernel según tus necesidades
-  decisionFunctionType: 'ovo', // One-vs-One para clasificación multiclase
-  normalize: true, // Normalizar muestras antes de entrenar
-};
-
-// Inicialización de los clasificadores SVM para SilvIA+ y Marsha+
-const silviaClassifier = new SVM(svmOptions);
-const marshaClassifier = new SVM(svmOptions);
-
 
 // Configuración de conexión a PostgreSQL
 const pool = new Pool({
