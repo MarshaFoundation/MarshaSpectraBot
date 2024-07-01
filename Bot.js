@@ -170,72 +170,6 @@ async function getChatGPTResponse(messages) {
   }
 }
 
-// Ejemplo de uso:
-async function main() {
-  try {
-    // Ejemplo de conversación inicial (mensaje del usuario)
-    const conversation1 = [
-      { role: 'user', content: 'Hola, ¿puedes ayudarme con algo?' }
-    ];
-
-    // Obtener respuesta para la conversación inicial
-    const response1 = await getChatGPTResponse(conversation1);
-    console.log('Respuesta 1:', response1);
-
-    // Ejemplo de seguir la conversación con agradecimiento
-    const conversation2 = [
-      { role: 'user', content: '¡Gracias por tu ayuda!' }
-    ];
-
-    // Obtener respuesta para la conversación con agradecimiento
-    const response2 = await getChatGPTResponse(conversation2);
-    console.log('Respuesta 2:', response2);
-
-    // Ejemplo de otro tipo de solicitud de información
-    const conversation3 = [
-      { role: 'user', content: '¿Cuál es tu opinión sobre inteligencia artificial?' }
-    ];
-
-    // Obtener respuesta para la solicitud de opinión
-    const response3 = await getChatGPTResponse(conversation3);
-    console.log('Respuesta 3:', response3);
-
-    // Ejemplo de despedida
-    const conversation4 = [
-      { role: 'user', content: 'Adiós, nos vemos más tarde.' }
-    ];
-
-    // Obtener respuesta para la despedida
-    const response4 = await getChatGPTResponse(conversation4);
-    console.log('Respuesta 4:', response4);
-
-    // Ejemplo de consulta sobre recursos de apoyo LGTBI
-    const conversation5 = [
-      { role: 'user', content: '¿Dónde puedo encontrar recursos de apoyo para personas LGTBI?' }
-    ];
-
-    // Obtener respuesta para la consulta sobre recursos de apoyo LGTBI
-    const response5 = await getChatGPTResponse(conversation5);
-    console.log('Respuesta 5:', response5);
-
-    // Ejemplo de consulta sobre derechos LGTBI
-    const conversation6 = [
-      { role: 'user', content: '¿Cuáles son los derechos legales de las personas LGTBI?' }
-    ];
-
-    // Obtener respuesta para la consulta sobre derechos LGTBI
-    const response6 = await getChatGPTResponse(conversation6);
-    console.log('Respuesta 6:', response6);
-
-    // Puedes agregar más ejemplos de conversación según los casos que desees probar
-  } catch (error) {
-    console.error('Error en la aplicación:', error);
-  }
-}
-
-// Ejecutar el ejemplo principal
-main();
-
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
   let client;
@@ -271,32 +205,6 @@ async function setUserLocale(chatId, locale) {
   }
 }
 
-// Respuestas en español e inglés
-const responses = {
-  greeting: {
-    es: [
-      `¡Hola! Soy ${assistantName}, ¿cómo estás hoy?`,
-      `¡Hey! Soy ${assistantName}. ¿Qué tal tu día?`,
-      `¡Hola! Aquí ${assistantName}, ¿en qué puedo ayudarte hoy?`
-    ],
-    en: [
-      `Hi! I'm ${assistantName}, how are you today?`,
-      `Hey! I'm ${assistantName}. How's your day going?`,
-      `Hello! This is ${assistantName}, how can I assist you today?`
-    ]
-  },
-  name: {
-    es: [
-      `Mi nombre es ${assistantName}. ${assistantDescription}`,
-      `¡Soy ${assistantName}! Un placer ayudarte. ${assistantDescription}`
-    ],
-    en: [
-      `My name is ${assistantName}. ${assistantDescription}`,
-      `I'm ${assistantName}! Happy to help you. ${assistantDescription}`
-    ]
-  }
-};
-
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
@@ -313,6 +221,26 @@ async function enviarMensajeDirecto(chatId, mensaje) {
 function matchPhrases(message, phrases) {
   const normalizedMessage = message.trim().toLowerCase();
   return phrases.includes(normalizedMessage);
+}
+
+// Función para obtener el idioma del usuario desde la base de datos
+async function getUserLocale(chatId) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    if (result.rows.length > 0) {
+      return result.rows[0].locale;
+    } else {
+      // Si el usuario no está en la base de datos, se usa 'es' como idioma predeterminado
+      return 'es';
+    }
+  } catch (error) {
+    console.error('Error al obtener el idioma del usuario:', error);
+    // En caso de error, se devuelve 'es' como idioma predeterminado
+    return 'es';
+  } finally {
+    client.release();
+  }
 }
 
 // Funciones para detectar saludos y preguntas por el nombre del asistente
@@ -388,8 +316,6 @@ async function handleMessage(msg) {
     await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
-
-const TelegramBot = require('node-telegram-bot-api');
 
 // Manejar el comando /start
 bot.onText(/\/start/, async (msg) => {
@@ -522,12 +448,12 @@ bot.on('location', async (msg) => {
 (async () => {
   const client = await pool.connect();
   try {
-    await client.query(
-      `CREATE TABLE IF NOT EXISTS users (
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
         chat_id BIGINT PRIMARY KEY,
         locale TEXT NOT NULL DEFAULT 'es'
-      )`
-    );
+      )
+    `);
     console.log('Tabla de usuarios creada correctamente');
   } catch (error) {
     console.error('Error al crear la tabla de usuarios:', error);
