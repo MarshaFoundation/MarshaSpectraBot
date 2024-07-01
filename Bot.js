@@ -32,20 +32,120 @@ const chatMessageHistory = new Map();
 // Mapa para cachear respuestas de OpenAI
 const cachedResponses = new Map();
 
-// Función para obtener respuesta de OpenAI con ajustes
+// Función para obtener respuesta de OpenAI con ajustes dinámicos
 async function getChatGPTResponse(messages) {
   const messagesKey = JSON.stringify(messages);
   if (cachedResponses.has(messagesKey)) {
     return cachedResponses.get(messagesKey);
   }
 
+  // Parámetros iniciales
+  let temperature = 0.7;
+  let maxTokens = 200;
+  let topP = 0.9;
+
+  // Lógica para ajuste dinámico de parámetros según el último mensaje
+  const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
+  if (lastUserMessage) {
+    const userText = lastUserMessage.content.toLowerCase();
+    if (userText.includes('ayuda')) {
+      temperature = 0.5;
+      maxTokens = 150;
+      topP = 0.8;
+    } else if (userText.includes('gracias') || userText.includes('agradecido')) {
+      temperature = 0.3;
+      maxTokens = 100;
+      topP = 0.7;
+    } else if (userText.includes('información')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('adiós') || userText.includes('hasta luego')) {
+      temperature = 0.4;
+      maxTokens = 120;
+      topP = 0.75;
+    } else if (userText.includes('broma') || userText.includes('chiste')) {
+      temperature = 0.7;
+      maxTokens = 200;
+      topP = 0.9;
+    } else if (userText.includes('cuéntame más') || userText.includes('explícame')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('tienes tiempo')) {
+      temperature = 0.4;
+      maxTokens = 150;
+      topP = 0.8;
+    } else if (userText.includes('necesito ayuda urgente')) {
+      temperature = 0.8;
+      maxTokens = 250;
+      topP = 0.95;
+    } else if (userText.includes('eres un robot') || userText.includes('eres humano')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.85;
+    } else if (userText.includes('qué opinas de')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('cuál es tu nombre')) {
+      temperature = 0.3;
+      maxTokens = 100;
+      topP = 0.7;
+    } else if (userText.includes('recursos de apoyo lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('derechos lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('definiciones lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('eventos lgtbi')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    } else if (userText.includes('pronombres y género')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    } else if (userText.includes('discriminación lgtbi')) {
+      temperature = 0.7;
+      maxTokens = 200;
+      topP = 0.9;
+    } else if (userText.includes('apoyo familiar lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('historia lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('salud mental lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('temas lgtbi')) {
+      temperature = 0.6;
+      maxTokens = 180;
+      topP = 0.85;
+    } else if (userText.includes('opinión lgtbi')) {
+      temperature = 0.5;
+      maxTokens = 160;
+      topP = 0.8;
+    }
+  }
+
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
-      temperature: 0.7,
-      max_tokens: 200,
-      top_p: 0.9
+      temperature: temperature,
+      max_tokens: maxTokens,
+      top_p: topP
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -55,18 +155,86 @@ async function getChatGPTResponse(messages) {
 
     let gptResponse = response.data.choices[0].message.content.trim();
 
+    // Limitar la longitud de la respuesta
     if (gptResponse.length > 200) {
       gptResponse = gptResponse.split('. ').slice(0, 3).join('. ') + '.';
     }
 
+    // Almacenar en caché la respuesta
     cachedResponses.set(messagesKey, gptResponse);
 
     return gptResponse;
   } catch (error) {
     console.error('Error al llamar a OpenAI:', error);
-    return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+    return 'Lo siento, no puedo responder en este momento.';
   }
 }
+
+// Ejemplo de uso:
+async function main() {
+  try {
+    // Ejemplo de conversación inicial (mensaje del usuario)
+    const conversation1 = [
+      { role: 'user', content: 'Hola, ¿puedes ayudarme con algo?' }
+    ];
+
+    // Obtener respuesta para la conversación inicial
+    const response1 = await getChatGPTResponse(conversation1);
+    console.log('Respuesta 1:', response1);
+
+    // Ejemplo de seguir la conversación con agradecimiento
+    const conversation2 = [
+      { role: 'user', content: '¡Gracias por tu ayuda!' }
+    ];
+
+    // Obtener respuesta para la conversación con agradecimiento
+    const response2 = await getChatGPTResponse(conversation2);
+    console.log('Respuesta 2:', response2);
+
+    // Ejemplo de otro tipo de solicitud de información
+    const conversation3 = [
+      { role: 'user', content: '¿Cuál es tu opinión sobre inteligencia artificial?' }
+    ];
+
+    // Obtener respuesta para la solicitud de opinión
+    const response3 = await getChatGPTResponse(conversation3);
+    console.log('Respuesta 3:', response3);
+
+    // Ejemplo de despedida
+    const conversation4 = [
+      { role: 'user', content: 'Adiós, nos vemos más tarde.' }
+    ];
+
+    // Obtener respuesta para la despedida
+    const response4 = await getChatGPTResponse(conversation4);
+    console.log('Respuesta 4:', response4);
+
+    // Ejemplo de consulta sobre recursos de apoyo LGTBI
+    const conversation5 = [
+      { role: 'user', content: '¿Dónde puedo encontrar recursos de apoyo para personas LGTBI?' }
+    ];
+
+    // Obtener respuesta para la consulta sobre recursos de apoyo LGTBI
+    const response5 = await getChatGPTResponse(conversation5);
+    console.log('Respuesta 5:', response5);
+
+    // Ejemplo de consulta sobre derechos LGTBI
+    const conversation6 = [
+      { role: 'user', content: '¿Cuáles son los derechos legales de las personas LGTBI?' }
+    ];
+
+    // Obtener respuesta para la consulta sobre derechos LGTBI
+    const response6 = await getChatGPTResponse(conversation6);
+    console.log('Respuesta 6:', response6);
+
+    // Puedes agregar más ejemplos de conversación según los casos que desees probar
+  } catch (error) {
+    console.error('Error en la aplicación:', error);
+  }
+}
+
+// Ejecutar el ejemplo principal
+main();
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
