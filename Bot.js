@@ -498,6 +498,25 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
 
+// Manejar fotos enviadas por el usuario
+bot.on('photo', async (msg) => {
+  const chatId = msg.chat.id;
+  const fileId = msg.photo[0].file_id;
+
+  // Aquí puedes procesar la imagen, por ejemplo, guardarla o enviar una respuesta adecuada
+  await bot.sendPhoto(chatId, fileId, { caption: '¡Gracias por compartir esta imagen!' });
+});
+
+// Manejar ubicaciones enviadas por el usuario
+bot.on('location', async (msg) => {
+  const chatId = msg.chat.id;
+  const latitude = msg.location.latitude;
+  const longitude = msg.location.longitude;
+
+  // Aquí puedes procesar la ubicación, por ejemplo, buscar lugares cercanos o proporcionar información útil
+  const locationMessage = `Tu ubicación recibida: Latitud ${latitude}, Longitud ${longitude}. ¿En qué más puedo ayudarte?`;
+  await bot.sendMessage(chatId, locationMessage);
+});
 
 // Inicialización de la base de datos
 (async () => {
