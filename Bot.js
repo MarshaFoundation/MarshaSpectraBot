@@ -300,57 +300,12 @@ module.exports = {
   askingNames
 };
 
-// Funciones para detectar preguntas sobre SilvIA+
-const silviaQuestions = [
-  // Español
-  'qué es SilvIA+', 'quién es SilvIA+', 'cuál es la misión de SilvIA+',
-  'cuál es el propósito de SilvIA+', 'qué hace SilvIA+', 'información sobre SilvIA+',
-  'quién creó SilvIA+', 'quiénes son los fundadores de SilvIA+', 'quién está detrás de SilvIA+',
-
-  // Inglés
-  'what is SilvIA+', 'who is SilvIA+', 'what is the mission of SilvIA+',
-  'what is the purpose of SilvIA+', 'what does SilvIA+ do', 'information about SilvIA+',
-  'who created SilvIA+', 'who are the founders of SilvIA+', 'who is behind SilvIA+'
-];
-
-// Respuesta sobre SilvIA+
+// Respuestas para SilvIA+ y Marsha+
 const silviaResponse = `
 SilvIA+ es una avanzada inteligencia artificial diseñada para proporcionar respuestas y asistencia basadas en lenguaje natural. 
 Está construida sobre la arquitectura de OpenAI GPT y puede responder una amplia gama de preguntas sobre diversos temas.
 `;
 
-// Funciones para detectar preguntas sobre Marsha+
-const marshaQuestions = [
-  // Español
-  'qué es Marsha+', 'quién es Marsha+', 'cuál es la misión de Marsha+',
-  'cuál es el propósito de Marsha+', 'qué hace Marsha+', 'información sobre Marsha+',
-  'quién creó Marsha+', 'quiénes son los fundadores de Marsha+', 'quién está detrás de Marsha+',
-  'qué es el token Marsha+', 'cómo funciona Marsha+', 'información sobre el token Marsha+',
-  'dónde puedo obtener información sobre Marsha+', 'cómo puedo participar en Marsha+',
-  'cómo puedo unirme a Marsha+', 'cómo puedo apoyar a Marsha+', 'dónde puedo comprar el token Marsha+',
-  'cómo obtengo Marsha+', 'dónde puedo invertir en Marsha+', 'cómo puedo contribuir a Marsha+',
-  'cómo puedo ser parte de Marsha+', 'dónde puedo aprender más sobre Marsha+',
-  'qué es MSA', 'qué significa MSA', 'cuál es la relación entre Marsha+ y MSA',
-  'dónde puedo encontrar información sobre MSA', 'qué es la fundación Marsha+', 'quién fundó Marsha+',
-  'quién es el creador de Marsha+', 'quién desarrolló Marsha+', 'quiénes están detrás de Marsha+',
-  'información sobre la fundación Marsha+', 'quiénes son los creadores de Marsha+',
-
-  // Inglés
-  'what is Marsha+', 'who is Marsha+', 'what is the mission of Marsha+',
-  'what is the purpose of Marsha+', 'what does Marsha+ do', 'information about Marsha+',
-  'who created Marsha+', 'who are the founders of Marsha+', 'who is behind Marsha+',
-  'what is the Marsha+ token', 'how does Marsha+ work', 'information about the Marsha+ token',
-  'where can I find information about Marsha+', 'how can I get involved in Marsha+',
-  'how can I join Marsha+', 'how can I support Marsha+', 'where can I buy the Marsha+ token',
-  'how do I get Marsha+', 'where can I invest in Marsha+', 'how can I contribute to Marsha+',
-  'how can I be part of Marsha+', 'where can I learn more about Marsha+',
-  'what is MSA', 'what does MSA mean', 'what is the relationship between Marsha+ and MSA',
-  'where can I find information about MSA', 'what is the Marsha+ foundation', 'who founded Marsha+',
-  'who is the creator of Marsha+', 'who developed Marsha+', 'who is behind Marsha+',
-  'information about the Marsha+ foundation', 'who are the creators of Marsha+'
-];
-
-// Respuesta sobre Marsha+
 const marshaResponse = `
 Introducing Marsha+: A revolutionary initiative designed to empower and support the LGBTQ+ community through blockchain technology. Our commitment is grounded in the belief that equality and human rights are fundamental, and Marsha+ stands as a beacon of positive change.
 
@@ -361,10 +316,151 @@ With a total supply of 8 billion tokens and an annual burn rate of 3%, Marsha+ r
 For more information, visit [marshaplus.org](http://marshaplus.org).
 `;
 
+// Datos de entrenamiento para SilvIA+ y Marsha+
+const silviaTrainingData = [
+  { input: '¿Qué es SilvIA+?', output: 'SilvIA+' },
+  { input: 'Who is behind SilvIA+?', output: 'SilvIA+' },
+  { input: 'Cuál es la misión de SilvIA+?', output: 'SilvIA+' },
+  { input: 'What does SilvIA+ do?', output: 'SilvIA+' },
+  { input: 'Information about SilvIA+', output: 'SilvIA+' },
+  { input: 'Who created SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is the purpose of SilvIA+?', output: 'SilvIA+' },
+  { input: 'Qué hace SilvIA+?', output: 'SilvIA+' },
+  { input: 'Quién está detrás de SilvIA+?', output: 'SilvIA+' },
+  { input: 'Quiénes son los fundadores de SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is the mission of SilvIA+?', output: 'SilvIA+' },
+  { input: 'Information on SilvIA+', output: 'SilvIA+' },
+  { input: 'Quién creó SilvIA+?', output: 'SilvIA+' },
+  { input: 'Cuál es el propósito de SilvIA+?', output: 'SilvIA+' },
+  { input: 'Information sobre SilvIA+', output: 'SilvIA+' },
+  { input: 'Who is the founder of SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+ used for?', output: 'SilvIA+' },
+  { input: 'What are the goals of SilvIA+?', output: 'SilvIA+' },
+  { input: 'Quién creó la inteligencia artificial SilvIA+?', output: 'SilvIA+' },
+  { input: 'Quiénes son los creadores de SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+ all about?', output: 'SilvIA+' },
+  { input: 'Who developed SilvIA+?', output: 'SilvIA+' },
+  { input: 'Cuál es el objetivo de SilvIA+?', output: 'SilvIA+' },
+  { input: 'Qué es SilvIA+ y cómo funciona?', output: 'SilvIA+' },
+  { input: 'Qué significa SilvIA+?', output: 'SilvIA+' },
+  { input: 'How was SilvIA+ created?', output: 'SilvIA+' },
+  { input: 'Who is SilvIA+ made by?', output: 'SilvIA+' },
+  { input: 'Who are the creators behind SilvIA+?', output: 'SilvIA+' },
+  { input: 'Who is SilvIA+ built by?', output: 'SilvIA+' },
+  { input: 'Who invented SilvIA+?', output: 'SilvIA+' },
+  { input: 'Qué hace SilvIA+ y cómo funciona?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+ designed to do?', output: 'SilvIA+' },
+  { input: 'Who are the founders behind SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+?', output: 'SilvIA+' },
+  { input: 'What is the SilvIA+ project?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'What is the SilvIA+ initiative?', output: 'SilvIA+' },
+  { input: 'What is the mission of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who is SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'What is the purpose of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'What is the goal of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who is the creator of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'What is SilvIA+ AI used for?', output: 'SilvIA+' },
+  { input: 'What does SilvIA+ AI aim to achieve?', output: 'SilvIA+' },
+  { input: 'What is the mission behind SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who is the founder of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who is behind SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'What is the vision of SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who developed SilvIA+ AI?', output: 'SilvIA+' },
+  { input: 'Who created the AI SilvIA+?', output: 'SilvIA+' },
+];
+
+
+const marshaTrainingData = [
+   { input: '¿Qué es Marsha+?', output: 'Marsha+' },
+  { input: 'Who is behind Marsha+?', output: 'Marsha+' },
+  { input: 'Cuál es la misión de Marsha+?', output: 'Marsha+' },
+  { input: 'What does Marsha+ do?', output: 'Marsha+' },
+  { input: 'Information about Marsha+', output: 'Marsha+' },
+  { input: 'Who created Marsha+?', output: 'Marsha+' },
+  { input: 'What is the purpose of Marsha+?', output: 'Marsha+' },
+  { input: 'Qué hace Marsha+?', output: 'Marsha+' },
+  { input: 'Quién está detrás de Marsha+?', output: 'Marsha+' },
+  { input: 'Quiénes son los fundadores de Marsha+?', output: 'Marsha+' },
+  { input: 'What is the mission of Marsha+?', output: 'Marsha+' },
+  { input: 'Information on Marsha+', output: 'Marsha+' },
+  { input: 'Quién creó Marsha+?', output: 'Marsha+' },
+  { input: 'Cuál es el propósito de Marsha+?', output: 'Marsha+' },
+  { input: 'Information sobre Marsha+', output: 'Marsha+' },
+  { input: 'Who is the founder of Marsha+?', output: 'Marsha+' },
+  { input: 'What is Marsha+ used for?', output: 'Marsha+' },
+  { input: 'What are the goals of Marsha+?', output: 'Marsha+' },
+  { input: 'Quién creó la iniciativa Marsha+?', output: 'Marsha+' },
+  { input: 'Quiénes son los creadores de Marsha+?', output: 'Marsha+' },
+  { input: 'What is Marsha+ all about?', output: 'Marsha+' },
+  { input: 'Who developed Marsha+?', output: 'Marsha+' },
+  { input: 'Cuál es el objetivo de Marsha+?', output: 'Marsha+' },
+  { input: 'Qué es Marsha+ y cómo funciona?', output: 'Marsha+' },
+  { input: 'Qué significa Marsha+?', output: 'Marsha+' },
+  { input: 'How was Marsha+ created?', output: 'Marsha+' },
+  { input: 'Who is Marsha+ made by?', output: 'Marsha+' },
+  { input: 'Who are the creators behind Marsha+?', output: 'Marsha+' },
+  { input: 'Who is Marsha+ built by?', output: 'Marsha+' },
+  { input: 'Who invented Marsha+?', output: 'Marsha+' },
+  { input: 'Qué hace Marsha+ y cómo funciona?', output: 'Marsha+' },
+  { input: 'What is Marsha+ designed to do?', output: 'Marsha+' },
+  { input: 'Who are the founders behind Marsha+?', output: 'Marsha+' },
+  { input: 'What is Marsha+?', output: 'Marsha+' },
+  { input: 'What is the Marsha+ project?', output: 'Marsha+' },
+  { input: 'What is Marsha+?', output: 'Marsha+' },
+  { input: 'What is the Marsha+ initiative?', output: 'Marsha+' },
+  { input: 'What is the mission of Marsha+?', output: 'Marsha+' },
+  { input: 'Who is Marsha+?', output: 'Marsha+' },
+  { input: 'What is the purpose of Marsha+?', output: 'Marsha+' },
+  { input: 'What is the goal of Marsha+?', output: 'Marsha+' },
+  { input: 'Who is the creator of Marsha+?', output: 'Marsha+' },
+  { input: 'What is Marsha+ used for?', output: 'Marsha+' },
+  { input: 'What does Marsha+ aim to achieve?', output: 'Marsha+' },
+  { input: 'What is the mission behind Marsha+?', output: 'Marsha+' },
+  { input: 'Who is the founder of Marsha+?', output: 'Marsha+' },
+  { input: 'Who is behind Marsha+?', output: 'Marsha+' },
+  { input: 'What is the vision of Marsha+?', output: 'Marsha+' },
+  { input: 'Who developed Marsha+?', output: 'Marsha+' },
+  { input: 'Who created the initiative Marsha+?', output: 'Marsha+' },
+];
+
+// Combinar todos los datos de entrenamiento
+const combinedTrainingData = [...silviaTrainingData, ...marshaTrainingData];
+
+// Inicialización de clasificadores SVM para SilvIA+ y Marsha+
+const silviaClassifier = new SVM();
+const marshaClassifier = new SVM();
+
+// Entrenamiento de los clasificadores
+combinedTrainingData.forEach(({ input, output }) => {
+  if (output === 'SilvIA+') {
+    silviaClassifier.train(input.toLowerCase(), output);
+  } else if (output === 'Marsha+') {
+    marshaClassifier.train(input.toLowerCase(), output);
+  }
+});
+
+// Inicialización del bot de Telegram
+const bot = new Telegraf('YOUR_TELEGRAM_BOT_TOKEN');
+
+// Función para predecir la categoría (SilvIA+ o Marsha+) de una pregunta
+function predictCategory(question) {
+  const silviaPrediction = silviaClassifier.predict(question.toLowerCase());
+  const marshaPrediction = marshaClassifier.predict(question.toLowerCase());
+
+  // Devuelve la categoría con la mayor confianza
+  return silviaPrediction > marshaPrediction ? 'SilvIA+' : 'Marsha+';
+}
+
 // Función para manejar mensajes sobre SilvIA+
 async function handleSilviaQuestions(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text.toLowerCase();
+
+  const silviaQuestions = [
+    'qué es SilvIA+', 'quién es SilvIA+', 'cuál es la misión de SilvIA+',
+    // Añade más preguntas sobre SilvIA+ según sea necesario
+  ];
 
   if (silviaQuestions.some(question => messageText.includes(question))) {
     await bot.sendMessage(chatId, silviaResponse);
@@ -375,6 +471,11 @@ async function handleSilviaQuestions(msg) {
 async function handleMarshaQuestions(msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text.toLowerCase();
+
+  const marshaQuestions = [
+    'qué es Marsha+', 'quién es Marsha+', 'cuál es la misión de Marsha+',
+    // Añade más preguntas sobre Marsha+ según sea necesario
+  ];
 
   if (marshaQuestions.some(question => messageText.includes(question))) {
     await bot.sendMessage(chatId, marshaResponse);
@@ -389,34 +490,19 @@ async function handleMessage(msg) {
   if (!messageText) return;
 
   try {
-    const userLocale = await getUserLocale(chatId);
-    const messageHistory = chatMessageHistory.get(chatId) || [];
-    messageHistory.push({ role: 'user', content: messageText });
-
-    // Lógica de personalización basada en historial aquí
-
-    if (matchPhrases(messageText, greetings)) {
-      bot.sendMessage(chatId, responses.greeting);
-    } else if (matchPhrases(messageText, askingNames)) {
-      bot.sendMessage(chatId, responses.name);
-    } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}` };
-      const messagesWithIntro = [assistantIntro, ...messageHistory];
-
-      const gptResponse = await getChatGPTResponse(messagesWithIntro);
-      bot.sendMessage(chatId, gptResponse);
-
-      messageHistory.push({ role: 'assistant', content: gptResponse });
-      chatMessageHistory.set(chatId, messageHistory);
+    // Predicción de la categoría y manejo de preguntas específicas
+    const category = predictCategory(messageText);
+    if (category === 'SilvIA+') {
+      await bot.sendMessage(chatId, silviaResponse);
+      await handleSilviaQuestions(msg);
+    } else if (category === 'Marsha+') {
+      await bot.sendMessage(chatId, marshaResponse);
+      await handleMarshaQuestions(msg);
     }
-
-    // Manejar preguntas específicas sobre SilvIA+ y Marsha+
-    await handleSilviaQuestions(msg);
-    await handleMarshaQuestions(msg);
 
   } catch (error) {
     console.error('Error handling message:', error);
-    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
+    await bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
 
@@ -424,42 +510,32 @@ async function handleMessage(msg) {
 bot.on('message', handleMessage);
 
 // Manejar comandos
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
-  bot.sendMessage(chatId, welcomeMessage);
+bot.command('start', async (ctx) => {
+  const chatId = ctx.chat.id;
+  const welcomeMessage = `¡Hola! Soy un asistente creado para responder preguntas sobre SilvIA+ y Marsha+. ¿Cómo puedo ayudarte hoy?`;
+  await ctx.reply(welcomeMessage);
 });
 
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
+// Iniciar el bot de Telegram
+bot.launch()
+  .then(() => console.log('El bot de Telegram está listo para responder preguntas sobre SilvIA+ y Marsha+.'))
+  .catch(err => console.error('Error al iniciar el bot:', err));
 
+// Manejar errores
+bot.catch((err) => console.error('Error en el bot:', err));
+
+// Manejar errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
-  process.exit(1);
+  process.exit(1); // Salir con código de error
 });
 
+// Manejar promesas no manejadas
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Error no manejado:', reason, 'promise:', promise);
+  console.error('Promesa no manejada:', reason, 'Promise:', promise);
 });
 
-// Inicialización de la base de datos
-(async () => {
-  const client = await pool.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        chat_id BIGINT PRIMARY KEY,
-        locale TEXT NOT NULL DEFAULT 'es'
-      )
-    `);
-    console.log('Tabla de usuarios creada correctamente');
-  } catch (error) {
-    console.error('Error al crear la tabla de usuarios:', error);
-  } finally {
-    client.release();
-  }
-})();
+
 
 
 
