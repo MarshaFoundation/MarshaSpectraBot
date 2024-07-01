@@ -389,27 +389,115 @@ async function handleMessage(msg) {
   }
 }
 
-// Manejar comandos
+const TelegramBot = require('node-telegram-bot-api');
+
+// Manejar el comando /start
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
   await bot.sendMessage(chatId, welcomeMessage);
 });
 
-bot.on('message', handleMessage);
+// Manejar el comando /help
+bot.onText(/\/help/, async (msg) => {
+  const chatId = msg.chat.id;
+  const helpMessage = `¡Hola! Soy ${assistantName}, tu asistente. Estoy aquí para ayudarte en temas relacionados con LGTBI+. Puedes hacerme preguntas sobre derechos LGTBI, recursos de apoyo, eventos y más. ¿En qué puedo asistirte hoy?`;
+  await bot.sendMessage(chatId, helpMessage);
+});
 
+// Manejar el comando /about
+bot.onText(/\/about/, async (msg) => {
+  const chatId = msg.chat.id;
+  const aboutMessage = `Soy ${assistantName}, el primer asistente LGTBI+ en el mundo, desarrollado por Marsha+ Foundation. Estoy aquí para ayudarte con información y apoyo sobre temas relacionados con la comunidad LGTBI+. Puedes visitar www.marshafoundation.org o escribir a info@marshafoundation.org para más detalles.`;
+  await bot.sendMessage(chatId, aboutMessage);
+});
+
+// Manejar el comando /events
+bot.onText(/\/events/, async (msg) => {
+  const chatId = msg.chat.id;
+  const eventsMessage = `Aquí puedes encontrar información sobre eventos LGTBI+. Mantente actualizado con actividades locales e internacionales que promueven la inclusión y diversidad.`;
+  await bot.sendMessage(chatId, eventsMessage);
+});
+
+// Manejar el comando /rights
+bot.onText(/\/rights/, async (msg) => {
+  const chatId = msg.chat.id;
+  const rightsMessage = `Los derechos LGTBI+ varían según el país y la región. Puedo proporcionarte información general sobre derechos legales, pero te recomiendo consultar con organizaciones locales para detalles específicos.`;
+  await bot.sendMessage(chatId, rightsMessage);
+});
+
+// Manejar el comando /support
+bot.onText(/\/support/, async (msg) => {
+  const chatId = msg.chat.id;
+  const supportMessage = `Hay muchos recursos de apoyo disponibles para personas LGTBI+. Puedo ayudarte a encontrar organizaciones locales que ofrecen servicios de apoyo, desde salud mental hasta grupos comunitarios.`;
+  await bot.sendMessage(chatId, supportMessage);
+});
+
+// Manejar el comando /pronouns
+bot.onText(/\/pronouns/, async (msg) => {
+  const chatId = msg.chat.id;
+  const pronounsMessage = `Los pronombres son una parte importante del respeto hacia las personas LGTBI+. Puedo proporcionarte información sobre pronombres y género, así como su importancia en la identidad de cada persona.`;
+  await bot.sendMessage(chatId, pronounsMessage);
+});
+
+// Manejar el comando /discrimination
+bot.onText(/\/discrimination/, async (msg) => {
+  const chatId = msg.chat.id;
+  const discriminationMessage = `La discriminación contra personas LGTBI+ es lamentablemente común. Puedo ofrecerte información sobre formas de enfrentar la discriminación y recursos para recibir apoyo legal y emocional.`;
+  await bot.sendMessage(chatId, discriminationMessage);
+});
+
+// Manejar el comando /mentalhealth
+bot.onText(/\/mentalhealth/, async (msg) => {
+  const chatId = msg.chat.id;
+  const mentalHealthMessage = `La salud mental es crucial para todas las personas, incluidas las LGTBI+. Puedo proporcionarte recursos y consejos para mantener una buena salud mental en un ambiente inclusivo.`;
+  await bot.sendMessage(chatId, mentalHealthMessage);
+});
+
+// Manejar el comando /history
+bot.onText(/\/history/, async (msg) => {
+  const chatId = msg.chat.id;
+  const historyMessage = `La historia LGTBI+ tiene raíces profundas y una rica herencia cultural. Puedo compartir contigo eventos históricos y figuras clave que han influenciado el movimiento.`;
+  await bot.sendMessage(chatId, historyMessage);
+});
+
+// Manejar el comando /community
+bot.onText(/\/community/, async (msg) => {
+  const chatId = msg.chat.id;
+  const communityMessage = `La comunidad LGTBI+ es diversa y vibrante. Puedo ayudarte a conectarte con grupos comunitarios locales o plataformas en línea donde puedes encontrar apoyo y camaradería.`;
+  await bot.sendMessage(chatId, communityMessage);
+});
+
+// Manejar el comando /faq
+bot.onText(/\/faq/, async (msg) => {
+  const chatId = msg.chat.id;
+  const faqMessage = `Aquí puedes encontrar respuestas a preguntas frecuentes sobre temas LGTBI+. Si tienes alguna pregunta específica, ¡no dudes en preguntar!`;
+  await bot.sendMessage(chatId, faqMessage);
+});
+
+// Manejar cualquier otro mensaje
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const defaultMessage = `Lo siento, no entendí ese comando. Puedes usar /help para ver la lista de comandos disponibles.`;
+  await bot.sendMessage(chatId, defaultMessage);
+});
+
+// Manejar errores de polling
 bot.on('polling_error', (error) => {
   console.error('Error de polling:', error);
 });
 
+// Manejar errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('Error no capturado:', err);
   process.exit(1);
 });
 
+// Manejar rechazos no manejados
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Error no manejado:', reason, 'promise:', promise);
 });
+
 
 // Inicialización de la base de datos
 (async () => {
