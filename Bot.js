@@ -70,35 +70,64 @@ async function getChatGPTResponse(messages) {
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
     return 'es';
+  } finally {
+    if (client) client.release();
   }
 }
 
 // Función para actualizar/guardar el idioma del usuario en la base de datos
 async function setUserLocale(chatId, locale) {
-  const queryText = `
-    INSERT INTO users (chat_id, locale) 
-    VALUES ($1, $2) 
-    ON CONFLICT (chat_id) 
-    DO UPDATE SET locale = $2
-  `;
-  
+  const queryText =
+    `INSERT INTO users (chat_id, locale)
+     VALUES ($1, $2)
+     ON CONFLICT (chat_id)
+     DO UPDATE SET locale = $2`;
+
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     await client.query(queryText, [chatId, locale]);
-    client.release();
     console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
+  } finally {
+    if (client) client.release();
   }
 }
+
+// Respuestas en español e inglés
+const responses = {
+  greeting: {
+    es: [
+      `¡Hola! Soy ${assistantName}, ¿cómo estás hoy?`,
+      `¡Hey! Soy ${assistantName}. ¿Qué tal tu día?`,
+      `¡Hola! Aquí ${assistantName}, ¿en qué puedo ayudarte hoy?`
+    ],
+    en: [
+      `Hi! I'm ${assistantName}, how are you today?`,
+      `Hey! I'm ${assistantName}. How's your day going?`,
+      `Hello! This is ${assistantName}, how can I assist you today?`
+    ]
+  },
+  name: {
+    es: [
+      `Mi nombre es ${assistantName}. ${assistantDescription}`,
+      `¡Soy ${assistantName}! Un placer ayudarte. ${assistantDescription}`
+    ],
+    en: [
+      `My name is ${assistantName}. ${assistantDescription}`,
+      `I'm ${assistantName}! Happy to help you. ${assistantDescription}`
+    ]
+  }
+};
 
 // Definición de respuestas para saludos y preguntas sobre el nombre
 const responses = {
