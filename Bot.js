@@ -62,8 +62,11 @@ async function getChatGPTResponse(messages) {
   let { temperature, maxTokens, topP } = { temperature: 0.7, maxTokens: 150, topP: 0.8 };
 
   const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
+  let userText = ''; // Variable para almacenar el texto del usuario
+
   if (lastUserMessage) {
-    const userText = lastUserMessage.content.toLowerCase();
+    userText = lastUserMessage.content.toLowerCase(); // Asignar el contenido del último mensaje del usuario
+    // Ajustar los parámetros basados en el texto del usuario
     if (userText.includes('ayuda')) {
       temperature = 0.5;
       maxTokens = 150;
