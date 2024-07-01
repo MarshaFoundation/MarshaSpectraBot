@@ -439,9 +439,6 @@ combinedTrainingData.forEach(({ input, output }) => {
   }
 });
 
-// Inicialización del bot de Telegram
-const bot = new Telegraf('YOUR_TELEGRAM_BOT_TOKEN');
-
 // Función para predecir la categoría (SilvIA+ o Marsha+) de una pregunta
 function predictCategory(question) {
   const lowerCaseQuestion = question.toLowerCase();
