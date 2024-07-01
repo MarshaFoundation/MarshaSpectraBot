@@ -108,13 +108,6 @@ function getRandomResponse(responses) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-// Manejar comandos /start
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  const welcomeMessage = getRandomResponse(greetingsResponses);
-  bot.sendMessage(chatId, welcomeMessage);
-});
-
 // Función para enviar mensaje directo a un usuario
 async function enviarMensajeDirecto(chatId, mensaje) {
   try {
