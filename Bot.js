@@ -39,11 +39,8 @@ async function getChatGPTResponse(messages) {
     return cachedResponses.get(messagesKey);
   }
 
-  let temperature = 0.7;
-  let maxTokens = 150;
-  let topP = 0.8;
+  let { temperature, maxTokens, topP } = { temperature: 0.7, maxTokens: 150, topP: 0.8 };
 
-  // Lógica para ajuste dinámico de parámetros según el último mensaje
   const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
   if (lastUserMessage) {
     const userText = lastUserMessage.content.toLowerCase();
@@ -91,50 +88,15 @@ async function getChatGPTResponse(messages) {
       temperature = 0.3;
       maxTokens = 100;
       topP = 0.7;
-    } else if (userText.includes('recursos de apoyo lgtbi')) {
+    } else if (userText.includes('recursos de apoyo lgtbi') || userText.includes('derechos lgtbi') ||
+               userText.includes('definiciones lgtbi') || userText.includes('eventos lgtbi') ||
+               userText.includes('pronombres y género') || userText.includes('discriminación lgtbi') ||
+               userText.includes('apoyo familiar lgtbi') || userText.includes('historia lgtbi') ||
+               userText.includes('salud mental lgtbi') || userText.includes('temas lgtbi') ||
+               userText.includes('opinión lgtbi')) {
       temperature = 0.6;
       maxTokens = 180;
       topP = 0.85;
-    } else if (userText.includes('derechos lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('definiciones lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('eventos lgtbi')) {
-      temperature = 0.5;
-      maxTokens = 160;
-      topP = 0.8;
-    } else if (userText.includes('pronombres y género')) {
-      temperature = 0.5;
-      maxTokens = 160;
-      topP = 0.8;
-    } else if (userText.includes('discriminación lgtbi')) {
-      temperature = 0.7;
-      maxTokens = 200;
-      topP = 0.9;
-    } else if (userText.includes('apoyo familiar lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('historia lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('salud mental lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('temas lgtbi')) {
-      temperature = 0.6;
-      maxTokens = 180;
-      topP = 0.85;
-    } else if (userText.includes('opinión lgtbi')) {
-      temperature = 0.5;
-      maxTokens = 160;
-      topP = 0.8;
     }
   }
 
@@ -161,6 +123,7 @@ async function getChatGPTResponse(messages) {
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
   }
 }
+
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
