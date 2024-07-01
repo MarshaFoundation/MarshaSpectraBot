@@ -74,11 +74,12 @@ async function getUserLocale(chatId) {
   try {
     const client = await pool.connect();
     const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    client.release();
     return res.rows.length > 0 ? res.rows[0].locale : 'es';
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
     return 'es';
+  } finally {
+    client.release();
   }
 }
 
@@ -94,10 +95,11 @@ async function setUserLocale(chatId, locale) {
   try {
     const client = await pool.connect();
     await client.query(queryText, [chatId, locale]);
-    client.release();
     console.log(`Idioma del usuario ${chatId} actualizado a ${locale}`);
   } catch (error) {
     console.error('Error al configurar el idioma del usuario:', error);
+  } finally {
+    client.release();
   }
 }
 
@@ -257,6 +259,7 @@ process.on('unhandledRejection', (reason, promise) => {
     client.release();
   }
 })();
+
 
 
 
