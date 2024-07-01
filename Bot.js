@@ -43,9 +43,9 @@ async function getChatGPTResponse(messages) {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-3.5-turbo',
       messages: messages,
-      temperature: 0.5, // Menos creativo
-      max_tokens: 150, // Limitar la longitud de la respuesta
-      top_p: 0.9 // Respuestas más directas
+      temperature: 0.7, // Mantener un nivel de creatividad medio
+      max_tokens: 200, // Ajustar la longitud según sea necesario
+      top_p: 0.9 // Mantener la diversidad
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -66,6 +66,38 @@ async function getChatGPTResponse(messages) {
   } catch (error) {
     console.error('Error al llamar a OpenAI:', error);
     return 'Lo siento, actualmente no puedo procesar tu solicitud.';
+  }
+}
+
+// Función para manejar mensajes
+async function handleMessage(msg) {
+  const chatId = msg.chat.id;
+  const messageText = msg.text;
+
+  if (!messageText) return;
+
+  try {
+    const userLocale = await getUserLocale(chatId);
+    const messageHistory = chatMessageHistory.get(chatId) || [];
+    messageHistory.push({ role: 'user', content: messageText });
+
+    if (matchPhrases(messageText, greetings)) {
+      bot.sendMessage(chatId, responses.greeting);
+    } else if (matchPhrases(messageText, askingNames)) {
+      bot.sendMessage(chatId, responses.name);
+    } else {
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}. Por favor, responde de manera breve y directa, y trata de ser amigable y personal.` };
+      const messagesWithIntro = [assistantIntro, ...messageHistory];
+
+      const gptResponse = await getChatGPTResponse(messagesWithIntro);
+      bot.sendMessage(chatId, gptResponse);
+
+      messageHistory.push({ role: 'assistant', content: gptResponse });
+      chatMessageHistory.set(chatId, messageHistory);
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, 'Lo siento, ocurrió un error al procesar tu mensaje.');
   }
 }
 
@@ -182,7 +214,7 @@ async function handleMessage(msg) {
     } else if (matchPhrases(messageText, askingNames)) {
       bot.sendMessage(chatId, responses.name);
     } else {
-      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}. Por favor, responde de manera breve y directa.` };
+      const assistantIntro = { role: 'system', content: `Eres un asistente llamado ${assistantName}. ${assistantDescription}. Por favor, responde de manera breve y directa, y trata de ser amigable y personal.` };
       const messagesWithIntro = [assistantIntro, ...messageHistory];
 
       const gptResponse = await getChatGPTResponse(messagesWithIntro);
@@ -197,26 +229,24 @@ async function handleMessage(msg) {
   }
 }
 
+// Ejemplos de respuestas personalizadas
+const responses = {
+  greeting: [
+    `¡Hola! Soy ${assistantName}, ¿cómo estás hoy?`,
+    `¡Hey! Soy ${assistantName}. ¿Qué tal tu día?`,
+    `¡Hola! Aquí ${assistantName}, ¿en qué puedo ayudarte hoy?`
+  ],
+  name: [
+    `Mi nombre es ${assistantName}. ${assistantDescription}`,
+    `¡Soy ${assistantName}! Un placer ayudarte. ${assistantDescription}`
+  ]
+};
+
 // Manejar comandos
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const welcomeMessage = `¡Hola! Soy ${assistantName}, tu asistente. ¿Cómo puedo ayudarte hoy?`;
+  const welcomeMessage = getRandomResponse(responses.greeting);
   bot.sendMessage(chatId, welcomeMessage);
-});
-
-bot.on('message', handleMessage);
-
-bot.on('polling_error', (error) => {
-  console.error('Error de polling:', error);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('Error no capturado:', err);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Error no manejado:', reason, 'promise:', promise);
 });
 
 // Inicialización de la base de datos
