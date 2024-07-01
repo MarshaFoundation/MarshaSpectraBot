@@ -172,16 +172,21 @@ async function getChatGPTResponse(messages) {
 
 // Función para obtener el idioma del usuario desde la base de datos
 async function getUserLocale(chatId) {
-  let client;
+  const client = await pool.connect();
   try {
-    client = await pool.connect();
-    const res = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    return res.rows.length > 0 ? res.rows[0].locale : 'es';
+    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
+    if (result.rows.length > 0) {
+      return result.rows[0].locale;
+    } else {
+      // Si el usuario no está en la base de datos, se usa 'es' como idioma predeterminado
+      return 'es';
+    }
   } catch (error) {
     console.error('Error al obtener el idioma del usuario:', error);
+    // En caso de error, se devuelve 'es' como idioma predeterminado
     return 'es';
   } finally {
-    if (client) client.release();
+    client.release();
   }
 }
 
@@ -223,25 +228,70 @@ function matchPhrases(message, phrases) {
   return phrases.includes(normalizedMessage);
 }
 
-// Función para obtener el idioma del usuario desde la base de datos
-async function getUserLocale(chatId) {
-  const client = await pool.connect();
+/ Manejador de comandos /start
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  const welcomeMessage = `¡Hola! Soy ${assistantName}, ${assistantDescription} 😊🌈\n\n¿En qué puedo ayudarte hoy?`;
+
   try {
-    const result = await client.query('SELECT locale FROM users WHERE chat_id = $1', [chatId]);
-    if (result.rows.length > 0) {
-      return result.rows[0].locale;
-    } else {
-      // Si el usuario no está en la base de datos, se usa 'es' como idioma predeterminado
-      return 'es';
-    }
+    await enviarMensajeDirecto(chatId, welcomeMessage);
   } catch (error) {
-    console.error('Error al obtener el idioma del usuario:', error);
-    // En caso de error, se devuelve 'es' como idioma predeterminado
-    return 'es';
-  } finally {
-    client.release();
+    console.error(`Error al enviar mensaje de bienvenida a ${chatId}:`, error);
   }
-}
+});
+
+// Manejador de mensajes de texto
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const messageId = msg.message_id;
+  const messageText = msg.text;
+
+  // Obtener el idioma del usuario
+  const userLocale = await getUserLocale(chatId);
+
+  // Agregar mensaje al historial de mensajes por chat
+  if (!chatMessageHistory.has(chatId)) {
+    chatMessageHistory.set(chatId, []);
+  }
+
+  const chatMessages = chatMessageHistory.get(chatId);
+  chatMessages.push({ role: 'user', content: messageText });
+
+  // Limitar el historial de mensajes a los últimos 10 mensajes
+  if (chatMessages.length > 10) {
+    chatMessages.shift();
+  }
+
+  // Actualizar el historial de mensajes por chat
+  chatMessageHistory.set(chatId, chatMessages);
+
+  // Obtener respuesta de OpenAI
+  try {
+    const gptResponse = await getChatGPTResponse(chatMessages);
+
+    // Enviar respuesta al usuario
+    await enviarMensajeDirecto(chatId, gptResponse);
+  } catch (error) {
+    console.error(`Error al procesar mensaje de ${chatId}:`, error);
+  }
+});
+
+// Manejador de errores no capturados
+process.on('uncaughtException', (err) => {
+  console.error('Excepción no capturada:', err);
+  if (ADMIN_CHAT_ID) {
+    bot.sendMessage(ADMIN_CHAT_ID, `Excepción no capturada: ${err.message}`);
+  }
+});
+
+// Manejador de errores no manejados de promesas rechazadas
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promesa rechazada no manejada:', reason);
+  if (ADMIN_CHAT_ID) {
+    bot.sendMessage(ADMIN_CHAT_ID, `Promesa rechazada no manejada: ${reason}`);
+  }
+});
 
 // Funciones para detectar saludos y preguntas por el nombre del asistente
 const greetings = [
